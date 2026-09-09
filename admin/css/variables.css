@@ -1,0 +1,85 @@
+/* SafeEdu Unified Design System - CSS Design Tokens */
+:root {
+  /* Brand Palette */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --primary-dark: #1e40af;
+
+  --secondary: #0f172a;
+  --secondary-light: #1e293b;
+  --secondary-muted: #334155;
+
+  --accent-teal: #0d9488;
+  --accent-teal-light: #f0fdfa;
+
+  /* Neutrals & Surfaces */
+  --bg-canvas: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --border-color: #e2e8f0;
+  --border-focus: #93c5fd;
+
+  /* Typography Colors */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --text-white: #ffffff;
+
+  /* Functional / Status Badges */
+  --status-pending-text: #b45309;
+  --status-pending-bg: #fef3c7;
+  --status-pending-border: #fde68a;
+
+  --status-process-text: #0369a1;
+  --status-process-bg: #e0f2fe;
+  --status-process-border: #bae6fd;
+
+  --status-success-text: #15803d;
+  --status-success-bg: #dcfce7;
+  --status-success-border: #bbf7d0;
+
+  --status-danger-text: #b91c1c;
+  --status-danger-bg: #fee2e2;
+  --status-danger-border: #fecaca;
+
+  /* Category Identity Badges */
+  --badge-facility-text: #1d4ed8;
+  --badge-facility-bg: #dbeafe;
+
+  --badge-ethics-text: #991b1b;
+  --badge-ethics-bg: #ffe4e6;
+
+  /* Typography System */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --topbar-height: 70px;
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
