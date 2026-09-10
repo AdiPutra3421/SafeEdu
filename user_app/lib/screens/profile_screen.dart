@@ -38,7 +38,7 @@ class ProfileScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'ID: ${report.idPengaduan}',
+                    'ID: ${report.id}',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary),
                   ),
                   IconButton(
@@ -52,7 +52,7 @@ class ProfileScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textMain),
               ),
               const SizedBox(height: 6),
-              Text('📍 ${report.lokasi} • ${report.tanggalPengaduan}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text('📍 ${report.lokasiKejadian} • ${report.createdAt}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
 
               const SizedBox(height: 20),
 
@@ -87,7 +87,7 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              if (report.alasanPenolakan != null && report.alasanPenolakan!.isNotEmpty) ...[
+              if (report.ulasanPelapor != null && report.ulasanPelapor!.isNotEmpty) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -101,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       const Text('Catatan Penolakan:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                       const SizedBox(height: 2),
-                      Text(report.alasanPenolakan!, style: const TextStyle(fontSize: 12, color: AppColors.textMain)),
+                      Text(report.ulasanPelapor!, style: const TextStyle(fontSize: 12, color: AppColors.textMain)),
                     ],
                   ),
                 ),
@@ -340,15 +340,15 @@ class ProfileScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: rep.idKategori == 2 ? AppColors.facilityBg : AppColors.ethicsBg,
+                                  color: rep.kategoriId == 2 ? AppColors.facilityBg : AppColors.ethicsBg,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  rep.idKategori == 2 ? 'Fasilitas' : 'Kode Etik',
+                                  rep.kategoriId == 2 ? 'Fasilitas' : 'Kode Etik',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: rep.idKategori == 2 ? AppColors.facilityText : AppColors.ethicsText,
+                                    color: rep.kategoriId == 2 ? AppColors.facilityText : AppColors.ethicsText,
                                   ),
                                 ),
                               ),
@@ -367,11 +367,11 @@ class ProfileScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('📍 ${rep.lokasi}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              Text('📍 ${rep.lokasiKejadian}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Text(rep.tanggalPengaduan, style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
+                                  Text(rep.createdAt ?? '', style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
                                   const Spacer(),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

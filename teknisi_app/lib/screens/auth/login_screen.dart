@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../technician_dashboard_screen.dart';
+import '../technician_main_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const TechnicianDashboardScreen()),
+        MaterialPageRoute(builder: (context) => const TechnicianMainShell()),
       );
     }
   }

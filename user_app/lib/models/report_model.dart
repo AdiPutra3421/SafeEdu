@@ -1,67 +1,74 @@
 class PengaduanModel {
-  final int idPengaduan;
-  final int idUser;
-  final int idKategori; // 1: kode_etik, 2: fasilitas
-  final int? idFasilitas;
+  final int id;
+  final int userId;
+  final int kategoriId;
+  final int? fasilitasId;
   final String judul;
-  final String isiPengaduan;
-  final String? lokasi;
-  final String status; // 'menunggu', 'diverifikasi', 'ditolak', 'dalam pengerjaan', 'selesai', 'ditindaklanjuti'
-  final String? alasanPenolakan;
-  final String tanggalPengaduan;
-  final String? tanggalSelesai;
+  final String deskripsi;
+  final String? lokasiKejadian;
+  final String status;
+  final bool isAnonim;
+  final String? fotoBukti;
+  int? ratingKepuasan;
+  String? ulasanPelapor;
+  final String? createdAt;
   
-  // Custom fields for UI that might join from other tables
+  // Custom fields from joins (with/load in Laravel)
   final String? namaKategori;
   final String? namaFasilitas;
 
   PengaduanModel({
-    required this.idPengaduan,
-    required this.idUser,
-    required this.idKategori,
-    this.idFasilitas,
+    required this.id,
+    required this.userId,
+    required this.kategoriId,
+    this.fasilitasId,
     required this.judul,
-    required this.isiPengaduan,
-    this.lokasi,
+    required this.deskripsi,
+    this.lokasiKejadian,
     this.status = 'menunggu',
-    this.alasanPenolakan,
-    required this.tanggalPengaduan,
-    this.tanggalSelesai,
+    this.isAnonim = false,
+    this.fotoBukti,
+    this.ratingKepuasan,
+    this.ulasanPelapor,
+    this.createdAt,
     this.namaKategori,
     this.namaFasilitas,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'id_pengaduan': idPengaduan,
-      'id_user': idUser,
-      'id_kategori': idKategori,
-      'id_fasilitas': idFasilitas,
+      'id': id,
+      'user_id': userId,
+      'kategori_id': kategoriId,
+      'fasilitas_id': fasilitasId,
       'judul': judul,
-      'isi_pengaduan': isiPengaduan,
-      'lokasi': lokasi,
+      'deskripsi': deskripsi,
+      'lokasi_kejadian': lokasiKejadian,
       'status': status,
-      'alasan_penolakan': alasanPenolakan,
-      'tanggal_pengaduan': tanggalPengaduan,
-      'tanggal_selesai': tanggalSelesai,
+      'is_anonim': isAnonim,
+      'foto_bukti': fotoBukti,
+      'rating_kepuasan': ratingKepuasan,
+      'ulasan_pelapor': ulasanPelapor,
     };
   }
 
   factory PengaduanModel.fromMap(Map<String, dynamic> map) {
     return PengaduanModel(
-      idPengaduan: map['id_pengaduan'] ?? 0,
-      idUser: map['id_user'] ?? 0,
-      idKategori: map['id_kategori'] ?? 0,
-      idFasilitas: map['id_fasilitas'],
+      id: map['id'] ?? 0,
+      userId: map['user_id'] ?? 0,
+      kategoriId: map['kategori_id'] ?? 0,
+      fasilitasId: map['fasilitas_id'],
       judul: map['judul'] ?? '',
-      isiPengaduan: map['isi_pengaduan'] ?? '',
-      lokasi: map['lokasi'],
+      deskripsi: map['deskripsi'] ?? '',
+      lokasiKejadian: map['lokasi_kejadian'],
       status: map['status'] ?? 'menunggu',
-      alasanPenolakan: map['alasan_penolakan'],
-      tanggalPengaduan: map['tanggal_pengaduan'] ?? '',
-      tanggalSelesai: map['tanggal_selesai'],
-      namaKategori: map['nama_kategori'],
-      namaFasilitas: map['nama_fasilitas'],
+      isAnonim: map['is_anonim'] == 1 || map['is_anonim'] == true,
+      fotoBukti: map['foto_bukti'],
+      ratingKepuasan: map['rating_kepuasan'],
+      ulasanPelapor: map['ulasan_pelapor'],
+      createdAt: map['created_at'],
+      namaKategori: map['kategori']?['nama'],
+      namaFasilitas: map['fasilitas']?['nama'],
     );
   }
 }

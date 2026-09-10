@@ -19,6 +19,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/konfirmasi', function () {
         return view('konfirmasi');
     })->name('konfirmasi');
+
+    Route::get('/fasilitas', function () {
+        return view('fasilitas');
+    })->name('fasilitas');
 });
 
 Route::middleware('auth')->group(function () {

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'theme/app_theme.dart';
-
 import 'screens/auth/login_screen.dart';
 
 void main() {

@@ -2,51 +2,47 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pengaduan extends Model
 {
-    use HasFactory;
-
     protected $table = 'pengaduan';
-    protected $primaryKey = 'id_pengaduan';
 
     protected $fillable = [
-        'id_user',
-        'id_kategori',
-        'id_fasilitas',
+        'user_id',
+        'kategori_id',
+        'fasilitas_id',
         'judul',
-        'isi_pengaduan',
-        'lokasi',
+        'deskripsi',
+        'lokasi_kejadian',
         'status',
-        'alasan_penolakan',
-        'tanggal_pengaduan',
-        'tanggal_selesai',
+        'is_anonim',
+        'foto_bukti',
+        'rating_kepuasan',
+        'ulasan_pelapor',
     ];
 
-    public function user()
+    protected $casts = [
+        'is_anonim' => 'boolean',
+    ];
+
+    public function pelapor()
     {
-        return $this->belongsTo(User::class, 'id_user', 'id_user');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function kategori()
     {
-        return $this->belongsTo(KategoriPengaduan::class, 'id_kategori', 'id_kategori');
+        return $this->belongsTo(Kategori::class, 'kategori_id');
     }
 
     public function fasilitas()
     {
-        return $this->belongsTo(Fasilitas::class, 'id_fasilitas', 'id_fasilitas');
+        return $this->belongsTo(Fasilitas::class, 'fasilitas_id');
     }
 
-    public function penugasan()
+    public function penugasans()
     {
-        return $this->hasMany(Penugasan::class, 'id_pengaduan', 'id_pengaduan');
-    }
-
-    public function buktiPengaduan()
-    {
-        return $this->hasMany(BuktiPengaduan::class, 'id_pengaduan', 'id_pengaduan');
+        return $this->hasMany(Penugasan::class, 'pengaduan_id');
     }
 }
