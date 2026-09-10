@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/report_screen.dart';
 import 'theme/app_theme.dart';
+import 'screens/auth/login_screen.dart';
 
 void main() {
   runApp(const SafeEduUserApp());
@@ -18,7 +19,7 @@ class SafeEduUserApp extends StatelessWidget {
       title: 'SafeEdu Siswa',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const MainNavigationShell(),
+      home: const LoginScreen(),
     );
   }
 }
@@ -34,36 +35,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
 
   // Student reports state
-  final List<UserReport> _reports = [
-    UserReport(
-      id: 'REP-2026-001',
-      type: 'fasilitas',
-      title: 'AC Bocor & Tidak Dingin di Lab Komputer 2',
-      category: 'Pendingin Ruangan (AC)',
-      location: 'Gedung B, Lantai 3, Lab 302',
-      urgency: 'Tinggi',
-      description: 'Pendingin ruangan meneteskan air deras tepat di atas meja PC server unit 4.',
-      date: '07 Sep 2026, 08:30',
-      isAnonymous: false,
-      status: 'Menunggu Verifikasi',
-      responseNote: null,
-    ),
-    UserReport(
-      id: 'REP-2026-003',
-      type: 'fasilitas',
-      title: 'Kran Air Wastafel Toilet Siswa Patah',
-      category: 'Sanitasi & Perpipaan Air',
-      location: 'Gedung A, Toilet Pria Lantai 1',
-      urgency: 'Sedang',
-      description: 'Kran air patah dan terus mengalir membanjiri lantai selasar koridor musholla.',
-      date: '06 Sep 2026, 14:00',
-      isAnonymous: false,
-      status: 'Diteruskan ke Teknisi',
-      responseNote: 'Teknisi Bambang Sudirjo sedang mengganti katup fitting pipa.',
-    ),
-  ];
+  final List<PengaduanModel> _reports = [];
 
-  void _handleNewReport(UserReport report) {
+  void _handleNewReport(PengaduanModel report) {
     setState(() {
       _reports.insert(0, report);
       _currentIndex = 2; // Auto switch to Profile / History tab to view submitted report

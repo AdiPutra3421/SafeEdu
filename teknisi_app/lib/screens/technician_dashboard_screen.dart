@@ -14,70 +14,26 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   String selectedFilter = 'Semua';
 
   // Seed tasks dispatched from Admin
-  final List<TechnicianTask> _tasks = [
-    TechnicianTask(
-      id: 'REP-2026-003',
-      title: 'Kran Air Wastafel Toilet Siswa Patah',
-      category: 'Sanitasi & Perpipaan',
-      location: 'Gedung A, Toilet Pria Lantai 1',
-      urgency: 'Tinggi',
-      reporterName: 'Rian Pratama (X TKJ 2)',
-      dateReceived: '07 Sep 2026, 14:00',
-      adminNotes: 'Prioritaskan penutupan katup utama dahulu sebelum jam istirahat sholat.',
-      status: 'Dalam Pengerjaan',
-      technicianNotes: 'Katup utama telah dimatikan. Fitting pipa 1/2 inch sedang diambil di gudang sarpras.',
-      estimatedCompletion: 'Hari ini 16:00',
-      confirmedAt: '07 Sep 2026, 14:30',
-    ),
-    TechnicianTask(
-      id: 'REP-2026-001',
-      title: 'AC Bocor & Tidak Dingin di Lab Komputer 2',
-      category: 'Kelistrikan & Pendingin',
-      location: 'Gedung B, Lantai 3, Lab 302',
-      urgency: 'Tinggi',
-      reporterName: 'Ahmad Fauzi (XII RPL 1)',
-      dateReceived: '07 Sep 2026, 09:15',
-      adminNotes: 'Bahaya air menetes di atas meja server unit 4.',
-      status: 'Tugas Baru',
-      technicianNotes: null,
-      estimatedCompletion: null,
-      confirmedAt: null,
-    ),
-    TechnicianTask(
-      id: 'REP-2026-004',
-      title: 'Proyektor LCD Mati Total Saat Presentasi',
-      category: 'Multimedia & IT',
-      location: 'Gedung C, Ruang Kelas 104',
-      urgency: 'Sedang',
-      reporterName: 'Dewi Lestari (XI MIPA 3)',
-      dateReceived: '06 Sep 2026, 09:20',
-      adminNotes: 'Ganti lampu cadangan dari logistik sarpras.',
-      status: 'Selesai',
-      technicianNotes: 'Lampu halogen dan kabel HDMI telah diganti. Uji coba display 1080p normal.',
-      estimatedCompletion: 'Selesai',
-      confirmedAt: '06 Sep 2026, 13:45',
-    ),
-  ];
+  final List<PenugasanModel> _tasks = [];
 
-  int get countNew => _tasks.where((t) => t.status == 'Tugas Baru').length;
-  int get countProcess => _tasks.where((t) => t.status == 'Dalam Pengerjaan').length;
-  int get countFinished => _tasks.where((t) => t.status == 'Selesai').length;
+  int get countNew => _tasks.where((t) => t.statusPenugasan == 'ditugaskan').length;
+  int get countProcess => _tasks.where((t) => t.statusPenugasan == 'diterima').length;
+  int get countFinished => _tasks.where((t) => t.statusPenugasan == 'selesai').length;
 
-  List<TechnicianTask> get filteredTasks {
+  List<PenugasanModel> get filteredTasks {
     if (selectedFilter == 'Tugas Baru') {
-      return _tasks.where((t) => t.status == 'Tugas Baru').toList();
+      return _tasks.where((t) => t.statusPenugasan == 'ditugaskan').toList();
     } else if (selectedFilter == 'Dalam Pengerjaan') {
-      return _tasks.where((t) => t.status == 'Dalam Pengerjaan').toList();
+      return _tasks.where((t) => t.statusPenugasan == 'diterima').toList();
     } else if (selectedFilter == 'Selesai') {
-      return _tasks.where((t) => t.status == 'Selesai').toList();
+      return _tasks.where((t) => t.statusPenugasan == 'selesai').toList();
     }
     return _tasks;
   }
 
-  void _showConfirmationSheet(TechnicianTask task) {
-    final notesController = TextEditingController(text: task.technicianNotes ?? '');
-    final estController = TextEditingController(text: task.estimatedCompletion ?? '2 Jam Kerja');
-    String chosenStatus = task.status == 'Tugas Baru' ? 'Dalam Pengerjaan' : task.status;
+  void _showConfirmationSheet(PenugasanModel task) {
+    final notesController = TextEditingController(text: task.keteranganTeknisi ?? '');
+    String chosenStatus = task.statusPenugasan == 'ditugaskan' ? 'diterima' : task.statusPenugasan;
 
     showModalBottomSheet(
       context: context,
@@ -120,7 +76,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              task.id,
+                              'ID Penugasan: ${task.idPenugasan}',
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w700,
@@ -154,18 +110,18 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            task.title,
+                            task.judulLaporan,
                             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '📍 ${task.location}',
+                            '📍 ${task.lokasi}',
                             style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                           ),
-                          if (task.adminNotes.isNotEmpty) ...[
+                          if (task.catatanAdmin != null && task.catatanAdmin!.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(
-                              'Pesan Admin: "${task.adminNotes}"',
+                              'Pesan Admin: "${task.catatanAdmin}"',
                               style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.secondaryMuted),
                             ),
                           ]
@@ -183,28 +139,28 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       children: [
                         ChoiceChip(
                           label: const Text('Dalam Pengerjaan'),
-                          selected: chosenStatus == 'Dalam Pengerjaan',
+                          selected: chosenStatus == 'diterima',
                           selectedColor: AppColors.statusProcessBg,
                           labelStyle: TextStyle(
-                            color: chosenStatus == 'Dalam Pengerjaan' ? AppColors.statusProcessText : AppColors.textMain,
+                            color: chosenStatus == 'diterima' ? AppColors.statusProcessText : AppColors.textMain,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
                           onSelected: (val) {
-                            if (val) setModalState(() => chosenStatus = 'Dalam Pengerjaan');
+                            if (val) setModalState(() => chosenStatus = 'diterima');
                           },
                         ),
                         ChoiceChip(
                           label: const Text('Pekerjaan Selesai'),
-                          selected: chosenStatus == 'Selesai',
+                          selected: chosenStatus == 'selesai',
                           selectedColor: AppColors.statusSuccessBg,
                           labelStyle: TextStyle(
-                            color: chosenStatus == 'Selesai' ? AppColors.statusSuccessText : AppColors.textMain,
+                            color: chosenStatus == 'selesai' ? AppColors.statusSuccessText : AppColors.textMain,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
                           onSelected: (val) {
-                            if (val) setModalState(() => chosenStatus = 'Selesai');
+                            if (val) setModalState(() => chosenStatus = 'selesai');
                           },
                         ),
                       ],
@@ -223,19 +179,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         hintStyle: TextStyle(fontSize: 13, color: AppColors.textLight),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Estimasi Waktu Penyelesaian',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: estController,
-                      decoration: const InputDecoration(
-                        hintText: 'Contoh: 30 Menit, Hari ini 17:00, atau Selesai',
-                        prefixIcon: Icon(Icons.schedule, size: 18, color: AppColors.textMuted),
-                      ),
-                    ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -244,10 +187,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         label: const Text('Kirim Konfirmasi ke Portal Admin'),
                         onPressed: () {
                           setState(() {
-                            task.status = chosenStatus;
-                            task.technicianNotes = notesController.text.trim();
-                            task.estimatedCompletion = estController.text.trim();
-                            task.confirmedAt = 'Baru saja';
+                            task.statusPenugasan = chosenStatus;
+                            task.keteranganTeknisi = notesController.text.trim();
+                            task.tanggalUpdate = DateTime.now().toString();
                           });
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -261,7 +203,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'Konfirmasi ${task.id} terkirim ke Admin!',
+                                      'Konfirmasi Penugasan #${task.idPenugasan} terkirim ke Admin!',
                                       style: const TextStyle(fontWeight: FontWeight.w500),
                                     ),
                                   ),
@@ -554,10 +496,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     );
   }
 
-  Widget _buildTaskCard(TechnicianTask task) {
-    final isNew = task.status == 'Tugas Baru';
-    final isInProgress = task.status == 'Dalam Pengerjaan';
-    final isDone = task.status == 'Selesai';
+  Widget _buildTaskCard(PenugasanModel task) {
+    final isNew = task.statusPenugasan == 'ditugaskan';
+    final isInProgress = task.statusPenugasan == 'diterima';
+    final isDone = task.statusPenugasan == 'selesai';
 
     Color statusBg = AppColors.statusPendingBg;
     Color statusText = AppColors.statusPendingText;
@@ -568,6 +510,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       statusBg = AppColors.statusSuccessBg;
       statusText = AppColors.statusSuccessText;
     }
+
+    String displayStatus = 'Baru';
+    if (isInProgress) displayStatus = 'Dikerjakan';
+    if (isDone) displayStatus = 'Selesai';
 
     return Card(
       child: Padding(
@@ -588,7 +534,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        task.id,
+                        'ID: ${task.idPenugasan}',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -598,7 +544,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      task.dateReceived,
+                      task.tanggalPenugasan,
                       style: const TextStyle(fontSize: 11, color: AppColors.textLight),
                     ),
                   ],
@@ -610,7 +556,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    task.status,
+                    displayStatus,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -625,7 +571,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
             // Title
             Text(
-              task.title,
+              task.judulLaporan,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -642,7 +588,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    task.location,
+                    task.lokasi,
                     style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ),
@@ -654,14 +600,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 const Icon(Icons.person_outline, size: 15, color: AppColors.textMuted),
                 const SizedBox(width: 4),
                 Text(
-                  'Pelapor: ${task.reporterName}',
+                  'Pelapor: ${task.pelapor}',
                   style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
               ],
             ),
 
             // Admin Disposed Notes
-            if (task.adminNotes.isNotEmpty) ...[
+            if (task.catatanAdmin != null && task.catatanAdmin!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -682,7 +628,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      task.adminNotes,
+                      task.catatanAdmin!,
                       style: const TextStyle(fontSize: 12, color: AppColors.textMain),
                     ),
                   ],
@@ -691,7 +637,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             ],
 
             // Technician's own note if already confirmed
-            if (task.technicianNotes != null && task.technicianNotes!.isNotEmpty) ...[
+            if (task.keteranganTeknisi != null && task.keteranganTeknisi!.isNotEmpty) ...[
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
@@ -708,21 +654,16 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
+                      children: const [
+                        Text(
                           'Catatan Lapangan Anda:',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accentTeal),
                         ),
-                        if (task.estimatedCompletion != null)
-                          Text(
-                            'Est: ${task.estimatedCompletion}',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.accentTeal),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      task.technicianNotes!,
+                      task.keteranganTeknisi!,
                       style: const TextStyle(fontSize: 12, color: AppColors.textMain),
                     ),
                   ],
@@ -761,3 +702,4 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     );
   }
 }
+

@@ -3,11 +3,11 @@ import '../models/report_model.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final List<UserReport> userReports;
+  final List<PengaduanModel> userReports;
 
   const ProfileScreen({super.key, required this.userReports});
 
-  void _showReportTrackingDetail(BuildContext context, UserReport report) {
+  void _showReportTrackingDetail(BuildContext context, PengaduanModel report) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -38,7 +38,7 @@ class ProfileScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    report.id,
+                    'ID: ${report.idPengaduan}',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary),
                   ),
                   IconButton(
@@ -48,11 +48,11 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
               Text(
-                report.title,
+                report.judul,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textMain),
               ),
               const SizedBox(height: 6),
-              Text('📍 ${report.location} • ${report.date}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text('📍 ${report.lokasi} • ${report.tanggalPengaduan}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
 
               const SizedBox(height: 20),
 
@@ -63,31 +63,31 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Laporan Masuk',
                 subtitle: 'Laporan Anda telah berhasil dicatat ke sistem SafeEdu',
                 isDone: true,
-                isCurrent: report.status == 'Menunggu Verifikasi',
+                isCurrent: report.status == 'menunggu',
               ),
               _buildTimelineStep(
                 title: 'Verifikasi Tim Admin',
                 subtitle: 'Admin kesiswaan/sarpras memeriksa validitas & urgensi insiden',
-                isDone: report.status == 'Diteruskan ke Teknisi' || report.status == 'Selesai',
-                isCurrent: report.status == 'Diteruskan ke Teknisi',
+                isDone: report.status == 'dalam pengerjaan' || report.status == 'selesai',
+                isCurrent: report.status == 'diverifikasi',
               ),
               _buildTimelineStep(
                 title: 'Penanganan oleh Teknisi / Satgas',
                 subtitle: 'Petugas lapangan sedang melakukan perbaikan atau investigasi',
-                isDone: report.status == 'Selesai',
-                isCurrent: report.status == 'Diteruskan ke Teknisi',
+                isDone: report.status == 'selesai',
+                isCurrent: report.status == 'dalam pengerjaan',
               ),
               _buildTimelineStep(
                 title: 'Selesai & Dikonfirmasi',
                 subtitle: 'Tiket ditutup setelah teknisi menyelesaikan penanganan',
-                isDone: report.status == 'Selesai',
+                isDone: report.status == 'selesai',
                 isCurrent: false,
                 isLast: true,
               ),
 
               const SizedBox(height: 16),
 
-              if (report.responseNote != null && report.responseNote!.isNotEmpty) ...[
+              if (report.alasanPenolakan != null && report.alasanPenolakan!.isNotEmpty) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -99,9 +99,9 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Catatan Respon Petugas:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      const Text('Catatan Penolakan:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                       const SizedBox(height: 2),
-                      Text(report.responseNote!, style: const TextStyle(fontSize: 12, color: AppColors.textMain)),
+                      Text(report.alasanPenolakan!, style: const TextStyle(fontSize: 12, color: AppColors.textMain)),
                     ],
                   ),
                 ),
@@ -324,10 +324,10 @@ class ProfileScreen extends StatelessWidget {
 
                       Color statusBg = AppColors.statusPendingBg;
                       Color statusText = AppColors.statusPendingText;
-                      if (rep.status == 'Diteruskan ke Teknisi') {
+                      if (rep.status == 'dalam pengerjaan') {
                         statusBg = AppColors.statusProcessBg;
                         statusText = AppColors.statusProcessText;
-                      } else if (rep.status == 'Selesai') {
+                      } else if (rep.status == 'selesai') {
                         statusBg = AppColors.statusSuccessBg;
                         statusText = AppColors.statusSuccessText;
                       }
@@ -340,22 +340,22 @@ class ProfileScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: rep.type == 'fasilitas' ? AppColors.facilityBg : AppColors.ethicsBg,
+                                  color: rep.idKategori == 2 ? AppColors.facilityBg : AppColors.ethicsBg,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  rep.type == 'fasilitas' ? 'Fasilitas' : 'Kode Etik',
+                                  rep.idKategori == 2 ? 'Fasilitas' : 'Kode Etik',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: rep.type == 'fasilitas' ? AppColors.facilityText : AppColors.ethicsText,
+                                    color: rep.idKategori == 2 ? AppColors.facilityText : AppColors.ethicsText,
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  rep.title,
+                                  rep.judul,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
@@ -367,11 +367,11 @@ class ProfileScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('📍 ${rep.location}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              Text('📍 ${rep.lokasi}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Text(rep.date, style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
+                                  Text(rep.tanggalPengaduan, style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
                                   const Spacer(),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -380,7 +380,7 @@ class ProfileScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      rep.status,
+                                      rep.status.toUpperCase(),
                                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: statusText),
                                     ),
                                   ),

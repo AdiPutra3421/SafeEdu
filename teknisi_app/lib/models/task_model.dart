@@ -1,51 +1,35 @@
-class TechnicianTask {
-  final String id;
-  final String title;
-  final String category;
-  final String location;
-  final String urgency;
-  final String reporterName;
-  final String dateReceived;
-  final String adminNotes;
-  String status; // 'Tugas Baru', 'Dalam Pengerjaan', 'Selesai'
-  String? technicianNotes;
-  String? estimatedCompletion;
-  String? confirmedAt;
+class PenugasanModel {
+  final int idPenugasan;
+  final int idPengaduan;
+  final int idTeknisi;
+  final int idAdmin;
+  final String tanggalPenugasan;
+  String statusPenugasan; // 'ditugaskan', 'diterima', 'selesai'
+  final String? catatanAdmin;
+  
+  // Joined fields for display
+  final String judulLaporan;
+  final String lokasi;
+  final String deskripsiLaporan;
+  final String pelapor;
+  
+  // Extra fields from status_pengerjaan for UI mock
+  String? keteranganTeknisi;
+  String? tanggalUpdate;
 
-  TechnicianTask({
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.location,
-    required this.urgency,
-    required this.reporterName,
-    required this.dateReceived,
-    required this.adminNotes,
-    required this.status,
-    this.technicianNotes,
-    this.estimatedCompletion,
-    this.confirmedAt,
+  PenugasanModel({
+    required this.idPenugasan,
+    required this.idPengaduan,
+    required this.idTeknisi,
+    required this.idAdmin,
+    required this.tanggalPenugasan,
+    required this.statusPenugasan,
+    this.catatanAdmin,
+    required this.judulLaporan,
+    required this.lokasi,
+    required this.deskripsiLaporan,
+    required this.pelapor,
+    this.keteranganTeknisi,
+    this.tanggalUpdate,
   });
-
-  TechnicianTask copyWith({
-    String? status,
-    String? technicianNotes,
-    String? estimatedCompletion,
-    String? confirmedAt,
-  }) {
-    return TechnicianTask(
-      id: id,
-      title: title,
-      category: category,
-      location: location,
-      urgency: urgency,
-      reporterName: reporterName,
-      dateReceived: dateReceived,
-      adminNotes: adminNotes,
-      status: status ?? this.status,
-      technicianNotes: technicianNotes ?? this.technicianNotes,
-      estimatedCompletion: estimatedCompletion ?? this.estimatedCompletion,
-      confirmedAt: confirmedAt ?? this.confirmedAt,
-    );
-  }
 }

@@ -3,7 +3,7 @@ import '../models/report_model.dart';
 import '../theme/app_theme.dart';
 
 class ReportScreen extends StatefulWidget {
-  final Function(UserReport) onReportSubmitted;
+  final Function(PengaduanModel) onReportSubmitted;
 
   const ReportScreen({super.key, required this.onReportSubmitted});
 
@@ -76,18 +76,16 @@ class _ReportScreenState extends State<ReportScreen> {
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      final newReport = UserReport(
-        id: 'REP-2026-${(100 + (DateTime.now().millisecond % 900))}',
-        type: _reportType,
-        title: _titleController.text.trim(),
-        category: _selectedCategory,
-        location: _locationController.text.trim(),
-        urgency: _selectedUrgency,
-        description: _descController.text.trim(),
-        date: '08 Sep 2026, 08:00',
-        isAnonymous: _isAnonymous,
-        attachmentName: _attachedFileName,
-        status: 'Menunggu Verifikasi',
+      final newReport = PengaduanModel(
+        idPengaduan: 100 + (DateTime.now().millisecond % 900),
+        idUser: 1, // mock user id
+        idKategori: _reportType == 'fasilitas' ? 2 : 1, // 1: kode_etik, 2: fasilitas
+        judul: _titleController.text.trim(),
+        isiPengaduan: _descController.text.trim(),
+        lokasi: _locationController.text.trim(),
+        status: 'menunggu',
+        tanggalPengaduan: DateTime.now().toIso8601String(),
+        namaKategori: _selectedCategory,
       );
 
       // Show confirmation alert
@@ -160,7 +158,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Laporan ${newReport.id} berhasil dikirim ke Admin!',
+                              'Laporan REP-2026-${newReport.idPengaduan} berhasil dikirim ke Admin!',
                               style: const TextStyle(fontWeight: FontWeight.w500),
                             ),
                           ),
