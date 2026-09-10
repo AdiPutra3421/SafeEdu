@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<CampusNews> _newsList = const [
     CampusNews(
       id: 'NEWS-01',
-      title: 'Pedoman Kampus Aman: Sosialisasi Pencegahan Perundungan (Bullying)',
+      title: 'Pedoman Sekolah Aman: Sosialisasi Pencegahan Perundungan (Bullying)',
       category: 'Kode Etik',
       date: '06 Sep 2026',
       readTime: '3 mnt baca',
@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       date: '03 Sep 2026',
       readTime: '4 mnt baca',
       summary: 'Identitas pelapor kode etik dijamin terenkripsi dan tidak dipublikasikan ke pihak luar demi integritas dan keamanan.',
-      author: 'Satgas Anti-Kekerasan Kampus',
+      author: 'Satgas Anti-Kekerasan Sekolah',
     ),
   ];
 
@@ -328,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Berita & Panduan Kampus',
+                    'Berita & Panduan Sekolah',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textMain),
                   ),
                   TextButton(

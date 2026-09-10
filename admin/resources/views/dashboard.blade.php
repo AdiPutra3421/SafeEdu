@@ -6,7 +6,7 @@
 <!-- Topbar Header -->
 <header class="topbar">
   <div class="page-title">
-    <h2>Statistik & Monitoring Kampus</h2>
+    <h2>Statistik & Monitoring Sekolah</h2>
     <p>Ikhtisar penerimaan laporan fasilitas, pelanggaran kode etik, dan status respon penanganan.</p>
   </div>
   <div class="topbar-actions">
@@ -55,7 +55,7 @@
         <div class="stat-title">Laporan Fasilitas</div>
         <div class="stat-number" id="stat-fasilitas">3</div>
         <div class="stat-meta">
-          Sarana & prasarana kampus
+          Sarana & prasarana sekolah
         </div>
       </div>
       <div class="stat-icon-wrapper icon-teal">
@@ -118,7 +118,7 @@
           <!-- Fasilitas Progress -->
           <div class="bar-chart-row">
             <div class="bar-label-wrap">
-              <span>Laporan Fasilitas Kampus (Disposisi ke Teknisi)</span>
+              <span>Laporan Fasilitas Sekolah (Disposisi ke Teknisi)</span>
               <span id="label-bar-facility">3 Tiket (60%)</span>
             </div>
             <div class="bar-track">
@@ -188,7 +188,7 @@
           <div class="legend-item">
             <div>
               <span class="legend-color-dot" style="background-color: var(--primary);"></span>
-              Fasilitas Kampus
+              Fasilitas Sekolah
             </div>
             <strong id="legend-facility-count">3 Laporan</strong>
           </div>

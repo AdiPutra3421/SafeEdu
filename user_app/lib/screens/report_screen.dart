@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/report_model.dart';
 import '../theme/app_theme.dart';
 
@@ -19,7 +21,11 @@ class _ReportScreenState extends State<ReportScreen> {
   final _locationController = TextEditingController();
   final _descController = TextEditingController();
 
+  List<dynamic> _apiFasilitas = [];
+  bool _isLoadingFasilitas = false;
+  int? _selectedFasilitasId;
   String _selectedCategory = 'Pendingin Ruangan (AC)';
+
   String _selectedUrgency = 'Sedang';
   bool _isAnonymous = false;
   String? _attachedFileName;
@@ -44,6 +50,34 @@ class _ReportScreenState extends State<ReportScreen> {
     'Diskriminasi & Intimidasi',
     'Lainnya (Sertakan Kronologi)',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFasilitas();
+  }
+
+  Future<void> _fetchFasilitas() async {
+    setState(() => _isLoadingFasilitas = true);
+    try {
+      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        if (data['success'] == true) {
+          setState(() {
+            _apiFasilitas = data['data'];
+            if (_apiFasilitas.isNotEmpty) {
+              _selectedFasilitasId = _apiFasilitas.first['id'];
+            }
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching fasilitas: $e');
+    } finally {
+      setState(() => _isLoadingFasilitas = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -87,6 +121,7 @@ class _ReportScreenState extends State<ReportScreen> {
         id: 100 + (DateTime.now().millisecond % 900),
         userId: 1, // mock user id
         kategoriId: _reportType == 'fasilitas' ? 2 : 1, 
+        fasilitasId: _reportType == 'fasilitas' ? _selectedFasilitasId : null,
         judul: _titleController.text.trim(),
         deskripsi: _descController.text.trim(),
         lokasiKejadian: _locationController.text.trim(),
@@ -133,7 +168,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                          'Tipe: ${_reportType == 'fasilitas' ? 'Fasilitas Kampus' : 'Pelanggaran Kode Etik'}',
+                          'Tipe: ${_reportType == 'fasilitas' ? 'Fasilitas Sekolah' : 'Pelanggaran Kode Etik'}',
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w600)),
                       Text('Kategori: $_selectedCategory',
@@ -281,7 +316,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                       : AppColors.textMuted),
                               const SizedBox(width: 6),
                               Text(
-                                'Fasilitas Kampus',
+                                'Fasilitas Sekolah',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,

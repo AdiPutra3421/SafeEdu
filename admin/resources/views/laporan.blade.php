@@ -111,7 +111,7 @@
             <option value="Eko Prasetyo (Divisi IT & Multimedia)">Eko Prasetyo - Divisi IT & Multimedia</option>
             <option value="Agus Santoso (Divisi Kelistrikan & AC)">Agus Santoso - Divisi Kelistrikan & AC</option>
             <option value="Suryono (Divisi Pengawas & Sarpras)">Suryono - Divisi Pengawas Keamanan & CCTV</option>
-            <option value="Tim Disiplin & Konseling Kampus">Tim Satgas Disiplin & BK (Khusus Kode Etik)</option>
+            <option value="Tim Disiplin & Konseling Sekolah">Tim Satgas Disiplin & BK (Khusus Kode Etik)</option>
           </select>
         </div>
 
@@ -202,7 +202,7 @@
     const badgeElem = document.getElementById('modal-report-badge');
     if (report.type === 'fasilitas') {
       badgeElem.className = 'badge badge-facility';
-      badgeElem.textContent = 'Fasilitas Kampus';
+      badgeElem.textContent = 'Fasilitas Sekolah';
     } else {
       badgeElem.className = 'badge badge-ethics';
       badgeElem.textContent = 'Pelanggaran Kode Etik';
@@ -211,7 +211,7 @@
     // Auto select suggested technician
     const select = document.getElementById('technicianSelect');
     if (report.type === 'kode_etik') {
-      select.value = 'Tim Disiplin & Konseling Kampus';
+      select.value = 'Tim Disiplin & Konseling Sekolah';
     } else if (report.category.includes('Air') || report.category.includes('Sanitasi')) {
       select.value = 'Bambang Sudirjo (Divisi Perpipaan & Sanitasi)';
     } else if (report.category.includes('Multimedia') || report.category.includes('IT')) {

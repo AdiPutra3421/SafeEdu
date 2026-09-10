@@ -6,7 +6,7 @@
 <header class="topbar">
   <div class="page-title">
     <h2>Manajemen Fasilitas & Katalog Sarana</h2>
-    <p>Tambah, edit, atau hapus fasilitas yang tersedia di kampus/sekolah untuk dapat dilaporkan oleh pengguna.</p>
+    <p>Tambah, edit, atau hapus fasilitas yang tersedia di sekolah/sekolah untuk dapat dilaporkan oleh pengguna.</p>
   </div>
   <div class="topbar-actions">
     <button class="btn btn-primary" onclick="openFasilitasModal()">
@@ -92,13 +92,22 @@
 @endsection
 
 @section('scripts')
+
 <script>
-  // Dummy State for UI testing (later to be replaced by API fetch)
-  let fasilitasData = [
-    { id: 1, nama: 'AC Lab Komputer 2', lokasi: 'Gedung B, Lantai 3', kondisi: 'Dalam Perbaikan', deskripsi: 'Air menetes mengenai meja server' },
-    { id: 2, nama: 'Proyektor Ruang 104', lokasi: 'Gedung C, Lantai 1', kondisi: 'Bisa Digunakan', deskripsi: 'Lampu proyektor mati saat dihidupkan (Sudah diganti)' },
-    { id: 3, nama: 'Wastafel Toilet Pria', lokasi: 'Gedung A, Lantai 1', kondisi: 'Dalam Perbaikan', deskripsi: 'Kran patah menyebabkan kebocoran' }
-  ];
+  let fasilitasData = [];
+
+  async function fetchFasilitas() {
+    try {
+      const response = await fetch('/api/fasilitas');
+      const json = await response.json();
+      if (json.success) {
+        fasilitasData = json.data;
+        renderTable();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   function showToast(message) {
     const container = document.getElementById('toastContainer');
@@ -111,9 +120,7 @@
       <span>${message}</span>
     `;
     container.appendChild(toast);
-    setTimeout(() => {
-      toast.remove();
-    }, 3500);
+    setTimeout(() => toast.remove(), 3500);
   }
 
   function renderTable() {
@@ -124,9 +131,9 @@
     }
 
     tbody.innerHTML = fasilitasData.map(f => {
-      let badgeClass = 'badge-resolved'; // green
-      if(f.kondisi === 'Dalam Perbaikan') badgeClass = 'badge-pending'; // yellow
-      if(f.kondisi === 'Tidak Bisa Digunakan') badgeClass = 'badge-ethics'; // red
+      let badgeClass = 'badge-resolved';
+      if(f.kondisi === 'Dalam Perbaikan') badgeClass = 'badge-pending';
+      if(f.kondisi === 'Tidak Bisa Digunakan') badgeClass = 'badge-ethics';
 
       return `
         <tr>
@@ -136,7 +143,7 @@
           <td><span class="badge ${badgeClass}">${f.kondisi}</span></td>
           <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
           <td>
-            <button class="btn btn-outline btn-sm" onclick="editFasilitas(${f.id})">Edit</button>
+            <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${f.id})">Edit</button>
             <button class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2; margin-left:4px;" onclick="deleteFasilitas(${f.id})">Hapus</button>
           </td>
         </tr>
@@ -152,7 +159,7 @@
       document.getElementById('namaInput').value = f.nama;
       document.getElementById('lokasiInput').value = f.lokasi;
       document.getElementById('kondisiSelect').value = f.kondisi;
-      document.getElementById('deskripsiInput').value = f.deskripsi;
+      document.getElementById('deskripsiInput').value = f.deskripsi || '';
     } else {
       document.getElementById('modal-title').innerText = 'Tambah Fasilitas Baru';
       document.getElementById('fasilitasForm').reset();
@@ -165,7 +172,7 @@
     document.getElementById('fasilitasModal').classList.remove('active');
   }
 
-  function handleFasilitasSubmit(e) {
+  async function handleFasilitasSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('fasilitas-id').value;
     const newData = {
@@ -175,35 +182,55 @@
       deskripsi: document.getElementById('deskripsiInput').value,
     };
 
-    if (id) {
-      // Edit
-      const index = fasilitasData.findIndex(x => x.id == id);
-      if(index !== -1) {
-        fasilitasData[index] = { ...fasilitasData[index], ...newData };
-        showToast('Fasilitas berhasil diperbarui!');
+    try {
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/fasilitas/${id}` : '/api/fasilitas';
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(newData)
+      });
+      
+      const json = await response.json();
+      if (json.success) {
+        showToast(id ? 'Fasilitas berhasil diperbarui!' : 'Fasilitas baru berhasil ditambahkan!');
+        closeFasilitasModal();
+        fetchFasilitas(); // Refresh table
+      } else {
+        alert("Gagal menyimpan: " + JSON.stringify(json.errors));
       }
-    } else {
-      // Tambah
-      const newId = fasilitasData.length ? Math.max(...fasilitasData.map(f => f.id)) + 1 : 1;
-      fasilitasData.push({ id: newId, ...newData });
-      showToast('Fasilitas baru berhasil ditambahkan!');
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan jaringan.");
     }
-
-    closeFasilitasModal();
-    renderTable();
   }
 
-  function deleteFasilitas(id) {
+  async function deleteFasilitas(id) {
     if(confirm('Apakah Anda yakin ingin menghapus fasilitas ini?')) {
-      fasilitasData = fasilitasData.filter(x => x.id != id);
-      showToast('Fasilitas berhasil dihapus!');
-      renderTable();
+      try {
+        const response = await fetch(`/api/fasilitas/${id}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' }
+        });
+        const json = await response.json();
+        if (json.success) {
+          showToast('Fasilitas berhasil dihapus!');
+          fetchFasilitas();
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
 
-  // Initial render
+  // Initial load
   document.addEventListener('DOMContentLoaded', () => {
-    renderTable();
+    fetchFasilitas();
   });
 </script>
+
 @endsection

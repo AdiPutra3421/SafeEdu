@@ -20,3 +20,7 @@ Route::prefix('penugasan')->group(function () {
     Route::get('/', [PenugasanController::class, 'index']);
     Route::post('/{id}/status', [PenugasanController::class, 'updateStatus']);
 });
+
+// API routes for Web Admin
+use App\Http\Controllers\Api\FasilitasController;
+Route::apiResource('fasilitas', FasilitasController::class);

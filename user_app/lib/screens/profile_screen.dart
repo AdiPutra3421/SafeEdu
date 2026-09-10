@@ -398,7 +398,7 @@ class ProfileScreen extends StatelessWidget {
 
             // Emergency & Campus Helpline
             const Text(
-              'Layanan Bantuan Darurat Kampus',
+              'Layanan Bantuan Darurat Sekolah',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textMain),
             ),
             const SizedBox(height: 12),
