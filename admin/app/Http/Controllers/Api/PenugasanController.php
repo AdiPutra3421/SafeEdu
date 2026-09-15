@@ -37,6 +37,38 @@ class PenugasanController extends Controller
     /**
      * Add log pengerjaan and update status.
      */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'pengaduan_id' => 'required|integer',
+            'teknisi_id' => 'required|integer',
+            'catatan_admin' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $penugasan = Penugasan::create([
+            'pengaduan_id' => $request->pengaduan_id,
+            'teknisi_id' => $request->teknisi_id,
+            'admin_id' => 1, // hardcoded Admin ID for now
+            'status' => 'ditugaskan',
+            'catatan_admin' => $request->catatan_admin
+        ]);
+        
+        $pengaduan = Pengaduan::find($request->pengaduan_id);
+        if ($pengaduan) {
+            $pengaduan->status = 'diproses';
+            $pengaduan->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $penugasan
+        ]);
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [

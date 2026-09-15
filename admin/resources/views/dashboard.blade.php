@@ -236,88 +236,50 @@
 @endsection
 
 @section('scripts')
+
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const stats = SafeEduStore.getStats();
-    const reports = SafeEduStore.getReports();
+  async function fetchDashboard() {
+    try {
+      const response = await fetch('/api/pengaduan');
+      const json = await response.json();
+      if (json.success) {
+        const data = json.data;
+        
+        // Update stats
+        document.getElementById('stat-total').innerText = data.length;
+        document.getElementById('stat-proses').innerText = data.filter(x => x.status === 'diproses' || x.status === 'menunggu').length;
+        document.getElementById('stat-selesai').innerText = data.filter(x => x.status === 'selesai').length;
 
-    // Set KPI values
-    document.getElementById('stat-total').textContent = stats.total;
-    document.getElementById('stat-fasilitas').textContent = stats.fasilitasCount;
-    document.getElementById('stat-ethics').textContent = stats.ethicsCount;
-    document.getElementById('stat-response-rate').textContent = stats.responseRate + '%';
-    document.getElementById('stat-responded-count').textContent = stats.dispatchedCount + stats.resolvedCount;
-    document.getElementById('stat-responded-total').textContent = stats.total;
+        // Render Aktivitas Terakhir
+        const tbody = document.getElementById('recent-activity-body');
+        const recent = data.slice(0, 5);
+        
+        if (recent.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8;">Belum ada aktivitas</td></tr>`;
+            return;
+        }
 
-    document.getElementById('stat-pending').textContent = stats.pendingCount;
-    document.getElementById('stat-dispatched').textContent = stats.dispatchedCount;
-    document.getElementById('stat-resolved').textContent = stats.resolvedCount;
-    document.getElementById('sidebar-pending-badge').textContent = stats.pendingCount;
-
-    // Bar Chart Fill
-    const total = stats.total || 1;
-    const facPct = Math.round((stats.fasilitasCount / total) * 100);
-    const ethPct = Math.round((stats.ethicsCount / total) * 100);
-    const resPct = Math.round((stats.resolvedCount / total) * 100);
-
-    document.getElementById('label-bar-facility').textContent = `${stats.fasilitasCount} Tiket (${facPct}%)`;
-    document.getElementById('fill-bar-facility').style.width = `${facPct}%`;
-
-    document.getElementById('label-bar-ethics').textContent = `${stats.ethicsCount} Kasus (${ethPct}%)`;
-    document.getElementById('fill-bar-ethics').style.width = `${ethPct}%`;
-
-    document.getElementById('label-bar-resolved').textContent = `${stats.resolvedCount} Tiket (${resPct}%)`;
-    document.getElementById('fill-bar-resolved').style.width = `${resPct}%`;
-
-    document.getElementById('legend-facility-count').textContent = `${stats.fasilitasCount} Laporan (${facPct}%)`;
-    document.getElementById('legend-ethics-count').textContent = `${stats.ethicsCount} Laporan (${ethPct}%)`;
-
-    // SVG Donut calculation
-    const circ = 377;
-    const facDash = (stats.fasilitasCount / total) * circ;
-    const ethDash = circ - facDash;
-    const donut1 = document.getElementById('donut-slice-facility');
-    const donut2 = document.getElementById('donut-slice-ethics');
-    donut1.style.strokeDasharray = `${facDash} ${circ}`;
-    donut2.style.strokeDasharray = `${ethDash} ${circ}`;
-    donut2.style.strokeDashoffset = `-${facDash}`;
-
-    // Populate Recent Table (up to 4 items)
-    const tbody = document.getElementById('recent-reports-table');
-    tbody.innerHTML = reports.slice(0, 4).map(rep => {
-      const isFacility = rep.type === 'fasilitas';
-      const typeBadge = isFacility
-        ? `<span class="badge badge-facility"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/></svg> Fasilitas</span>`
-        : `<span class="badge badge-ethics"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Kode Etik</span>`;
-
-      let statusBadge = '';
-      if (rep.status === 'Menunggu Verifikasi') {
-        statusBadge = `<span class="badge badge-pending">Menunggu Verifikasi</span>`;
-      } else if (rep.status === 'Diteruskan ke Teknisi') {
-        statusBadge = `<span class="badge badge-dispatched">Diteruskan ke Teknisi</span>`;
-      } else {
-        statusBadge = `<span class="badge badge-resolved">Selesai</span>`;
+        tbody.innerHTML = recent.map(item => {
+          let badgeClass = 'badge-resolved';
+          if(item.status === 'menunggu') badgeClass = 'badge-ethics';
+          if(item.status === 'diproses') badgeClass = 'badge-pending';
+          
+          return `
+            <tr>
+              <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()}</span></td>
+              <td style="font-weight:600; color:var(--text-main);">${item.judul || '-'}</td>
+              <td>${item.is_anonim ? 'Anonim' : 'Siswa'}</td>
+              <td><span class="badge ${badgeClass}">${item.status}</span></td>
+            </tr>
+          `;
+        }).join('');
       }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
-      const urgencyColor = rep.urgency === 'Mendesak' || rep.urgency === 'Tinggi' ? 'urgency-high' : 'urgency-medium';
-
-      return `
-        <tr>
-          <td><strong>${rep.id}</strong></td>
-          <td>${typeBadge}</td>
-          <td>
-            <div style="font-weight: 600;">${rep.title}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">${rep.location}</div>
-          </td>
-          <td>${rep.reporterName}</td>
-          <td><span class="urgency-indicator ${urgencyColor}">● ${rep.urgency}</span></td>
-          <td>${statusBadge}</td>
-          <td>
-            <a href="{{ route('laporan') }}?id=${rep.id}" class="btn btn-outline btn-sm">Tinjau</a>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  });
+  document.addEventListener('DOMContentLoaded', fetchDashboard);
 </script>
+
 @endsection

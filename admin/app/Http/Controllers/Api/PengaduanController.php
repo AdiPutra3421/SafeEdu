@@ -14,16 +14,17 @@ class PengaduanController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = $request->query('user_id', 1);
+        $userId = $request->query('user_id');
 
-        $pengaduan = Pengaduan::with(['kategori', 'fasilitas'])
-            ->where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Pengaduan::with(['kategori', 'fasilitas', 'pelapor'])->orderBy('created_at', 'desc');
+        
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $pengaduan
+            'data' => $query->get()
         ]);
     }
 

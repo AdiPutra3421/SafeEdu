@@ -149,26 +149,67 @@
 @endsection
 
 @section('scripts')
-<script>
-  let currentTypeFilter = 'all';
-  let currentStatusFilter = 'all';
 
-  function setFilterType(type, element) {
-    currentTypeFilter = type;
-    document.querySelectorAll('.toolbar-container .filter-btn').forEach(btn => btn.classList.remove('active'));
-    element.classList.add('active');
-    renderReportsTable();
+<script>
+  let laporanData = [];
+
+  async function fetchLaporan() {
+    try {
+      const response = await fetch('/api/pengaduan');
+      const json = await response.json();
+      if (json.success) {
+        laporanData = json.data;
+        renderTable();
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
-  function setStatusFilter(status, element) {
-    currentStatusFilter = status;
-    document.querySelectorAll('#filter-status-all, #filter-status-pending, #filter-status-dispatched, #filter-status-resolved').forEach(btn => {
-      btn.classList.remove('btn-primary');
-      btn.classList.add('btn-outline');
-    });
-    element.classList.remove('btn-outline');
-    element.classList.add('btn-primary');
-    renderReportsTable();
+  function renderTable(filter = 'Semua') {
+    const tbody = document.getElementById('laporan-table-body');
+    let filtered = laporanData;
+    if (filter !== 'Semua') {
+      filtered = laporanData.filter(x => 
+        (filter === 'Menunggu' && x.status === 'menunggu') ||
+        (filter === 'Diproses' && x.status === 'diproses') ||
+        (filter === 'Selesai' && x.status === 'selesai')
+      );
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data laporan</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(item => {
+      let badgeClass = 'badge-resolved';
+      if(item.status === 'menunggu') badgeClass = 'badge-ethics';
+      if(item.status === 'diproses') badgeClass = 'badge-pending';
+      
+      const judul = item.judul || '-';
+      const type = item.kategori?.jenis === 'fasilitas' ? 'Fasilitas Sekolah' : 'Kode Etik';
+
+      return `
+        <tr>
+          <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()}</span></td>
+          <td>${item.is_anonim ? '<i>Anonim</i>' : 'Siswa'}</td>
+          <td style="font-weight:600; color:var(--text-main);">${judul}</td>
+          <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${type}</span></td>
+          <td style="font-size:0.85rem;">${item.lokasi_kejadian || '-'}</td>
+          <td><span class="badge ${badgeClass}">${item.status}</span></td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="openDisposisiModal(${item.id})">Lihat / Disposisi</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterLaporan(btn, status) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable(status);
   }
 
   function showToast(message) {
@@ -182,196 +223,63 @@
       <span>${message}</span>
     `;
     container.appendChild(toast);
-    setTimeout(() => {
-      toast.remove();
-    }, 3500);
+    setTimeout(() => toast.remove(), 3500);
   }
 
-  function openDispatchModal(reportId) {
-    const reports = SafeEduStore.getReports();
-    const report = reports.find(r => r.id === reportId);
-    if (!report) return;
+  let selectedId = null;
+  function openDisposisiModal(id) {
+    selectedId = id;
+    const item = laporanData.find(x => x.id === id);
+    if(!item) return;
 
-    document.getElementById('dispatch-report-id').value = report.id;
-    document.getElementById('modal-report-id').textContent = report.id;
-    document.getElementById('modal-report-title').textContent = report.title;
-    document.getElementById('modal-report-location').textContent = '📍 ' + report.location + ' | Kategori: ' + report.category;
-    document.getElementById('modal-report-desc').textContent = '"' + report.description + '"';
-    document.getElementById('adminNotesInput').value = report.adminNotes || '';
-
-    const badgeElem = document.getElementById('modal-report-badge');
-    if (report.type === 'fasilitas') {
-      badgeElem.className = 'badge badge-facility';
-      badgeElem.textContent = 'Fasilitas Sekolah';
-    } else {
-      badgeElem.className = 'badge badge-ethics';
-      badgeElem.textContent = 'Pelanggaran Kode Etik';
-    }
-
-    // Auto select suggested technician
-    const select = document.getElementById('technicianSelect');
-    if (report.type === 'kode_etik') {
-      select.value = 'Tim Disiplin & Konseling Sekolah';
-    } else if (report.category.includes('Air') || report.category.includes('Sanitasi')) {
-      select.value = 'Bambang Sudirjo (Divisi Perpipaan & Sanitasi)';
-    } else if (report.category.includes('Multimedia') || report.category.includes('IT')) {
-      select.value = 'Eko Prasetyo (Divisi IT & Multimedia)';
-    } else {
-      select.value = 'Agus Santoso (Divisi Kelistrikan & AC)';
-    }
-
-    document.getElementById('dispatchModal').classList.add('active');
+    document.getElementById('modal-id').innerText = `RPT-${item.id}`;
+    document.getElementById('modal-pelapor').innerText = item.is_anonim ? 'Anonim' : 'Siswa';
+    document.getElementById('modal-judul').innerText = item.judul;
+    document.getElementById('modal-lokasi').innerText = item.lokasi_kejadian;
+    document.getElementById('modal-deskripsi').innerText = item.deskripsi;
+    
+    document.getElementById('disposisiModal').classList.add('active');
   }
 
-  function closeDispatchModal() {
-    document.getElementById('dispatchModal').classList.remove('active');
+  function closeDisposisiModal() {
+    document.getElementById('disposisiModal').classList.remove('active');
+    selectedId = null;
   }
 
-  function handleDispatchSubmit(event) {
-    event.preventDefault();
-    const reportId = document.getElementById('dispatch-report-id').value;
-    const technician = document.getElementById('technicianSelect').value;
-    const adminNotes = document.getElementById('adminNotesInput').value;
+  async function submitDisposisi(e) {
+    e.preventDefault();
+    if (!selectedId) return;
 
-    if (!technician) return;
+    try {
+      const response = await fetch('/api/penugasan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          pengaduan_id: selectedId,
+          teknisi_id: 2, // Hardcode Bambang Teknisi (ID 2) for now
+          catatan_admin: document.getElementById('modal-catatan')?.value || ''
+        })
+      });
 
-    SafeEduStore.dispatchToTechnician(reportId, technician, adminNotes);
-    closeDispatchModal();
-    showToast(`Tiket ${reportId} berhasil diverifikasi & dikirim ke ${technician}`);
-    updateBadgeCounts();
-    renderReportsTable();
-  }
-
-  function updateBadgeCounts() {
-    const reports = SafeEduStore.getReports();
-    const stats = SafeEduStore.getStats();
-
-    document.getElementById('count-all').textContent = reports.length;
-    document.getElementById('count-fasilitas').textContent = stats.fasilitasCount;
-    document.getElementById('count-ethics').textContent = stats.ethicsCount;
-    document.getElementById('sidebar-pending-badge').textContent = stats.pendingCount;
-  }
-
-  function renderReportsTable() {
-    const reports = SafeEduStore.getReports();
-    const search = (document.getElementById('searchInput').value || '').toLowerCase();
-    const tbody = document.getElementById('reports-table-body');
-
-    const filtered = reports.filter(item => {
-      // Type filter
-      if (currentTypeFilter !== 'all' && item.type !== currentTypeFilter) return false;
-
-      // Status filter
-      if (currentStatusFilter !== 'all' && item.status !== currentStatusFilter) return false;
-
-      // Search filter
-      if (search) {
-        const matchTitle = item.title.toLowerCase().includes(search);
-        const matchId = item.id.toLowerCase().includes(search);
-        const matchLocation = item.location.toLowerCase().includes(search);
-        const matchReporter = item.reporterName.toLowerCase().includes(search);
-        const matchCat = item.category.toLowerCase().includes(search);
-        if (!matchTitle && !matchId && !matchLocation && !matchReporter && !matchCat) return false;
-      }
-
-      return true;
-    });
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <div>Tidak ditemukan laporan yang sesuai dengan filter atau kata kunci pencarian.</div>
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    tbody.innerHTML = filtered.map(item => {
-      const isFacility = item.type === 'fasilitas';
-      const typeBadge = isFacility
-        ? `<span class="badge badge-facility"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/></svg> Fasilitas</span>`
-        : `<span class="badge badge-ethics"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Kode Etik</span>`;
-
-      let statusBadge = '';
-      if (item.status === 'Menunggu Verifikasi') {
-        statusBadge = `<span class="badge badge-pending">Menunggu Verifikasi</span>`;
-      } else if (item.status === 'Diteruskan ke Teknisi') {
-        statusBadge = `<span class="badge badge-dispatched">Diteruskan ke Teknisi</span>`;
+      const json = await response.json();
+      if (json.success) {
+        showToast('Laporan berhasil didisposisikan ke tim terkait!');
+        closeDisposisiModal();
+        fetchLaporan(); // refresh table
       } else {
-        statusBadge = `<span class="badge badge-resolved">Selesai</span>`;
+        alert('Gagal disposisi');
       }
-
-      const urgencyColor = item.urgency === 'Mendesak' || item.urgency === 'Tinggi' ? 'urgency-high' : 'urgency-medium';
-
-      const actionButton = item.status === 'Menunggu Verifikasi'
-        ? `<button class="btn btn-primary btn-sm" onclick="openDispatchModal('${item.id}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Verifikasi & Kirim
-          </button>`
-        : `<button class="btn btn-outline btn-sm" onclick="openDispatchModal('${item.id}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Ubah Disposisi
-          </button>`;
-
-      const reporterDisplay = item.isAnonymous
-        ? `<span style="display: flex; align-items: center; gap: 4px; color: var(--status-danger-text); font-weight: 600; font-size: 0.8rem;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            ${item.reporterName}
-          </span>`
-        : `<div>
-            <div style="font-weight: 600; font-size: 0.84rem;">${item.reporterName}</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">${item.reporterClass}</div>
-          </div>`;
-
-      return `
-        <tr>
-          <td><strong>${item.id}</strong></td>
-          <td>
-            ${typeBadge}
-            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">${item.category}</div>
-          </td>
-          <td>
-            <div style="font-weight: 600; color: var(--text-main); margin-bottom: 2px;">${item.title}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; max-width: 280px;">${item.description}</div>
-          </td>
-          <td>
-            <div style="font-size: 0.84rem;">${item.location}</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${item.date}</div>
-          </td>
-          <td>${reporterDisplay}</td>
-          <td><span class="urgency-indicator ${urgencyColor}">● ${item.urgency}</span></td>
-          <td>
-            ${statusBadge}
-            ${item.assignedTechnician ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Petugas: ${item.assignedTechnician.split('(')[0]}</div>` : ''}
-          </td>
-          <td>${actionButton}</td>
-        </tr>
-      `;
-    }).join('');
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan');
+    }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    // Check query param if navigated from Dashboard
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetId = urlParams.get('id');
 
-    updateBadgeCounts();
-    renderReportsTable();
-
-    if (targetId) {
-      openDispatchModal(targetId);
-    }
-  });
+  document.addEventListener('DOMContentLoaded', fetchLaporan);
 </script>
+
 @endsection

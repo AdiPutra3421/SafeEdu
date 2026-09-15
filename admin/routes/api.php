@@ -18,6 +18,7 @@ Route::prefix('pengaduan')->group(function () {
 // API routes for Teknisi (Teknisi App)
 Route::prefix('penugasan')->group(function () {
     Route::get('/', [PenugasanController::class, 'index']);
+    Route::post('/', [PenugasanController::class, 'store']);
     Route::post('/{id}/status', [PenugasanController::class, 'updateStatus']);
 });
 
