@@ -74,7 +74,7 @@ class PenugasanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:ditugaskan,diterima,selesai',
-            'catatan_teknisi' => 'required|string',
+            'catatan_teknisi' => 'nullable|string',
             'foto_hasil' => 'nullable|string',
         ]);
 
@@ -99,9 +99,14 @@ class PenugasanController extends Controller
         $penugasan->save();
 
         // Create log pengerjaan
+        $statusLabel = [
+            'diterima' => 'Teknisi telah menerima dan mengkonfirmasi tugas.',
+            'selesai' => 'Teknisi menandai pekerjaan selesai.',
+        ];
+        $defaultNote = $statusLabel[$request->status] ?? 'Status diperbarui.';
         LogPengerjaan::create([
             'penugasan_id' => $penugasan->id,
-            'catatan_teknisi' => $request->catatan_teknisi,
+            'catatan_teknisi' => $request->catatan_teknisi ?: $defaultNote,
             'foto_hasil' => $request->foto_hasil,
         ]);
 

@@ -204,7 +204,7 @@ class _ReportScreenState extends State<ReportScreen> {
         Uri.parse('http://127.0.0.1:8000/api/pengaduan'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'user_id': 1, // mock user id
+          'user_id': 3, // ID Siswa User di database
           'kategori_id': kategoriId,
           'fasilitas_id': _reportType == 'fasilitas' ? _selectedFasilitasId : null,
           'judul': _titleController.text.trim(),

@@ -798,7 +798,15 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       label: const Text('Terima & Konfirmasi Tugas'),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary),
-                      onPressed: () => _showConfirmationSheet(task),
+                      onPressed: () {
+                        _updateTaskStatus(task.idPenugasan, 'diterima', 'Teknisi telah menerima dan mengkonfirmasi tugas.');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tugas dikonfirmasi! Status dikirim ke Admin.'),
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                        );
+                      },
                     )
                   : isInProgress
                       ? ElevatedButton.icon(

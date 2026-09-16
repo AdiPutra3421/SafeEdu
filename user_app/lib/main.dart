@@ -48,27 +48,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Future<void> _fetchReports() async {
     try {
       // Mock user id 1 (Budi Siswa)
-      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/pengaduan?user_id=1'));
+      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/pengaduan?user_id=3'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
           final List<dynamic> list = data['data'];
           setState(() {
-            _reports = list.map((item) {
-              return PengaduanModel(
-                id: item['id'],
-                userId: item['user_id'],
-                kategoriId: item['kategori_id'],
-                fasilitasId: item['fasilitas_id'],
-                judul: item['judul'],
-                deskripsi: item['deskripsi'],
-                lokasiKejadian: item['lokasi_kejadian'],
-                status: item['status'],
-                isAnonim: item['is_anonim'] == 1 || item['is_anonim'] == true,
-                createdAt: item['created_at'],
-                namaKategori: item['kategori']?['nama'] ?? '-',
-              );
-            }).toList();
+            _reports = list.map((item) => PengaduanModel.fromMap(item)).toList();
           });
         }
       }
