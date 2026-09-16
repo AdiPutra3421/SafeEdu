@@ -93,5 +93,31 @@
 
   <script src="{{ asset('js/store.js') }}"></script>
   @yield('scripts')
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const badge = document.getElementById('sidebar-pending-badge');
+        if (!badge) return;
+        
+        const response = await fetch('/api/pengaduan');
+        const json = await response.json();
+        
+        if (json.success) {
+            // Count reports that are "menunggu"
+            const unread = json.data.filter(x => x.status === 'menunggu').length;
+            if (unread > 0) {
+                badge.innerText = unread;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load badge count', e);
+    }
+});
+</script>
 </body>
+
 </html>

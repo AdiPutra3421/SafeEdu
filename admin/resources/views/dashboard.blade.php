@@ -245,31 +245,92 @@
       if (json.success) {
         const data = json.data;
         
-        // Update stats
-        document.getElementById('stat-total').innerText = data.length;
-        document.getElementById('stat-proses').innerText = data.filter(x => x.status === 'diproses' || x.status === 'menunggu').length;
-        document.getElementById('stat-selesai').innerText = data.filter(x => x.status === 'selesai').length;
+        const total = data.length;
+        const fasilitas = data.filter(x => x.kategori?.jenis === 'fasilitas').length;
+        const etik = data.filter(x => x.kategori?.jenis === 'etik').length;
+        const selesai = data.filter(x => x.status === 'selesai').length;
+        const menunggu = data.filter(x => x.status === 'menunggu').length;
+        const proses = data.filter(x => x.status === 'diproses').length;
+
+        // KPI
+        document.getElementById('stat-total').innerText = total;
+        document.getElementById('stat-fasilitas').innerText = fasilitas;
+        document.getElementById('stat-ethics').innerText = etik;
+
+        const responRate = total === 0 ? 0 : Math.round(((proses + selesai) / total) * 100);
+        document.getElementById('stat-response-rate').innerText = responRate + '%';
+        document.getElementById('stat-responded-count').innerText = (proses + selesai);
+        document.getElementById('stat-responded-total').innerText = total;
+
+        // Progress Bars
+        const fasilPercent = total === 0 ? 0 : Math.round((fasilitas / total) * 100);
+        const etikPercent = total === 0 ? 0 : Math.round((etik / total) * 100);
+        const selesaiPercent = total === 0 ? 0 : Math.round((selesai / total) * 100);
+
+        document.getElementById('fill-bar-facility').style.width = fasilPercent + '%';
+        document.getElementById('fill-bar-ethics').style.width = etikPercent + '%';
+        document.getElementById('fill-bar-resolved').style.width = selesaiPercent + '%';
+
+        document.getElementById('label-bar-facility').innerText = fasilitas + ' Tiket (' + fasilPercent + '%)';
+        document.getElementById('label-bar-ethics').innerText = etik + ' Kasus (' + etikPercent + '%)';
+        document.getElementById('label-bar-resolved').innerText = selesai + ' Tiket (' + selesaiPercent + '%)';
+
+        // Summary Boxes
+        document.getElementById('stat-pending').innerText = menunggu;
+        document.getElementById('stat-dispatched').innerText = proses;
+        document.getElementById('stat-resolved').innerText = selesai;
+
+        // Pie Chart
+        const circumference = 2 * Math.PI * 60; // radius = 60
+        if (total === 0) {
+            document.getElementById('donut-slice-facility').style.strokeDasharray = `0 ${circumference}`;
+            document.getElementById('donut-slice-ethics').style.strokeDasharray = `0 ${circumference}`;
+        } else {
+            const fasilDash = (fasilPercent / 100) * circumference;
+            const etikDash = (etikPercent / 100) * circumference;
+            
+            document.getElementById('donut-slice-facility').style.strokeDasharray = `${fasilDash} ${circumference}`;
+            document.getElementById('donut-slice-facility').style.strokeDashoffset = `0`;
+            
+            document.getElementById('donut-slice-ethics').style.strokeDasharray = `${etikDash} ${circumference}`;
+            document.getElementById('donut-slice-ethics').style.strokeDashoffset = `-${fasilDash}`;
+        }
+
+        document.getElementById('legend-facility-count').innerText = fasilitas + ' Laporan';
+        document.getElementById('legend-ethics-count').innerText = etik + ' Laporan';
 
         // Render Aktivitas Terakhir
-        const tbody = document.getElementById('recent-activity-body');
+        const tbody = document.getElementById('recent-reports-table');
         const recent = data.slice(0, 5);
         
         if (recent.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8;">Belum ada aktivitas</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Belum ada aktivitas</td></tr>`;
             return;
         }
 
         tbody.innerHTML = recent.map(item => {
           let badgeClass = 'badge-resolved';
-          if(item.status === 'menunggu') badgeClass = 'badge-ethics';
-          if(item.status === 'diproses') badgeClass = 'badge-pending';
+          if(item.status === 'menunggu') badgeClass = 'badge-ethics'; // Red warning
+          if(item.status === 'diproses') badgeClass = 'badge-pending'; // Yellow
           
+          let jenisLaporan = item.kategori ? item.kategori.nama : '-';
+          let pelapor = item.is_anonim ? 'Anonim' : (item.pelapor ? item.pelapor.nama : 'Siswa');
+          let urgency = item.kategori?.jenis === 'etik' ? '<span class="badge badge-ethics">Tinggi</span>' : '<span class="badge badge-pending">Normal</span>';
+
           return `
             <tr>
               <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()}</span></td>
-              <td style="font-weight:600; color:var(--text-main);">${item.judul || '-'}</td>
-              <td>${item.is_anonim ? 'Anonim' : 'Siswa'}</td>
-              <td><span class="badge ${badgeClass}">${item.status}</span></td>
+              <td>${jenisLaporan}</td>
+              <td>
+                <div style="font-weight:600; color:var(--text-main);">${item.judul || '-'}</div>
+                <div style="font-size:0.8rem; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">${item.deskripsi || '-'}</div>
+              </td>
+              <td>${pelapor}</td>
+              <td>${urgency}</td>
+              <td><span class="badge ${badgeClass}">${item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span></td>
+              <td>
+                <a href="/laporan/${item.id}" class="btn btn-outline btn-sm">Detail</a>
+              </td>
             </tr>
           `;
         }).join('');

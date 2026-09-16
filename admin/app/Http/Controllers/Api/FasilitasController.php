@@ -22,7 +22,7 @@ class FasilitasController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:150',
             'lokasi' => 'required|string|max:150',
-            'kondisi' => 'required|string',
+            'status_kondisi' => 'required|string',
             'deskripsi' => 'nullable|string',
         ]);
 
@@ -47,7 +47,7 @@ class FasilitasController extends Controller
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:150',
             'lokasi' => 'required|string|max:150',
-            'kondisi' => 'required|string',
+            'status_kondisi' => 'required|string',
             'deskripsi' => 'nullable|string',
         ]);
 

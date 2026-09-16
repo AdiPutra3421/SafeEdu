@@ -13,7 +13,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/laporan', function () {
-        return view('laporan');
+        $teknisi = \App\Models\User::where('role', 'teknisi')->get();
+        return view('laporan', compact('teknisi'));
     })->name('laporan');
 
     Route::get('/konfirmasi', function () {

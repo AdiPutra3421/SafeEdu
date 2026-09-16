@@ -6,8 +6,8 @@
 
         <!-- Email Address -->
         <div class="form-group">
-            <label class="form-label" for="email">Email Admin</label>
-            <input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" />
+            <label class="form-label" for="email">Username</label>
+            <input id="email" class="form-control" type="text" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2 text-danger" style="font-size: 0.8rem; margin-top: 5px; color: #ef4444;" />
         </div>
 

@@ -7,7 +7,9 @@ import 'dart:convert';
 class ProfileScreen extends StatelessWidget {
   final List<PengaduanModel> userReports;
 
-  const ProfileScreen({super.key, required this.userReports});
+  final Future<void> Function()? onRefresh;
+
+  const ProfileScreen({super.key, required this.userReports, this.onRefresh});
 
   void _showReportTrackingDetail(BuildContext context, PengaduanModel report) {
     showModalBottomSheet(
@@ -68,22 +70,22 @@ class ProfileScreen extends StatelessWidget {
                 isCurrent: report.status == 'menunggu',
               ),
               _buildTimelineStep(
-                title: 'Verifikasi Tim Admin',
-                subtitle: 'Admin kesiswaan/sarpras memeriksa validitas & urgensi insiden',
-                isDone: report.status == 'dalam pengerjaan' || report.status == 'selesai',
-                isCurrent: report.status == 'diverifikasi',
+                title: 'Verifikasi Tim Admin (Disposisi)',
+                subtitle: 'Admin telah memverifikasi dan menugaskan teknisi untuk insiden ini',
+                isDone: report.status == 'diproses' || report.status == 'selesai',
+                isCurrent: report.status == 'diproses' && report.penugasanStatus == 'ditugaskan',
               ),
               _buildTimelineStep(
                 title: 'Penanganan oleh Teknisi / Satgas',
-                subtitle: 'Petugas lapangan sedang melakukan perbaikan atau investigasi',
+                subtitle: 'Petugas lapangan menerima tugas dan sedang melakukan perbaikan',
                 isDone: report.status == 'selesai',
-                isCurrent: report.status == 'dalam pengerjaan',
+                isCurrent: report.status == 'diproses' && report.penugasanStatus == 'diterima',
               ),
               _buildTimelineStep(
                 title: 'Selesai & Dikonfirmasi',
                 subtitle: 'Tiket ditutup setelah teknisi menyelesaikan penanganan',
                 isDone: report.status == 'selesai',
-                isCurrent: false,
+                isCurrent: report.status == 'selesai',
                 isLast: true,
               ),
 
@@ -189,8 +191,20 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: onRefresh == null 
+        ? _buildContent()
+        : RefreshIndicator(
+            onRefresh: onRefresh!,
+            color: AppColors.primary,
+            child: _buildContent(),
+          ),
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -342,15 +356,15 @@ class ProfileScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: rep.kategoriId == 2 ? AppColors.facilityBg : AppColors.ethicsBg,
+                                  color: rep.kategoriId == 1 ? AppColors.facilityBg : AppColors.ethicsBg,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  rep.kategoriId == 2 ? 'Fasilitas' : 'Kode Etik',
+                                  rep.kategoriId == 1 ? 'Fasilitas' : 'Kode Etik',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: rep.kategoriId == 2 ? AppColors.facilityText : AppColors.ethicsText,
+                                    color: rep.kategoriId == 1 ? AppColors.facilityText : AppColors.ethicsText,
                                   ),
                                 ),
                               ),
@@ -434,8 +448,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 24),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildHelpItem({

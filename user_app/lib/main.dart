@@ -5,6 +5,8 @@ import 'screens/profile_screen.dart';
 import 'screens/report_screen.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const SafeEduUserApp());
@@ -35,12 +37,50 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
 
   // Student reports state
-  final List<PengaduanModel> _reports = [];
+  List<PengaduanModel> _reports = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReports();
+  }
+
+  Future<void> _fetchReports() async {
+    try {
+      // Mock user id 1 (Budi Siswa)
+      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/pengaduan?user_id=1'));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        if (data['success'] == true) {
+          final List<dynamic> list = data['data'];
+          setState(() {
+            _reports = list.map((item) {
+              return PengaduanModel(
+                id: item['id'],
+                userId: item['user_id'],
+                kategoriId: item['kategori_id'],
+                fasilitasId: item['fasilitas_id'],
+                judul: item['judul'],
+                deskripsi: item['deskripsi'],
+                lokasiKejadian: item['lokasi_kejadian'],
+                status: item['status'],
+                isAnonim: item['is_anonim'] == 1 || item['is_anonim'] == true,
+                createdAt: item['created_at'],
+                namaKategori: item['kategori']?['nama'] ?? '-',
+              );
+            }).toList();
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching reports: $e');
+    }
+  }
 
   void _handleNewReport(PengaduanModel report) {
+    _fetchReports(); // Refresh from DB
     setState(() {
-      _reports.insert(0, report);
-      _currentIndex = 2; // Auto switch to Profile / History tab to view submitted report
+      _currentIndex = 2; // Auto switch to Profile / History tab
     });
   }
 
@@ -55,7 +95,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final List<Widget> pages = [
       HomeScreen(onNavigateToTab: _switchTab),
       ReportScreen(onReportSubmitted: _handleNewReport),
-      ProfileScreen(userReports: _reports),
+      ProfileScreen(userReports: _reports, onRefresh: _fetchReports),
     ];
 
     return Scaffold(

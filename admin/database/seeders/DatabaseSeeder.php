@@ -15,11 +15,33 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Add default users
+        User::create([
+            'nama' => 'Admin User',
+            'email' => 'admin',
+            'password' => bcrypt('admin'),
+            'role' => 'admin'
         ]);
+
+        User::create([
+            'nama' => 'Teknisi User',
+            'email' => 'teknisi',
+            'password' => bcrypt('teknisi'),
+            'role' => 'teknisi'
+        ]);
+
+        User::create([
+            'nama' => 'Siswa User',
+            'email' => 'user',
+            'password' => bcrypt('user'),
+            'role' => 'siswa'
+        ]);
+
+        // Seed some master data
+        \App\Models\Kategori::create(['jenis' => 'fasilitas', 'nama' => 'Kerusakan Fasilitas']);
+        \App\Models\Kategori::create(['jenis' => 'etik', 'nama' => 'Pelanggaran Kode Etik']);
+
+        \App\Models\Fasilitas::create(['nama' => 'Ruang Kelas 1A', 'lokasi' => 'Gedung A', 'status_kondisi' => 'Bisa Digunakan', 'deskripsi' => 'AC baru diganti bulan lalu.']);
+        \App\Models\Fasilitas::create(['nama' => 'Laboratorium Komputer', 'lokasi' => 'Gedung B', 'status_kondisi' => 'Dalam Perbaikan', 'deskripsi' => '2 PC rusak pada motherboard.']);
     }
 }

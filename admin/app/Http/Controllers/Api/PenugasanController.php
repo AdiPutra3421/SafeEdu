@@ -16,21 +16,22 @@ class PenugasanController extends Controller
      */
     public function index(Request $request)
     {
-        $teknisiId = $request->query('teknisi_id', 2);
+        $teknisiId = $request->query('teknisi_id');
 
-        $penugasan = Penugasan::with([
+        $query = Penugasan::with([
             'pengaduan.pelapor', 
             'pengaduan.kategori',
             'pengaduan.fasilitas',
             'logPengerjaans'
-        ])
-            ->where('teknisi_id', $teknisiId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        ])->orderBy('created_at', 'desc');
+
+        if ($teknisiId) {
+            $query->where('teknisi_id', $teknisiId);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $penugasan
+            'data' => $query->get()
         ]);
     }
 

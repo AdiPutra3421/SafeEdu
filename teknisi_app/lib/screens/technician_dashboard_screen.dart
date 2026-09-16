@@ -260,12 +260,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         icon: const Icon(Icons.send_rounded, size: 18),
                         label: const Text('Kirim Konfirmasi ke Portal Admin'),
                         onPressed: () {
-                          setState(() {
-                            task.statusPenugasan = chosenStatus;
-                            task.keteranganTeknisi =
-                                notesController.text.trim();
-                            task.tanggalUpdate = DateTime.now().toString();
-                          });
+                          _updateTaskStatus(task.idPenugasan, chosenStatus, notesController.text.trim());
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -329,7 +324,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const Text(
-                  'Bambang S. (Sarpras & Sanitasi)',
+                  'Bambang Teknisi',
                   style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textMuted,

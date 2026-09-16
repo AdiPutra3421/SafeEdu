@@ -16,7 +16,7 @@ class PengaduanController extends Controller
     {
         $userId = $request->query('user_id');
 
-        $query = Pengaduan::with(['kategori', 'fasilitas', 'pelapor'])->orderBy('created_at', 'desc');
+        $query = Pengaduan::with(['kategori', 'fasilitas', 'pelapor', 'penugasans'])->orderBy('created_at', 'desc');
         
         if ($userId) {
             $query->where('user_id', $userId);

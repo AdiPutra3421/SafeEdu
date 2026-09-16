@@ -117,23 +117,9 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      final newReport = PengaduanModel(
-        id: 100 + (DateTime.now().millisecond % 900),
-        userId: 1, // mock user id
-        kategoriId: _reportType == 'fasilitas' ? 2 : 1, 
-        fasilitasId: _reportType == 'fasilitas' ? _selectedFasilitasId : null,
-        judul: _titleController.text.trim(),
-        deskripsi: _descController.text.trim(),
-        lokasiKejadian: _locationController.text.trim(),
-        status: 'menunggu',
-        isAnonim: _isAnonymous,
-        createdAt: DateTime.now().toIso8601String(),
-        namaKategori: _selectedCategory,
-      );
-
-      // Show confirmation alert
+      // Tampilkan dialog konfirmasi
       showDialog(
         context: context,
         builder: (ctx) {
@@ -154,9 +140,9 @@ class _ReportScreenState extends State<ReportScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Apakah data laporan Anda sudah benar? Laporan akan langsung masuk ke antrean verifikasi Admin SafeEdu.',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13, color: AppColors.secondaryMuted),
                 ),
                 const SizedBox(height: 12),
@@ -173,10 +159,12 @@ class _ReportScreenState extends State<ReportScreen> {
                           'Tipe: ${_reportType == 'fasilitas' ? 'Fasilitas Sekolah' : 'Pelanggaran Kode Etik'}',
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w600)),
-                      Text('Kategori: $_selectedCategory',
+                      Text(_reportType == 'fasilitas' 
+                            ? 'Fasilitas: ${_apiFasilitas.firstWhere((f) => f['id'] == _selectedFasilitasId, orElse: () => {'nama': '-'})['nama']}'
+                            : 'Kategori: $_selectedCategory',
                           style: const TextStyle(fontSize: 12)),
                       Text(
-                          'Pelapor: ${_isAnonymous ? 'Anonim (Dirahasiakan)' : 'Ahmad Fauzi (Terbuka)'}',
+                          'Pelapor: ${_isAnonymous ? 'Anonim (Dirahasiakan)' : 'Budi Siswa (Terbuka)'}',
                           style: const TextStyle(fontSize: 12)),
                     ],
                   ),
@@ -189,46 +177,103 @@ class _ReportScreenState extends State<ReportScreen> {
                 child: const Text('Periksa Kembali'),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  widget.onReportSubmitted(newReport);
-
-                  // Reset form
-                  _titleController.clear();
-                  _locationController.clear();
-                  _descController.clear();
-                  setState(() {
-                    _attachedFileName = null;
-                  });
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: AppColors.secondary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle,
-                              color: Color(0xFF4ADE80), size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Laporan REP-2026-${newReport.id} berhasil dikirim ke Admin!',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  await _sendReportToApi();
                 },
                 child: const Text('Kirim Sekarang'),
               ),
             ],
           );
         },
+      );
+    }
+  }
+
+  Future<void> _sendReportToApi() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      int kategoriId = _reportType == 'fasilitas' ? 1 : 2; 
+      
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:8000/api/pengaduan'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': 1, // mock user id
+          'kategori_id': kategoriId,
+          'fasilitas_id': _reportType == 'fasilitas' ? _selectedFasilitasId : null,
+          'judul': _titleController.text.trim(),
+          'deskripsi': _descController.text.trim(),
+          'lokasi_kejadian': _locationController.text.trim(),
+          'is_anonim': _isAnonymous,
+        }),
+      );
+
+      Navigator.pop(context); // close loading
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = json.decode(response.body)['data'];
+        
+        final newReport = PengaduanModel(
+          id: data['id'],
+          userId: data['user_id'],
+          kategoriId: data['kategori_id'],
+          fasilitasId: data['fasilitas_id'],
+          judul: data['judul'],
+          deskripsi: data['deskripsi'],
+          lokasiKejadian: data['lokasi_kejadian'],
+          status: data['status'],
+          isAnonim: data['is_anonim'] == 1 || data['is_anonim'] == true,
+          createdAt: data['created_at'],
+          namaKategori: _reportType == 'fasilitas' 
+            ? _apiFasilitas.firstWhere((f) => f['id'] == _selectedFasilitasId, orElse: () => {'nama': '-'})['nama'] 
+            : _selectedCategory,
+        );
+
+        widget.onReportSubmitted(newReport);
+
+        _titleController.clear();
+        _locationController.clear();
+        _descController.clear();
+        setState(() {
+          _attachedFileName = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.secondary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle,
+                    color: Color(0xFF4ADE80), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Laporan REP-2026-${newReport.id} berhasil dikirim ke Admin!',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal mengirim laporan')),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // close loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
@@ -446,23 +491,40 @@ class _ReportScreenState extends State<ReportScreen> {
 
               const SizedBox(height: 16),
 
-              // Category Field
-              const Text('Kategori Masalah *',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              // Facility / Category Field
+              Text(isFacility ? 'Pilih Fasilitas *' : 'Kategori Masalah *',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                key: ValueKey('category_$_reportType'),
-                initialValue: _selectedCategory,
-                items: categories.map((cat) {
-                  return DropdownMenuItem(
-                      value: cat,
-                      child: Text(cat, style: const TextStyle(fontSize: 13)));
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedCategory = val);
-                },
-                decoration: const InputDecoration(),
-              ),
+              isFacility 
+                ? DropdownButtonFormField<int>(
+                    key: ValueKey('fasilitas_$_reportType'),
+                    value: _selectedFasilitasId,
+                    items: _apiFasilitas.map((f) {
+                      return DropdownMenuItem<int>(
+                          value: f['id'],
+                          child: Text(f['nama'] ?? '-', style: const TextStyle(fontSize: 13)));
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedFasilitasId = val);
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Pilih fasilitas yang rusak',
+                      hintStyle: TextStyle(fontSize: 13, color: AppColors.textLight),
+                    ),
+                  )
+                : DropdownButtonFormField<String>(
+                    key: ValueKey('category_$_reportType'),
+                    value: _selectedCategory,
+                    items: categories.map((cat) {
+                      return DropdownMenuItem(
+                          value: cat,
+                          child: Text(cat, style: const TextStyle(fontSize: 13)));
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedCategory = val);
+                    },
+                    decoration: const InputDecoration(),
+                  ),
 
               const SizedBox(height: 16),
 

@@ -107,11 +107,9 @@
           <label class="form-label" for="technicianSelect">Pilih Teknisi / Divisi Penanggung Jawab *</label>
           <select id="technicianSelect" class="form-control" required>
             <option value="">-- Pilih Petugas / Teknisi --</option>
-            <option value="Bambang Sudirjo (Divisi Perpipaan & Sanitasi)">Bambang Sudirjo - Divisi Perpipaan & Sanitasi</option>
-            <option value="Eko Prasetyo (Divisi IT & Multimedia)">Eko Prasetyo - Divisi IT & Multimedia</option>
-            <option value="Agus Santoso (Divisi Kelistrikan & AC)">Agus Santoso - Divisi Kelistrikan & AC</option>
-            <option value="Suryono (Divisi Pengawas & Sarpras)">Suryono - Divisi Pengawas Keamanan & CCTV</option>
-            <option value="Tim Disiplin & Konseling Sekolah">Tim Satgas Disiplin & BK (Khusus Kode Etik)</option>
+            @foreach($teknisi as $t)
+              <option value="{{ $t->id }}">{{ $t->nama }}</option>
+            @endforeach
           </select>
         </div>
 
@@ -152,64 +150,106 @@
 
 <script>
   let laporanData = [];
-
+  let currentTypeFilter = 'all';
+  let currentStatusFilter = 'all';
+  
   async function fetchLaporan() {
     try {
       const response = await fetch('/api/pengaduan');
       const json = await response.json();
       if (json.success) {
         laporanData = json.data;
-        renderTable();
+        updateCounts();
+        renderReportsTable();
       }
     } catch (err) {
       console.error(err);
     }
   }
 
-  function renderTable(filter = 'Semua') {
-    const tbody = document.getElementById('laporan-table-body');
+  function updateCounts() {
+    document.getElementById('count-all').innerText = laporanData.length;
+    document.getElementById('count-fasilitas').innerText = laporanData.filter(x => x.kategori?.jenis === 'fasilitas').length;
+    document.getElementById('count-ethics').innerText = laporanData.filter(x => x.kategori?.jenis !== 'fasilitas').length;
+  }
+
+  function setFilterType(type, btn) {
+    document.querySelectorAll('.filter-group .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTypeFilter = type;
+    renderReportsTable();
+  }
+
+  function setStatusFilter(status, btn) {
+    document.querySelectorAll('[id^="filter-status-"]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentStatusFilter = status;
+    renderReportsTable();
+  }
+
+  function renderReportsTable() {
+    const tbody = document.getElementById('reports-table-body');
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    
     let filtered = laporanData;
-    if (filter !== 'Semua') {
-      filtered = laporanData.filter(x => 
-        (filter === 'Menunggu' && x.status === 'menunggu') ||
-        (filter === 'Diproses' && x.status === 'diproses') ||
-        (filter === 'Selesai' && x.status === 'selesai')
+    
+    if (currentTypeFilter === 'fasilitas') {
+      filtered = filtered.filter(x => x.kategori?.jenis === 'fasilitas');
+    } else if (currentTypeFilter === 'kode_etik') {
+      filtered = filtered.filter(x => x.kategori?.jenis !== 'fasilitas');
+    }
+    
+    if (currentStatusFilter !== 'all') {
+      filtered = filtered.filter(x => {
+        if (currentStatusFilter === 'Menunggu Verifikasi') return x.status === 'menunggu';
+        if (currentStatusFilter === 'Diteruskan ke Teknisi') return x.status === 'diproses';
+        if (currentStatusFilter === 'Selesai') return x.status === 'selesai';
+        return true;
+      });
+    }
+
+    if (searchQuery) {
+      filtered = filtered.filter(x => 
+        (x.judul && x.judul.toLowerCase().includes(searchQuery)) ||
+        (x.lokasi_kejadian && x.lokasi_kejadian.toLowerCase().includes(searchQuery)) ||
+        (x.id && x.id.toString().includes(searchQuery))
       );
     }
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data laporan</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data laporan yang sesuai filter</td></tr>`;
       return;
     }
 
     tbody.innerHTML = filtered.map(item => {
       let badgeClass = 'badge-resolved';
-      if(item.status === 'menunggu') badgeClass = 'badge-ethics';
-      if(item.status === 'diproses') badgeClass = 'badge-pending';
+      let statusLabel = 'Selesai';
+      if(item.status === 'menunggu') {
+        badgeClass = 'badge-ethics';
+        statusLabel = 'Menunggu';
+      } else if(item.status === 'diproses') {
+        badgeClass = 'badge-pending';
+        statusLabel = 'Diproses Teknisi';
+      }
       
       const judul = item.judul || '-';
       const type = item.kategori?.jenis === 'fasilitas' ? 'Fasilitas Sekolah' : 'Kode Etik';
 
       return `
         <tr>
-          <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()}</span></td>
-          <td>${item.is_anonim ? '<i>Anonim</i>' : 'Siswa'}</td>
-          <td style="font-weight:600; color:var(--text-main);">${judul}</td>
+          <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()} - ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
           <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${type}</span></td>
+          <td style="font-weight:600; color:var(--text-main);">${judul}</td>
           <td style="font-size:0.85rem;">${item.lokasi_kejadian || '-'}</td>
-          <td><span class="badge ${badgeClass}">${item.status}</span></td>
+          <td>${item.is_anonim ? '<i>Anonim</i>' : 'Siswa'}</td>
+          <td><span class="badge" style="background:#fef3c7; color:#d97706;">Sedang</span></td>
+          <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
           <td>
             <button class="btn btn-outline btn-sm" onclick="openDisposisiModal(${item.id})">Lihat / Disposisi</button>
           </td>
         </tr>
       `;
     }).join('');
-  }
-
-  function filterLaporan(btn, status) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderTable(status);
   }
 
   function showToast(message) {
@@ -232,21 +272,20 @@
     const item = laporanData.find(x => x.id === id);
     if(!item) return;
 
-    document.getElementById('modal-id').innerText = `RPT-${item.id}`;
-    document.getElementById('modal-pelapor').innerText = item.is_anonim ? 'Anonim' : 'Siswa';
-    document.getElementById('modal-judul').innerText = item.judul;
-    document.getElementById('modal-lokasi').innerText = item.lokasi_kejadian;
-    document.getElementById('modal-deskripsi').innerText = item.deskripsi;
+    document.getElementById('modal-report-id').innerText = `RPT-${item.id} - ${item.is_anonim ? 'Anonim' : 'Siswa'} (Dikirim: ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+    document.getElementById('modal-report-title').innerText = item.judul;
+    document.getElementById('modal-report-location').innerText = `Lokasi: ${item.lokasi_kejadian}`;
+    document.getElementById('modal-report-desc').innerText = item.deskripsi;
     
-    document.getElementById('disposisiModal').classList.add('active');
+    document.getElementById('dispatchModal').classList.add('active');
   }
 
-  function closeDisposisiModal() {
-    document.getElementById('disposisiModal').classList.remove('active');
+  function closeDispatchModal() {
+    document.getElementById('dispatchModal').classList.remove('active');
     selectedId = null;
   }
 
-  async function submitDisposisi(e) {
+  async function handleDispatchSubmit(e) {
     e.preventDefault();
     if (!selectedId) return;
 
@@ -259,15 +298,15 @@
         },
         body: JSON.stringify({
           pengaduan_id: selectedId,
-          teknisi_id: 2, // Hardcode Bambang Teknisi (ID 2) for now
-          catatan_admin: document.getElementById('modal-catatan')?.value || ''
+          teknisi_id: document.getElementById('technicianSelect').value,
+          catatan_admin: document.getElementById('adminNotesInput')?.value || ''
         })
       });
 
       const json = await response.json();
       if (json.success) {
         showToast('Laporan berhasil didisposisikan ke tim terkait!');
-        closeDisposisiModal();
+        closeDispatchModal();
         fetchLaporan(); // refresh table
       } else {
         alert('Gagal disposisi');
@@ -277,7 +316,6 @@
       alert('Terjadi kesalahan');
     }
   }
-
 
   document.addEventListener('DOMContentLoaded', fetchLaporan);
 </script>

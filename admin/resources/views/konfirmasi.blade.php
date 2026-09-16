@@ -43,6 +43,7 @@
       <button class="filter-btn" onclick="setConfFilter('in_progress', this)">Sedang Dikerjakan</button>
       <button class="filter-btn" onclick="setConfFilter('completed', this)">Pekerjaan Selesai</button>
       <button class="filter-btn" onclick="setConfFilter('unverified', this)">Perlu Approval Admin</button>
+      <button class="filter-btn" onclick="setConfFilter('unconfirmed', this)">Belum Dikonfirmasi</button>
     </div>
 
     <div style="font-size: 0.82rem; color: var(--text-muted);">
@@ -63,6 +64,7 @@
 @section('scripts')
 <script>
   let currentConfFilter = 'all';
+  let confData = [];
 
   function showToast(message) {
     const container = document.getElementById('toastContainer');
@@ -87,31 +89,50 @@
     renderConfirmations();
   }
 
-  function reloadConfirmations() {
-    renderConfirmations();
+  async function reloadConfirmations() {
+    await fetchConfirmations();
     showToast('Data konfirmasi teknisi telah diperbarui.');
   }
 
-  function handleApprove(confId) {
-    SafeEduStore.approveConfirmation(confId);
-    showToast('Laporan teknisi berhasil divalidasi dan tiket ditutup.');
-    renderConfirmations();
+  async function fetchConfirmations() {
+    try {
+      const response = await fetch('/api/penugasan');
+      const json = await response.json();
+      if (json.success) {
+        confData = json.data;
+        renderConfirmations();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleApprove(confId) {
+    // Just mock the approval since we don't have a verified column in DB
+    const idx = confData.findIndex(c => c.id == confId);
+    if (idx > -1) {
+      confData[idx].verified = true;
+      showToast('Laporan teknisi berhasil divalidasi dan tiket ditutup.');
+      renderConfirmations();
+    }
   }
 
   function renderConfirmations() {
-    const confs = SafeEduStore.getConfirmations();
-    const stats = SafeEduStore.getStats();
     const container = document.getElementById('confirmationList');
 
-    document.getElementById('sidebar-pending-badge').textContent = stats.pendingCount;
-    document.getElementById('count-total-conf').textContent = confs.length;
-    document.getElementById('count-in-progress').textContent = confs.filter(c => c.actionStatus !== 'Pekerjaan Selesai').length;
-    document.getElementById('count-finished').textContent = confs.filter(c => c.actionStatus === 'Pekerjaan Selesai').length;
+    const inProgress = confData.filter(c => c.status !== 'selesai');
+    const finished = confData.filter(c => c.status === 'selesai');
+    const pendingCount = inProgress.length;
 
-    const filtered = confs.filter(item => {
-      if (currentConfFilter === 'in_progress') return item.actionStatus !== 'Pekerjaan Selesai';
-      if (currentConfFilter === 'completed') return item.actionStatus === 'Pekerjaan Selesai';
-      if (currentConfFilter === 'unverified') return !item.verifiedByAdmin;
+    document.getElementById('sidebar-pending-badge').textContent = pendingCount > 0 ? pendingCount : '';
+    document.getElementById('count-total-conf').textContent = confData.length;
+    document.getElementById('count-in-progress').textContent = inProgress.length;
+    document.getElementById('count-finished').textContent = finished.length;
+
+    const filtered = confData.filter(item => {
+      if (currentConfFilter === 'in_progress') return item.status !== 'selesai';
+      if (currentConfFilter === 'completed') return item.status === 'selesai';
+      if (currentConfFilter === 'unverified') return !item.verified;
       return true;
     });
 
@@ -129,19 +150,20 @@
     }
 
     container.innerHTML = filtered.map(item => {
-      const isFinished = item.actionStatus === 'Pekerjaan Selesai';
-      const initials = item.technicianName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+      const isFinished = item.status === 'selesai';
+      const techName = item.teknisi_id == 2 ? 'Bambang Teknisi' : 'Teknisi';
+      const initials = techName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
       let statusBadge = '';
       if (isFinished) {
         statusBadge = `<span class="badge badge-resolved"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Selesai</span>`;
-      } else if (item.actionStatus.includes('Investigasi')) {
-        statusBadge = `<span class="badge badge-pending">Investigasi</span>`;
+      } else if (item.status === 'ditugaskan') {
+        statusBadge = `<span class="badge" style="background: #fef2f2; color: #ef4444; border: 1px solid #fca5a5;">Belum Dikonfirmasi</span>`;
       } else {
-        statusBadge = `<span class="badge badge-dispatched">${item.actionStatus}</span>`;
+        statusBadge = `<span class="badge badge-dispatched">Dalam Pengerjaan</span>`;
       }
 
-      const approvalButton = item.verifiedByAdmin
+      const approvalButton = item.verified
         ? `<span style="font-size: 0.78rem; color: var(--status-success-text); font-weight: 600; display: flex; align-items: center; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             Divalidasi Admin
@@ -151,14 +173,17 @@
             Validasi & Tutup
           </button>`;
 
+      const logs = item.log_pengerjaans || [];
+      const latestLog = logs.length > 0 ? logs[logs.length - 1].catatan_teknisi : (item.catatan_admin || 'Belum ada catatan');
+
       return `
         <div class="confirmation-card">
           <div class="confirmation-card-header">
             <div class="tech-info-chip">
               <div class="tech-avatar">${initials}</div>
               <div class="tech-details">
-                <div class="name">${item.technicianName}</div>
-                <div class="division">${item.division}</div>
+                <div class="name">${techName}</div>
+                <div class="division">Divisi Sarpras</div>
               </div>
             </div>
             <div>${statusBadge}</div>
@@ -166,27 +191,20 @@
 
           <div style="border-top: 1px solid var(--border-color); padding-top: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">${item.ticketId}</span>
-              <span style="font-size: 0.72rem; color: var(--text-light);">🕒 ${item.timestamp}</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">TUGAS-${item.id} (RPT-${item.pengaduan_id})</span>
+              <span style="font-size: 0.72rem; color: var(--text-light);">${new Date(item.created_at).toLocaleDateString()}</span>
             </div>
-            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${item.taskTitle}</h4>
+            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${item.pengaduan?.judul || '-'}</h4>
             
             <div class="timeline-note-box">
-              <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-teal); margin-bottom: 2px;">Laporan Lapangan:</div>
-              ${item.notes}
+              <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-teal); margin-bottom: 2px;">Catatan Terakhir:</div>
+              ${latestLog}
             </div>
 
-            <div style="margin-top: 10px; font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              <span>Estimasi: <strong>${item.estimatedFinish}</strong></span>
-            </div>
           </div>
 
           <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.72rem; color: var(--text-muted);">Ref: ${item.id}</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Tugas ID: ${item.id}</span>
             <div>${approvalButton}</div>
           </div>
         </div>
@@ -195,7 +213,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    renderConfirmations();
+    fetchConfirmations();
   });
 </script>
 @endsection

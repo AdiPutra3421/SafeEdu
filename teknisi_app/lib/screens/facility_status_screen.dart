@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/facility_model.dart';
 import '../theme/app_theme.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class FacilityStatusScreen extends StatefulWidget {
   const FacilityStatusScreen({super.key});
@@ -10,58 +12,52 @@ class FacilityStatusScreen extends StatefulWidget {
 }
 
 class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
-  // Dummy data for testing
-  final List<FacilityModel> _facilities = [
-    FacilityModel(
-      idFasilitas: 1,
-      namaFasilitas: 'AC Lab Komputer 2',
-      lokasi: 'Gedung B, Lantai 3',
-      kondisi: 'Dalam Perbaikan',
-      deskripsi: 'Air menetes mengenai meja server',
-    ),
-    FacilityModel(
-      idFasilitas: 2,
-      namaFasilitas: 'Proyektor Ruang 104',
-      lokasi: 'Gedung C, Lantai 1',
-      kondisi: 'Bisa Digunakan',
-      deskripsi: 'Baru diganti lampunya',
-    ),
-    FacilityModel(
-      idFasilitas: 3,
-      namaFasilitas: 'Wastafel Toilet Pria',
-      lokasi: 'Gedung A, Lantai 1',
-      kondisi: 'Dalam Perbaikan',
-      deskripsi: 'Kran patah',
-    ),
-    FacilityModel(
-      idFasilitas: 4,
-      namaFasilitas: 'Meja Guru Kelas 10A',
-      lokasi: 'Gedung D, Lantai 2',
-      kondisi: 'Bisa Digunakan',
-      deskripsi: '-',
-    ),
-  ];
-
+  List<dynamic> _facilities = [];
+  bool _isLoading = false;
   String searchQuery = '';
 
-  List<FacilityModel> get filteredFacilities {
+  @override
+  void initState() {
+    super.initState();
+    _fetchFacilities();
+  }
+
+  Future<void> _fetchFacilities() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        if (data['success'] == true) {
+          setState(() {
+            _facilities = data['data'];
+          });
+        }
+      }
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  List<dynamic> get filteredFacilities {
     if (searchQuery.isEmpty) return _facilities;
     return _facilities.where((f) => 
-      f.namaFasilitas.toLowerCase().contains(searchQuery.toLowerCase()) ||
-      f.lokasi.toLowerCase().contains(searchQuery.toLowerCase())
+      (f['nama'] ?? '').toLowerCase().contains(searchQuery.toLowerCase()) ||
+      (f['lokasi'] ?? '').toLowerCase().contains(searchQuery.toLowerCase())
     ).toList();
   }
 
-  void _updateKondisi(FacilityModel facility, String newKondisi) {
+  void _updateKondisi(dynamic facility, String newKondisi) {
+    // API logic will go here if needed, but for now we just change state locally to simulate
     setState(() {
-      facility.kondisi = newKondisi;
+      facility['status_kondisi'] = newKondisi;
     });
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Status ${facility.namaFasilitas} diperbarui menjadi: $newKondisi'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: newKondisi == 'Bisa Digunakan' ? AppColors.statusSuccessText : AppColors.statusProcessText,
+        content: Text('Status fasilitas diperbarui'),
+        backgroundColor: AppColors.statusSuccessText,
       ),
     );
   }
@@ -113,10 +109,10 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredFacilities.length,
+                    itemCount: _isLoading ? 0 : filteredFacilities.length,
                     itemBuilder: (context, index) {
                       final facility = filteredFacilities[index];
-                      final isOk = facility.kondisi == 'Bisa Digunakan';
+                      final isOk = facility['status_kondisi'] == 'Bisa Digunakan';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -130,7 +126,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      facility.namaFasilitas,
+                                      facility['nama'] ?? '-',
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
@@ -145,7 +141,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      facility.kondisi,
+                                      facility['status_kondisi'] ?? '-',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -161,7 +157,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                   const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
                                   const SizedBox(width: 4),
                                   Text(
-                                    facility.lokasi,
+                                    facility['lokasi'] ?? '-',
                                     style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                                   ),
                                 ],
@@ -178,7 +174,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   DropdownButton<String>(
-                                    value: facility.kondisi,
+                                    value: facility['status_kondisi'] ?? '-',
                                     style: const TextStyle(fontSize: 13, color: AppColors.textMain),
                                     underline: const SizedBox(),
                                     items: <String>['Bisa Digunakan', 'Dalam Perbaikan', 'Tidak Bisa Digunakan']
@@ -189,7 +185,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                       );
                                     }).toList(),
                                     onChanged: (String? newValue) {
-                                      if (newValue != null && newValue != facility.kondisi) {
+                                      if (newValue != null && newValue != (facility['status_kondisi'] ?? '-')) {
                                         _updateKondisi(facility, newValue);
                                       }
                                     },

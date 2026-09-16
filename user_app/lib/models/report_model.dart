@@ -16,6 +16,7 @@ class PengaduanModel {
   // Custom fields from joins (with/load in Laravel)
   final String? namaKategori;
   final String? namaFasilitas;
+  final String? penugasanStatus;
 
   PengaduanModel({
     required this.id,
@@ -33,6 +34,7 @@ class PengaduanModel {
     this.createdAt,
     this.namaKategori,
     this.namaFasilitas,
+    this.penugasanStatus,
   });
 
   Map<String, dynamic> toMap() {
@@ -69,6 +71,9 @@ class PengaduanModel {
       createdAt: map['created_at'],
       namaKategori: map['kategori']?['nama'],
       namaFasilitas: map['fasilitas']?['nama'],
+      penugasanStatus: map['penugasans'] != null && (map['penugasans'] as List).isNotEmpty 
+          ? map['penugasans'][0]['status'] 
+          : null,
     );
   }
 }

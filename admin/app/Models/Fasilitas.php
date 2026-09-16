@@ -11,7 +11,7 @@ class Fasilitas extends Model
     protected $fillable = [
         'nama',
         'lokasi',
-        'kondisi',
+        'status_kondisi',
         'deskripsi',
     ];
 
