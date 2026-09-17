@@ -16,7 +16,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   bool isOnDuty = true;
   String selectedFilter = 'Semua';
 
-
   List<PenugasanModel> _tasks = [];
   bool _isLoading = true;
 
@@ -29,7 +28,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Future<void> _fetchTasks() async {
     setState(() => _isLoading = true);
     try {
-      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/penugasan'));
+      final res =
+          await http.get(Uri.parse('http://127.0.0.1:8000/api/penugasan'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success']) {
@@ -46,11 +46,15 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     }
   }
 
-  Future<void> _updateTaskStatus(int id, String status, String keterangan) async {
+  Future<void> _updateTaskStatus(
+      int id, String status, String keterangan) async {
     try {
       final res = await http.post(
         Uri.parse('http://127.0.0.1:8000/api/penugasan/$id/status'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: json.encode({
           'status': status,
           'catatan_teknisi': keterangan,
@@ -65,7 +69,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       print('Error update task: $e');
     }
   }
-
 
   int get countNew =>
       _tasks.where((t) => t.statusPenugasan == 'ditugaskan').length;
@@ -214,8 +217,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             fontSize: 12,
                           ),
                           onSelected: (val) {
-                            if (val)
+                            if (val) {
                               setModalState(() => chosenStatus = 'diterima');
+                            }
                           },
                         ),
                         ChoiceChip(
@@ -230,8 +234,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             fontSize: 12,
                           ),
                           onSelected: (val) {
-                            if (val)
+                            if (val) {
                               setModalState(() => chosenStatus = 'selesai');
+                            }
                           },
                         ),
                       ],
@@ -260,7 +265,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         icon: const Icon(Icons.send_rounded, size: 18),
                         label: const Text('Kirim Konfirmasi ke Portal Admin'),
                         onPressed: () {
-                          _updateTaskStatus(task.idPenugasan, chosenStatus, notesController.text.trim());
+                          _updateTaskStatus(task.idPenugasan, chosenStatus,
+                              notesController.text.trim());
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -323,9 +329,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   'SafeEdu Teknisi',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
-                const Text(
+                Text(
                   'Bambang Teknisi',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 11,
                       color: AppColors.textMuted,
                       fontWeight: FontWeight.normal),
@@ -799,10 +805,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary),
                       onPressed: () {
-                        _updateTaskStatus(task.idPenugasan, 'diterima', 'Teknisi telah menerima dan mengkonfirmasi tugas.');
+                        _updateTaskStatus(task.idPenugasan, 'diterima',
+                            'Teknisi telah menerima dan mengkonfirmasi tugas.');
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Tugas dikonfirmasi! Status dikirim ke Admin.'),
+                            content: Text(
+                                'Tugas dikonfirmasi! Status dikirim ke Admin.'),
                             backgroundColor: Color(0xFF10B981),
                           ),
                         );

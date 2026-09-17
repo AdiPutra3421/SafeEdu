@@ -203,9 +203,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
-            Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text('SafeEdu Siswa',
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -261,9 +261,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'Halo, Budi Siswa',
                                 style: TextStyle(
@@ -286,8 +286,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Row(
-                              children: const [
+                            child: const Row(
+                              children: [
                                 Icon(Icons.check_circle,
                                     color: Color(0xFF4ADE80), size: 14),
                                 SizedBox(width: 4),
@@ -442,11 +442,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 24),
 
               // Section: Katalog Fasilitas & Layanan
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text(
                       'Katalog Fasilitas & Sarana',
                       style: TextStyle(
@@ -489,14 +489,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   final item = filteredFacilities[index];
                   IconData leadingIcon = Icons.domain;
                   if (item.iconType == 'computer') leadingIcon = Icons.computer;
-                  if (item.iconType == 'book')
+                  if (item.iconType == 'book') {
                     leadingIcon = Icons.menu_book_rounded;
-                  if (item.iconType == 'sports')
+                  }
+                  if (item.iconType == 'sports') {
                     leadingIcon = Icons.sports_basketball_rounded;
-                  if (item.iconType == 'counseling')
+                  }
+                  if (item.iconType == 'counseling') {
                     leadingIcon = Icons.favorite_outline_rounded;
-                  if (item.iconType == 'sanitation')
+                  }
+                  if (item.iconType == 'sanitation') {
                     leadingIcon = Icons.water_drop_outlined;
+                  }
 
                   return Card(
                     child: ListTile(

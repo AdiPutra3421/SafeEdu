@@ -25,7 +25,8 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
   Future<void> _fetchFacilities() async {
     setState(() => _isLoading = true);
     try {
-      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
+      final res =
+          await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -43,10 +44,15 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
 
   List<dynamic> get filteredFacilities {
     if (searchQuery.isEmpty) return _facilities;
-    return _facilities.where((f) => 
-      (f['nama'] ?? '').toLowerCase().contains(searchQuery.toLowerCase()) ||
-      (f['lokasi'] ?? '').toLowerCase().contains(searchQuery.toLowerCase())
-    ).toList();
+    return _facilities
+        .where((f) =>
+            (f['nama'] ?? '')
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase()) ||
+            (f['lokasi'] ?? '')
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase()))
+        .toList();
   }
 
   void _updateKondisi(dynamic facility, String newKondisi) {
@@ -55,8 +61,8 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
       facility['status_kondisi'] = newKondisi;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Status fasilitas diperbarui'),
+      const SnackBar(
+        content: const Text('Status fasilitas diperbarui'),
         backgroundColor: AppColors.statusSuccessText,
       ),
     );
@@ -78,7 +84,8 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Cari fasilitas atau lokasi...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                prefixIcon:
+                    const Icon(Icons.search, color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
@@ -112,7 +119,8 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                     itemCount: _isLoading ? 0 : filteredFacilities.length,
                     itemBuilder: (context, index) {
                       final facility = filteredFacilities[index];
-                      final isOk = facility['status_kondisi'] == 'Bisa Digunakan';
+                      final isOk =
+                          facility['status_kondisi'] == 'Bisa Digunakan';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -122,7 +130,8 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
@@ -135,9 +144,12 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: isOk ? AppColors.statusSuccessBg : AppColors.statusProcessBg,
+                                      color: isOk
+                                          ? AppColors.statusSuccessBg
+                                          : AppColors.statusProcessBg,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -145,7 +157,9 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
-                                        color: isOk ? AppColors.statusSuccessText : AppColors.statusProcessText,
+                                        color: isOk
+                                            ? AppColors.statusSuccessText
+                                            : AppColors.statusProcessText,
                                       ),
                                     ),
                                   ),
@@ -154,38 +168,51 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
+                                  const Icon(Icons.location_on_outlined,
+                                      size: 14, color: AppColors.textMuted),
                                   const SizedBox(width: 4),
                                   Text(
                                     facility['lokasi'] ?? '-',
-                                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              
+
                               // Action Row
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   const Text(
                                     'Ubah Status:',
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(width: 8),
                                   DropdownButton<String>(
                                     value: facility['status_kondisi'] ?? '-',
-                                    style: const TextStyle(fontSize: 13, color: AppColors.textMain),
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textMain),
                                     underline: const SizedBox(),
-                                    items: <String>['Bisa Digunakan', 'Dalam Perbaikan', 'Tidak Bisa Digunakan']
-                                        .map((String value) {
+                                    items: <String>[
+                                      'Bisa Digunakan',
+                                      'Dalam Perbaikan',
+                                      'Tidak Bisa Digunakan'
+                                    ].map((String value) {
                                       return DropdownMenuItem<String>(
                                         value: value,
                                         child: Text(value),
                                       );
                                     }).toList(),
                                     onChanged: (String? newValue) {
-                                      if (newValue != null && newValue != (facility['status_kondisi'] ?? '-')) {
+                                      if (newValue != null &&
+                                          newValue !=
+                                              (facility['status_kondisi'] ??
+                                                  '-')) {
                                         _updateKondisi(facility, newValue);
                                       }
                                     },
