@@ -10,6 +10,8 @@ class Notifikasi extends Model
 
     protected $fillable = [
         'user_id',
+        'pengaduan_id',
+        'type',
         'judul',
         'pesan',
         'is_read',
@@ -18,6 +20,8 @@ class Notifikasi extends Model
     protected $casts = [
         'is_read' => 'boolean',
     ];
+
+    public $timestamps = true;
 
     public function user()
     {

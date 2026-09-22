@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../main.dart';
+import '../../services/auth_service.dart';
+import '../../theme/app_theme.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,13 +16,36 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainNavigationShell()),
-      );
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final error = await AuthService.instance.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (error != null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = error;
+      });
+      return;
     }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainNavigationShell()),
+    );
   }
 
   @override
@@ -86,15 +111,48 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 24),
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.statusDangerBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              size: 18, color: AppColors.statusDangerText),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.statusDangerText),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   ElevatedButton(
-                    onPressed: _login,
+                    onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
-                    child: const Text('Masuk', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2.5, color: Colors.white),
+                          )
+                        : const Text('Masuk',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(height: 16),
                   TextButton(

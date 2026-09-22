@@ -3,6 +3,8 @@ import 'models/report_model.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/report_screen.dart';
+import 'services/api_config.dart';
+import 'services/auth_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'package:http/http.dart' as http;
@@ -46,9 +48,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   Future<void> _fetchReports() async {
+    final userId = AuthService.instance.userId;
+    if (userId == null) return;
     try {
-      // Mock user id 1 (Budi Siswa)
-      final res = await http.get(Uri.parse('http://127.0.0.1:8000/api/pengaduan?user_id=3'));
+      // user_id dari hasil login (AuthService), bukan hardcoded
+      final res = await http
+          .get(Uri.parse('${ApiConfig.baseUrl}/api/pengaduan?user_id=$userId'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -80,7 +85,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       HomeScreen(onNavigateToTab: _switchTab),
-      ReportScreen(onReportSubmitted: _handleNewReport),
+      ReportScreen(
+        onReportSubmitted: _handleNewReport,
+        existingReports: _reports,
+      ),
       ProfileScreen(userReports: _reports, onRefresh: _fetchReports),
     ];
 

@@ -9,11 +9,14 @@ class PengaduanModel {
   final String status;
   final bool isAnonim;
   final String? fotoBukti;
+  final String? fileBuktiUrl;
   int? ratingKepuasan;
   String? ulasanPelapor;
   final String? createdAt;
-  
-  // Custom fields from joins (with/load in Laravel)
+  final String? verifiedAt;
+  final String? assignedAt;
+  final String? workedAt;
+  final String? completedAt;
   final String? namaKategori;
   final String? namaFasilitas;
   final String? penugasanStatus;
@@ -29,9 +32,14 @@ class PengaduanModel {
     this.status = 'menunggu',
     this.isAnonim = false,
     this.fotoBukti,
+    this.fileBuktiUrl,
     this.ratingKepuasan,
     this.ulasanPelapor,
     this.createdAt,
+    this.verifiedAt,
+    this.assignedAt,
+    this.workedAt,
+    this.completedAt,
     this.namaKategori,
     this.namaFasilitas,
     this.penugasanStatus,
@@ -56,24 +64,36 @@ class PengaduanModel {
 
   factory PengaduanModel.fromMap(Map<String, dynamic> map) {
     return PengaduanModel(
-      id: map['id'] ?? 0,
-      userId: map['user_id'] ?? 0,
-      kategoriId: map['kategori_id'] ?? 0,
-      fasilitasId: map['fasilitas_id'],
+      id: _asInt(map['id']),
+      userId: _asInt(map['user_id']),
+      kategoriId: _asInt(map['kategori_id']),
+      fasilitasId:
+          map['fasilitas_id'] == null ? null : _asInt(map['fasilitas_id']),
       judul: map['judul'] ?? '',
       deskripsi: map['deskripsi'] ?? '',
       lokasiKejadian: map['lokasi_kejadian'],
       status: map['status'] ?? 'menunggu',
       isAnonim: map['is_anonim'] == 1 || map['is_anonim'] == true,
       fotoBukti: map['foto_bukti'],
-      ratingKepuasan: map['rating_kepuasan'],
+      fileBuktiUrl: map['file_bukti_url'],
+      ratingKepuasan: map['rating_kepuasan'] == null
+          ? null
+          : _asInt(map['rating_kepuasan']),
       ulasanPelapor: map['ulasan_pelapor'],
       createdAt: map['created_at'],
-      namaKategori: map['kategori']?['nama'],
-      namaFasilitas: map['fasilitas']?['nama'],
-      penugasanStatus: map['penugasans'] != null && (map['penugasans'] as List).isNotEmpty 
-          ? map['penugasans'][0]['status'] 
-          : null,
+      verifiedAt: map['verified_at'],
+      assignedAt: map['assigned_at'],
+      workedAt: map['worked_at'],
+      completedAt: map['completed_at'],
+      namaKategori: (map['kategori'] as Map?)?['nama']?.toString(),
+      namaFasilitas: (map['fasilitas'] as Map?)?['nama']?.toString(),
+      penugasanStatus:
+          map['penugasans'] is List && (map['penugasans'] as List).isNotEmpty
+              ? ((map['penugasans'] as List).first as Map)['status']?.toString()
+              : null,
     );
   }
+
+  static int _asInt(dynamic value) =>
+      value is int ? value : int.tryParse('$value') ?? 0;
 }

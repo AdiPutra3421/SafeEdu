@@ -24,6 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/fasilitas', function () {
         return view('fasilitas');
     })->name('fasilitas');
+
+    Route::get('/konten-sekolah', function () {
+        return view('konten-sekolah');
+    })->name('konten-sekolah');
 });
 
 Route::middleware('auth')->group(function () {

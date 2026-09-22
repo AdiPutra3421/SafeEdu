@@ -98,6 +98,7 @@
         <h4 id="modal-report-title" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;"></h4>
         <div id="modal-report-location" style="font-size: 0.8rem; color: var(--text-muted);"></div>
         <div id="modal-report-desc" style="font-size: 0.82rem; color: var(--text-main); margin-top: 8px; line-height: 1.4;"></div>
+        <div id="modal-report-attachment" style="font-size: 0.82rem; margin-top: 10px;"></div>
       </div>
 
       <form id="dispatchForm" onsubmit="handleDispatchSubmit(event)">
@@ -245,7 +246,9 @@
           <td><span class="badge" style="background:#fef3c7; color:#d97706;">Sedang</span></td>
           <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
           <td>
-            <button class="btn btn-outline btn-sm" onclick="openDisposisiModal(${item.id})">Lihat / Disposisi</button>
+            <button class="btn btn-outline btn-sm" onclick="openDisposisiModal(${item.id})">
+              ${item.status === 'menunggu' ? 'Lihat / Disposisi' : 'Lihat Detail'}
+            </button>
           </td>
         </tr>
       `;
@@ -276,6 +279,20 @@
     document.getElementById('modal-report-title').innerText = item.judul;
     document.getElementById('modal-report-location').innerText = `Lokasi: ${item.lokasi_kejadian}`;
     document.getElementById('modal-report-desc').innerText = item.deskripsi;
+    const canDispatch = item.status === 'menunggu';
+    document.getElementById('technicianSelect').disabled = !canDispatch;
+    document.getElementById('adminNotesInput').disabled = !canDispatch;
+    document.querySelector('#dispatchForm button[type="submit"]').disabled = !canDispatch;
+    document.querySelector('#dispatchForm .modal-footer').style.display = canDispatch ? 'flex' : 'none';
+    const attachment = document.getElementById('modal-report-attachment');
+    if (item.file_bukti_url) {
+      const fileUrl = item.file_bukti_url.startsWith('http')
+        ? item.file_bukti_url
+        : `${window.location.origin}${item.file_bukti_url}`;
+      attachment.innerHTML = `<a href="${fileUrl}" target="_blank" rel="noopener">Lihat lampiran bukti</a>`;
+    } else {
+      attachment.innerText = 'Tidak ada lampiran bukti.';
+    }
     
     document.getElementById('dispatchModal').classList.add('active');
   }
@@ -309,7 +326,11 @@
         closeDispatchModal();
         fetchLaporan(); // refresh table
       } else {
-        alert('Gagal disposisi');
+        const validationErrors = json.errors
+          ? Object.values(json.errors).flat().join(' ')
+          : '';
+        alert(json.message || validationErrors || 'Gagal disposisi');
+        fetchLaporan();
       }
     } catch (err) {
       console.error(err);

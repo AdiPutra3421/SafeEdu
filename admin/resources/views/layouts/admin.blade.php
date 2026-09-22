@@ -61,6 +61,13 @@
           </svg>
           Manajemen Fasilitas
         </a>
+        <a href="{{ route('konten-sekolah') }}" class="nav-item {{ request()->routeIs('konten-sekolah') ? 'active' : '' }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 4h16v16H4z"></path>
+            <path d="M8 8h8M8 12h8M8 16h5"></path>
+          </svg>
+          Berita & Panduan
+        </a>
 
         <div class="nav-label" style="margin-top: 20px;">Akun</div>
         <form method="POST" action="{{ route('logout') }}">

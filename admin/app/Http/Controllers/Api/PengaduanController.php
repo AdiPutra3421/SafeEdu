@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pengaduan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class PengaduanController extends Controller
@@ -17,14 +19,31 @@ class PengaduanController extends Controller
         $userId = $request->query('user_id');
 
         $query = Pengaduan::with(['kategori', 'fasilitas', 'pelapor', 'penugasans'])->orderBy('created_at', 'desc');
-        
+
         if ($userId) {
             $query->where('user_id', $userId);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $query->get(),
+        ]);
+    }
+
+    /**
+     * Get single report detail
+     */
+    public function show($id)
+    {
+        $pengaduan = Pengaduan::with(['kategori', 'fasilitas', 'pelapor', 'penugasans.logPengerjaans'])->find($id);
+
+        if (! $pengaduan) {
+            return response()->json(['success' => false, 'message' => 'Laporan tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $pengaduan,
         ]);
     }
 
@@ -33,38 +52,101 @@ class PengaduanController extends Controller
      */
     public function store(Request $request)
     {
+        // Validasi Konten (Masalah #2)
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer',
             'kategori_id' => 'required|integer',
             'fasilitas_id' => 'nullable|integer',
-            'judul' => 'required|string|max:150',
-            'deskripsi' => 'required|string',
-            'lokasi_kejadian' => 'nullable|string|max:150',
-            'is_anonim' => 'boolean'
+            // Judul minimal 10 karakter, harus berupa kata yang jelas (bukan angka/simbol acak)
+            'judul' => ['required', 'string', 'min:10', 'max:150', function ($attribute, $value, $fail) {
+                if (! self::isMeaningfulText($value, 0.5)) {
+                    $fail('Judul harus berupa kata yang jelas, tidak boleh hanya angka atau simbol acak.');
+                }
+            }],
+            // Deskripsi minimal 30 karakter, harus berupa kalimat yang masuk akal
+            'deskripsi' => ['required', 'string', 'min:30', function ($attribute, $value, $fail) {
+                if (! self::isMeaningfulText($value, 0.3)) {
+                    $fail('Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya angka atau simbol acak.');
+                }
+            }],
+            'lokasi_kejadian' => ['required', 'string', 'min:3', 'max:150', function ($attribute, $value, $fail) {
+                if (! self::isMeaningfulLocation($value)) {
+                    $fail('Lokasi insiden harus berupa keterangan lokasi yang jelas.');
+                }
+            }],
+            'is_anonim' => 'boolean',
+            'file_bukti' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // max 5MB (Masalah #3)
+        ], [
+            'judul.min' => 'Judul laporan minimal 10 karakter.',
+            'deskripsi.min' => 'Mohon jelaskan kronologi kejadian dengan detail (minimal 30 karakter).',
+            'lokasi_kejadian.required' => 'Lokasi insiden wajib dicantumkan.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
+        }
+
+        // Anti-Spam (Masalah #1)
+        $judul = trim($request->judul);
+        $lokasi = trim($request->lokasi_kejadian);
+        $deskripsi = trim($request->deskripsi);
+
+        // Duplikat penuh: judul + lokasi + deskripsi identik, kapan pun & status apa pun
+        $exactDuplicate = Pengaduan::where('user_id', $request->user_id)
+            ->where('judul', $judul)
+            ->where('lokasi_kejadian', $lokasi)
+            ->where('deskripsi', $deskripsi)
+            ->exists();
+
+        if ($exactDuplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah melaporkan insiden ini sebelumnya. Laporan tidak dapat dikirim berulang kali.',
+            ], 429);
+        }
+
+        // Laporan serupa (judul & lokasi sama) dalam 24 jam terakhir yang belum selesai
+        $recentSimilar = Pengaduan::where('user_id', $request->user_id)
+            ->where('judul', $judul)
+            ->where('lokasi_kejadian', $lokasi)
+            ->where('created_at', '>=', Carbon::now()->subHours(24))
+            ->whereIn('status', ['menunggu', 'diproses'])
+            ->exists();
+
+        if ($recentSimilar) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah melaporkan insiden ini sebelumnya. Laporan Anda sedang dalam antrean kami.',
+            ], 429);
+        }
+
+        // Upload Lampiran Nyata (Masalah #3)
+        $fileUrl = null;
+        if ($request->hasFile('file_bukti')) {
+            $file = $request->file('file_bukti');
+            $path = $file->store('bukti', 'public');
+            $fileUrl = Storage::url($path);
         }
 
         $pengaduan = Pengaduan::create([
             'user_id' => $request->user_id,
             'kategori_id' => $request->kategori_id,
             'fasilitas_id' => $request->fasilitas_id,
-            'judul' => $request->judul,
-            'deskripsi' => $request->deskripsi,
-            'lokasi_kejadian' => $request->lokasi_kejadian,
+            'judul' => trim($request->judul),
+            'deskripsi' => trim($request->deskripsi),
+            'lokasi_kejadian' => trim($request->lokasi_kejadian),
             'status' => 'menunggu',
-            'is_anonim' => $request->is_anonim ?? false,
+            'is_anonim' => $request->is_anonim == 'true' || $request->is_anonim == '1' || $request->is_anonim === true,
+            'file_bukti_url' => $fileUrl,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Laporan berhasil dikirim.',
-            'data' => $pengaduan
+            'data' => $pengaduan->load(['kategori', 'fasilitas']),
         ], 201);
     }
 
@@ -75,19 +157,19 @@ class PengaduanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'rating_kepuasan' => 'required|integer|min:1|max:5',
-            'ulasan_pelapor' => 'nullable|string'
+            'ulasan_pelapor' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $pengaduan = Pengaduan::find($id);
 
-        if (!$pengaduan) {
+        if (! $pengaduan) {
             return response()->json(['success' => false, 'message' => 'Laporan tidak ditemukan'], 404);
         }
 
@@ -102,7 +184,55 @@ class PengaduanController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rating berhasil dikirim.',
-            'data' => $pengaduan
+            'data' => $pengaduan,
         ]);
+    }
+
+    /**
+     * Cek apakah teks benar-benar bermakna (bukan angka/simbol acak).
+     * Minimal proporsi huruf [minLetterRatio] dan minimal 2 kata berhuruf (>= 3 huruf).
+     */
+    private static function isMeaningfulText(string $value, float $minLetterRatio): bool
+    {
+        $text = mb_strtolower(trim($value));
+        if ($text === '') {
+            return false;
+        }
+
+        $noSpaces = preg_replace('/\s+/', '', $text);
+        $length = mb_strlen($noSpaces);
+        if ($length === 0) {
+            return false;
+        }
+
+        $letterCount = preg_match_all('/[a-z]/', $text);
+        if (($letterCount / $length) < $minLetterRatio) {
+            return false;
+        }
+
+        $letterWords = array_filter(
+            preg_split('/\s+/', $text),
+            fn ($w) => (bool) preg_match('/[a-z]{3,}/', $w)
+        );
+
+        return count($letterWords) >= 2;
+    }
+
+    private static function isMeaningfulLocation(string $value): bool
+    {
+        $text = trim($value);
+        $letters = preg_match_all('/[a-z]/i', $text);
+        $compactLength = mb_strlen(preg_replace('/\s+/', '', $text));
+
+        if ($compactLength === 0 || $letters < 3 || ($letters / $compactLength) < 0.25) {
+            return false;
+        }
+
+        $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
+        if (count($words) < 2) {
+            return false;
+        }
+
+        return (bool) preg_match('/[a-z]{3,}/i', $text);
     }
 }

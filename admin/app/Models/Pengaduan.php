@@ -18,12 +18,21 @@ class Pengaduan extends Model
         'status',
         'is_anonim',
         'foto_bukti',
+        'file_bukti_url',
         'rating_kepuasan',
         'ulasan_pelapor',
+        'verified_at',
+        'assigned_at',
+        'worked_at',
+        'completed_at',
     ];
 
     protected $casts = [
         'is_anonim' => 'boolean',
+        'verified_at' => 'datetime',
+        'assigned_at' => 'datetime',
+        'worked_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function pelapor()

@@ -1,15 +1,21 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/report_model.dart';
+import '../services/api_config.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class ReportScreen extends StatefulWidget {
   final Function(PengaduanModel) onReportSubmitted;
+  final List<PengaduanModel> existingReports;
 
-  const ReportScreen({super.key, required this.onReportSubmitted});
+  const ReportScreen({
+    super.key,
+    required this.onReportSubmitted,
+    this.existingReports = const [],
+  });
 
   @override
   State<ReportScreen> createState() => _ReportScreenState();
@@ -30,7 +36,8 @@ class _ReportScreenState extends State<ReportScreen> {
 
   String _selectedUrgency = 'Sedang';
   bool _isAnonymous = false;
-  String? _attachedFileName;
+  PlatformFile? _selectedFile;
+  bool _isSubmitting = false;
 
   final List<String> _facilityCategories = [
     'Pendingin Ruangan (AC)',
@@ -68,9 +75,10 @@ class _ReportScreenState extends State<ReportScreen> {
         final data = json.decode(res.body);
         if (data['success'] == true) {
           setState(() {
-            _apiFasilitas = data['data'];
+            _apiFasilitas = data['data'] is List ? data['data'] : [];
             if (_apiFasilitas.isNotEmpty) {
-              _selectedFasilitasId = _apiFasilitas.first['id'];
+              _selectedFasilitasId =
+                  int.tryParse('${_apiFasilitas.first['id']}');
             }
           });
         }
@@ -102,23 +110,73 @@ class _ReportScreenState extends State<ReportScreen> {
     });
   }
 
-  void _simulatePickAttachment() {
-    setState(() {
-      _attachedFileName = _reportType == 'fasilitas'
-          ? 'bukti_kerusakan_unit.jpg'
-          : 'kronologi_kejadian.pdf';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('Lampiran file "$_attachedFileName" berhasil ditambahkan!'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  Future<void> _pickAttachment() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      );
+      if (file == null) return;
+      if (!mounted) return;
+      setState(() => _selectedFile = file);
+    } catch (e) {
+      print('Error picking file: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memilih file. Coba kembali.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  bool _isMeaningfulText(String value, {double minLetterRatio = 0.5}) {
+    final text = value.toLowerCase().trim();
+    if (text.isEmpty) return false;
+    final noSpaces = text.replaceAll(RegExp(r'\s+'), '');
+    if (noSpaces.isEmpty) return false;
+
+    final letters = RegExp(r'[a-z]').allMatches(text).length;
+    if (letters / noSpaces.length < minLetterRatio) return false;
+
+    final letterWords = text
+        .split(RegExp(r'\s+'))
+        .where((w) => RegExp(r'[a-z]{3,}').hasMatch(w))
+        .length;
+    return letterWords >= 2;
+  }
+
+  String? _validateLocation(String? value) {
+    final text = value?.trim() ?? '';
+    final letters = RegExp(r'[a-zA-Z]').allMatches(text).length;
+    final compactLength = text.replaceAll(RegExp(r'\s+'), '').length;
+    if (text.isEmpty) return 'Lokasi insiden wajib dicantumkan';
+    if (letters < 3 || compactLength == 0 || letters / compactLength < 0.25) {
+      return 'Masukkan lokasi yang jelas, bukan huruf atau angka acak';
+    }
+    if (text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length <
+            2 ||
+        !RegExp(r'[a-zA-Z]{3,}').hasMatch(text)) {
+      return 'Lokasi harus memuat keterangan tempat yang jelas';
+    }
+    return null;
   }
 
   Future<void> _handleSubmit() async {
+    if (_isSubmitting) return;
+
+    // Cegah pelaporan berulang (cek ke riwayat yang sudah dimuat)
+    final judul = _titleController.text.trim();
+    final lokasi = _locationController.text.trim();
+    final duplicate = widget.existingReports
+        .any((r) => r.judul == judul && (r.lokasiKejadian ?? '') == lokasi);
+    if (duplicate) {
+      _showError(
+          'Anda sudah melaporkan insiden ini sebelumnya. Laporan tidak dapat dikirim berulang kali.');
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       // Tampilkan dialog konfirmasi
       showDialog(
@@ -195,45 +253,66 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _sendReportToApi() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
-    );
+    setState(() => _isSubmitting = true);
 
     try {
       int kategoriId = _reportType == 'fasilitas' ? 1 : 2;
+      final userId = AuthService.instance.userId;
 
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/pengaduan'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'user_id': 3, // ID Siswa User di database
-          'kategori_id': kategoriId,
-          'fasilitas_id':
-              _reportType == 'fasilitas' ? _selectedFasilitasId : null,
-          'judul': _titleController.text.trim(),
-          'deskripsi': _descController.text.trim(),
-          'lokasi_kejadian': _locationController.text.trim(),
-          'is_anonim': _isAnonymous,
-        }),
+      if (userId == null) {
+        _showError(
+            'Anda harus login terlebih dahulu sebelum mengirim laporan.');
+        return;
+      }
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/api/pengaduan'),
       );
 
-      Navigator.pop(context); // close loading
+      request.fields['user_id'] = userId.toString();
+      request.fields['kategori_id'] = kategoriId.toString();
+      if (_reportType == 'fasilitas' && _selectedFasilitasId != null) {
+        request.fields['fasilitas_id'] = _selectedFasilitasId.toString();
+      }
+      request.fields['judul'] = _titleController.text.trim();
+      request.fields['deskripsi'] = _descController.text.trim();
+      request.fields['lokasi_kejadian'] = _locationController.text.trim();
+      request.fields['is_anonim'] = _isAnonymous ? '1' : '0';
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = json.decode(response.body)['data'];
+      if (_selectedFile != null) {
+        final bytes = await _selectedFile!.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          'file_bukti',
+          bytes,
+          filename: _selectedFile!.name,
+        ));
+      }
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode == 201) {
+        final body = json.decode(response.body);
+        final data = body['data'];
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException('Format respons laporan tidak valid.');
+        }
 
         final newReport = PengaduanModel(
-          id: data['id'],
-          userId: data['user_id'],
-          kategoriId: data['kategori_id'],
-          fasilitasId: data['fasilitas_id'],
+          id: int.tryParse('${data['id']}') ?? 0,
+          userId: int.tryParse('${data['user_id']}') ?? 0,
+          kategoriId: int.tryParse('${data['kategori_id']}') ?? 0,
+          fasilitasId: data['fasilitas_id'] == null
+              ? null
+              : int.tryParse('${data['fasilitas_id']}'),
           judul: data['judul'],
           deskripsi: data['deskripsi'],
           lokasiKejadian: data['lokasi_kejadian'],
           status: data['status'],
-          isAnonim: data['is_anonim'] == 1 || data['is_anonim'] == true,
+          isAnonim: data['is_anonim'] == 1 ||
+              data['is_anonim'] == '1' ||
+              data['is_anonim'] == true,
           createdAt: data['created_at'],
           namaKategori: _reportType == 'fasilitas'
               ? _apiFasilitas.firstWhere((f) => f['id'] == _selectedFasilitasId,
@@ -246,42 +325,75 @@ class _ReportScreenState extends State<ReportScreen> {
         _titleController.clear();
         _locationController.clear();
         _descController.clear();
-        setState(() {
-          _attachedFileName = null;
-        });
+        if (mounted) {
+          setState(() {
+            _selectedFile = null;
+          });
+        }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.secondary,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle,
-                    color: Color(0xFF4ADE80), size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Laporan REP-2026-${newReport.id} berhasil dikirim ke Admin!',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        _showSuccess(
+            'Laporan REP-2026-${newReport.id} berhasil dikirim ke Admin!');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal mengirim laporan')),
-        );
+        _handleApiError(response);
       }
     } catch (e) {
-      Navigator.pop(context); // close loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showError('Terjadi kesalahan: $e');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  void _handleApiError(http.Response response) {
+    String message = 'Gagal mengirim laporan. Silakan coba lagi.';
+    try {
+      final data = json.decode(response.body);
+      if (data['message'] != null) {
+        message = data['message'].toString();
+      } else if (data['errors'] != null) {
+        final errors = data['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final firstError = errors.values.first;
+          message = firstError is List && firstError.isNotEmpty
+              ? firstError.first.toString()
+              : firstError.toString();
+        } else if (errors is List && errors.isNotEmpty) {
+          message = errors.first.toString();
+        }
+      }
+    } catch (_) {}
+    _showError(message);
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFFB91C1C),
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.secondary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Color(0xFF4ADE80), size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(message,
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -490,9 +602,15 @@ class _ReportScreenState extends State<ReportScreen> {
                   hintStyle:
                       const TextStyle(fontSize: 13, color: AppColors.textLight),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty
-                    ? 'Judul laporan wajib diisi'
-                    : null,
+                validator: (val) {
+                  final v = val == null ? '' : val.trim();
+                  if (v.isEmpty) return 'Judul laporan wajib diisi';
+                  if (v.length < 10) return 'Judul laporan minimal 10 karakter';
+                  if (!_isMeaningfulText(v)) {
+                    return 'Judul harus berupa kata yang jelas, tidak boleh hanya angka atau simbol acak';
+                  }
+                  return null;
+                },
               ),
 
               const SizedBox(height: 16),
@@ -553,9 +671,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   prefixIcon: Icon(Icons.location_on_outlined,
                       size: 18, color: AppColors.textMuted),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty
-                    ? 'Lokasi insiden wajib dicantumkan'
-                    : null,
+                validator: _validateLocation,
               ),
 
               const SizedBox(height: 16),
@@ -589,9 +705,16 @@ class _ReportScreenState extends State<ReportScreen> {
                   hintStyle:
                       TextStyle(fontSize: 13, color: AppColors.textLight),
                 ),
-                validator: (val) => val == null || val.trim().length < 10
-                    ? 'Mohon jelaskan minimal 10 karakter'
-                    : null,
+                validator: (val) {
+                  final v = val == null ? '' : val.trim();
+                  if (v.length < 30) {
+                    return 'Mohon jelaskan kronologi kejadian secara detail (minimal 30 karakter)';
+                  }
+                  if (!_isMeaningfulText(v, minLetterRatio: 0.3)) {
+                    return 'Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya angka atau simbol acak';
+                  }
+                  return null;
+                },
               ),
 
               const SizedBox(height: 16),
@@ -601,7 +724,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 6),
               InkWell(
-                onTap: _simulatePickAttachment,
+                onTap: _pickAttachment,
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: double.infinity,
@@ -616,10 +739,10 @@ class _ReportScreenState extends State<ReportScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        _attachedFileName != null
+                        _selectedFile != null
                             ? Icons.attach_file_rounded
                             : Icons.cloud_upload_outlined,
-                        color: _attachedFileName != null
+                        color: _selectedFile != null
                             ? AppColors.accentTeal
                             : AppColors.primary,
                         size: 20,
@@ -627,22 +750,29 @@ class _ReportScreenState extends State<ReportScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          _attachedFileName ??
+                          _selectedFile?.name ??
                               'Unggah foto kerusakan atau bukti pendukung',
                           style: TextStyle(
                             fontSize: 13,
-                            color: _attachedFileName != null
+                            color: _selectedFile != null
                                 ? AppColors.textMain
                                 : AppColors.textMuted,
-                            fontWeight: _attachedFileName != null
+                            fontWeight: _selectedFile != null
                                 ? FontWeight.w600
                                 : FontWeight.normal,
                           ),
                         ),
                       ),
-                      if (_attachedFileName != null)
+                      if (_selectedFile != null) ...[
                         const Icon(Icons.check_circle,
                             color: Color(0xFF10B981), size: 18),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () => setState(() => _selectedFile = null),
+                          child: const Icon(Icons.close,
+                              size: 18, color: AppColors.textMuted),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -699,15 +829,24 @@ class _ReportScreenState extends State<ReportScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.send_rounded, size: 18),
-                  label: const Text('Kirim Laporan ke SafeEdu'),
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.white),
+                        )
+                      : const Icon(Icons.send_rounded, size: 18),
+                  label: Text(_isSubmitting
+                      ? 'Mengirim Laporan...'
+                      : 'Kirim Laporan ke SafeEdu'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isFacility
                         ? AppColors.primary
                         : const Color(0xFFE11D48),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: _handleSubmit,
+                  onPressed: _isSubmitting ? null : _handleSubmit,
                 ),
               ),
 

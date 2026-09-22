@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/report_model.dart';
 import '../theme/app_theme.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../utils/formatters.dart';
 
 class ProfileScreen extends StatelessWidget {
   final List<PengaduanModel> userReports;
@@ -62,7 +61,7 @@ class ProfileScreen extends StatelessWidget {
                     color: AppColors.textMain),
               ),
               const SizedBox(height: 6),
-              Text('📍 ${report.lokasiKejadian} • ${report.createdAt}',
+              Text('📍 ${report.lokasiKejadian} • ${formatTimestamp(report.createdAt)}',
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textMuted)),
               const SizedBox(height: 20),
@@ -73,6 +72,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Laporan Masuk',
                 subtitle:
                     'Laporan Anda telah berhasil dicatat ke sistem SafeEdu',
+                timestamp: report.createdAt,
                 isDone: true,
                 isCurrent: report.status == 'menunggu',
               ),
@@ -80,6 +80,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Verifikasi Tim Admin (Disposisi)',
                 subtitle:
                     'Admin telah memverifikasi dan menugaskan teknisi untuk insiden ini',
+                timestamp: report.assignedAt,
                 isDone:
                     report.status == 'diproses' || report.status == 'selesai',
                 isCurrent: report.status == 'diproses' &&
@@ -89,6 +90,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Penanganan oleh Teknisi / Satgas',
                 subtitle:
                     'Petugas lapangan menerima tugas dan sedang melakukan perbaikan',
+                timestamp: report.workedAt,
                 isDone: report.status == 'selesai',
                 isCurrent: report.status == 'diproses' &&
                     report.penugasanStatus == 'diterima',
@@ -97,6 +99,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Selesai & Dikonfirmasi',
                 subtitle:
                     'Tiket ditutup setelah teknisi menyelesaikan penanganan',
+                timestamp: report.completedAt,
                 isDone: report.status == 'selesai',
                 isCurrent: report.status == 'selesai',
                 isLast: true,
@@ -139,6 +142,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildTimelineStep({
     required String title,
     required String subtitle,
+    String? timestamp,
     required bool isDone,
     required bool isCurrent,
     bool isLast = false,
@@ -198,6 +202,33 @@ class ProfileScreen extends StatelessWidget {
                 style:
                     const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
+              if (timestamp != null && timestamp.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 12,
+                      color: isDone
+                          ? const Color(0xFF047857)
+                          : (isCurrent ? AppColors.primary : AppColors.textLight),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formatTimestamp(timestamp),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDone
+                            ? const Color(0xFF047857)
+                            : (isCurrent
+                                ? AppColors.primary
+                                : AppColors.textLight),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
             ],
           ),
@@ -450,7 +481,7 @@ class ProfileScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Text(rep.createdAt ?? '',
+                                Text(formatTimestamp(rep.createdAt),
                                     style: const TextStyle(
                                         fontSize: 11,
                                         color: AppColors.textLight)),

@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/catalog_model.dart';
+import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
+import 'notifikasi_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -21,10 +25,42 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _facilities = [];
   bool _isLoading = false;
 
+  int _unreadCount = 0;
+  Timer? _notifTimer;
+
   @override
   void initState() {
     super.initState();
     _fetchFacilities();
+    _fetchNews();
+    _fetchUnreadCount();
+    // Polling notifikasi setiap 30 detik saat app aktif
+    _notifTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _fetchUnreadCount(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _notifTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    final userId = AuthService.instance.userId;
+    if (userId == null) return;
+    final count = await NotificationService.fetchUnreadCount(userId);
+    if (!mounted) return;
+    setState(() => _unreadCount = count);
+  }
+
+  Future<void> _openNotifikasi() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotifikasiScreen()),
+    );
+    _fetchUnreadCount();
   }
 
   Future<void> _fetchFacilities() async {
@@ -44,6 +80,24 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error: $e');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchNews() async {
+    try {
+      final res =
+          await http.get(Uri.parse('http://127.0.0.1:8000/api/konten-sekolah'));
+      if (res.statusCode != 200) return;
+      final data = json.decode(res.body);
+      if (data['success'] != true || data['data'] is! List || !mounted) return;
+      setState(() {
+        _newsList
+          ..clear()
+          ..addAll(
+              (data['data'] as List).map((item) => CampusNews.fromMap(item)));
+      });
+    } catch (e) {
+      print('Error fetching school content: $e');
     }
   }
 
@@ -219,10 +273,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded,
-                color: AppColors.textMain),
-            onPressed: () {},
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded,
+                    color: AppColors.textMain),
+                onPressed: _openNotifikasi,
+              ),
+              if (_unreadCount > 0)
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE11D48),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16),
+                    child: Text(
+                      _unreadCount > 99 ? '99+' : '$_unreadCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
