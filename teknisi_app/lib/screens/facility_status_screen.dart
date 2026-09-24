@@ -62,7 +62,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: const Text('Status fasilitas diperbarui'),
+        content: Text('Status fasilitas diperbarui'),
         backgroundColor: AppColors.statusSuccessText,
       ),
     );

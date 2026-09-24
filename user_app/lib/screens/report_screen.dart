@@ -631,8 +631,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                 style: const TextStyle(fontSize: 13)));
                       }).toList(),
                       onChanged: (val) {
-                        if (val != null)
+                        if (val != null) {
                           setState(() => _selectedFasilitasId = val);
+                        }
                       },
                       decoration: const InputDecoration(
                         hintText: 'Pilih fasilitas yang rusak',
@@ -650,8 +651,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                 style: const TextStyle(fontSize: 13)));
                       }).toList(),
                       onChanged: (val) {
-                        if (val != null)
+                        if (val != null) {
                           setState(() => _selectedCategory = val);
+                        }
                       },
                       decoration: const InputDecoration(),
                     ),
