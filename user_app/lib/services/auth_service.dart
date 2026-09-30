@@ -47,6 +47,51 @@ class AuthService {
     }
   }
 
+  /// Panggil POST /api/auth/register, simpan session user jika berhasil.
+  /// Mengembalikan pesan error jika gagal, null jika sukses.
+  Future<String?> register({
+    required String nama,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/register'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'nama': nama.trim(),
+          'email': email.trim(),
+          'password': password,
+        }),
+      );
+
+      final data = json.decode(res.body);
+
+      if (res.statusCode != 201 || data['success'] != true) {
+        if (data['errors'] != null && data['errors'] is Map) {
+          final firstError = (data['errors'] as Map).values.first;
+          if (firstError is List && firstError.isNotEmpty) {
+            return firstError.first.toString();
+          }
+          return firstError.toString();
+        }
+        return data['message'] ?? 'Pendaftaran gagal.';
+      }
+
+      final user = data['data'];
+      userId = user['id'];
+      this.nama = user['nama'];
+      this.email = user['email'];
+      role = user['role'];
+      return null;
+    } catch (e) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+    }
+  }
+
   void logout() {
     userId = null;
     nama = null;

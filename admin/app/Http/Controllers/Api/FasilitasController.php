@@ -45,9 +45,9 @@ class FasilitasController extends Controller
         if (!$fasilitas) return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $validator = Validator::make($request->all(), [
-            'nama' => 'required|string|max:150',
-            'lokasi' => 'required|string|max:150',
-            'status_kondisi' => 'required|string',
+            'nama' => 'sometimes|required|string|max:150',
+            'lokasi' => 'sometimes|required|string|max:150',
+            'status_kondisi' => 'sometimes|required|string',
             'deskripsi' => 'nullable|string',
         ]);
 
@@ -55,7 +55,7 @@ class FasilitasController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $fasilitas->update($request->all());
+        $fasilitas->update($request->only(['nama', 'lokasi', 'status_kondisi', 'deskripsi']));
 
         return response()->json([
             'success' => true,

@@ -19,6 +19,7 @@ class AuthApiController extends Controller
         $validator = Validator::make($request->all(), [
             'email'    => 'required|string',
             'password' => 'required|string',
+            'role'     => 'nullable|string|in:siswa,teknisi,admin',
         ]);
 
         if ($validator->fails()) {
@@ -28,10 +29,14 @@ class AuthApiController extends Controller
             ], 422);
         }
 
-        // Cari user berdasarkan email
-        $user = User::where('email', $request->email)
-                    ->where('role', 'siswa')
-                    ->first();
+        // Cari user berdasarkan email dan role jika ditentukan
+        $query = User::where('email', $request->email);
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        } else {
+            $query->whereIn('role', ['siswa', 'teknisi']);
+        }
+        $user = $query->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -50,6 +55,49 @@ class AuthApiController extends Controller
                 'role'  => $user->role,
             ],
         ]);
+    }
+
+    /**
+     * Registrasi akun siswa baru dari user_app.
+     */
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama'     => 'required|string|max:100',
+            'email'    => 'required|string|max:100|unique:users,email',
+            'password' => 'required|string|min:6',
+        ], [
+            'nama.required'     => 'Nama lengkap wajib diisi.',
+            'email.required'    => 'NISN atau Email wajib diisi.',
+            'email.unique'      => 'NISN atau Email ini sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min'      => 'Password minimal 6 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $user = User::create([
+            'nama'     => trim($request->nama),
+            'email'    => trim($request->email),
+            'password' => Hash::make($request->password),
+            'role'     => 'siswa',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pendaftaran berhasil.',
+            'data'    => [
+                'id'    => $user->id,
+                'nama'  => $user->nama,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ],
+        ], 201);
     }
 
     /**

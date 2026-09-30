@@ -57,19 +57,19 @@ class PengaduanController extends Controller
             'user_id' => 'required|integer',
             'kategori_id' => 'required|integer',
             'fasilitas_id' => 'nullable|integer',
-            // Judul minimal 10 karakter, harus berupa kata yang jelas (bukan angka/simbol acak)
-            'judul' => ['required', 'string', 'min:10', 'max:150', function ($attribute, $value, $fail) {
+            // Judul minimal 10 karakter, harus berupa kata yang jelas (bukan angka/simbol acak), hanya boleh huruf dan angka
+            'judul' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[a-zA-Z0-9\s]+$/u', function ($attribute, $value, $fail) {
                 if (! self::isMeaningfulText($value, 0.5)) {
                     $fail('Judul harus berupa kata yang jelas, tidak boleh hanya angka atau simbol acak.');
                 }
             }],
-            // Deskripsi minimal 30 karakter, harus berupa kalimat yang masuk akal
-            'deskripsi' => ['required', 'string', 'min:30', function ($attribute, $value, $fail) {
+            // Deskripsi minimal 30 karakter, harus berupa kalimat yang masuk akal, hanya boleh huruf dan angka
+            'deskripsi' => ['required', 'string', 'min:30', 'regex:/^[a-zA-Z0-9\s]+$/u', function ($attribute, $value, $fail) {
                 if (! self::isMeaningfulText($value, 0.3)) {
                     $fail('Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya angka atau simbol acak.');
                 }
             }],
-            'lokasi_kejadian' => ['required', 'string', 'min:3', 'max:150', function ($attribute, $value, $fail) {
+            'lokasi_kejadian' => ['required', 'string', 'min:3', 'max:150', 'regex:/^[a-zA-Z0-9\s]+$/u', function ($attribute, $value, $fail) {
                 if (! self::isMeaningfulLocation($value)) {
                     $fail('Lokasi insiden harus berupa keterangan lokasi yang jelas.');
                 }
@@ -78,8 +78,11 @@ class PengaduanController extends Controller
             'file_bukti' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // max 5MB (Masalah #3)
         ], [
             'judul.min' => 'Judul laporan minimal 10 karakter.',
+            'judul.regex' => 'Judul laporan hanya boleh berisi huruf dan angka.',
             'deskripsi.min' => 'Mohon jelaskan kronologi kejadian dengan detail (minimal 30 karakter).',
+            'deskripsi.regex' => 'Rincian kronologi hanya boleh berisi huruf dan angka.',
             'lokasi_kejadian.required' => 'Lokasi insiden wajib dicantumkan.',
+            'lokasi_kejadian.regex' => 'Lokasi insiden hanya boleh berisi huruf dan angka.',
         ]);
 
         if ($validator->fails()) {
