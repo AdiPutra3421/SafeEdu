@@ -16,7 +16,7 @@ class AppColors {
   static const Color accentTealLight = Color(0xFFF0FDFA);
 
   // Canvas & Surfaces
-  static const Color canvas = Color(0xFFF8FAFC);
+  static const Color canvas = Color(0xFFF8FAFC); 
   static const Color surface = Color(0xFFFFFFFF);
   static const Color subtle = Color(0xFFF1F5F9);
   static const Color border = Color(0xFFE2E8F0);
