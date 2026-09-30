@@ -10,6 +10,8 @@ class AuthService {
   int? userId;
   String? nama;
   String? email;
+  String? nisn;
+  String? kelas;
   String? role;
 
   bool get isLoggedIn => userId != null;
@@ -39,12 +41,35 @@ class AuthService {
       final user = data['data'];
       userId = user['id'];
       nama = user['nama'];
-      email = user['email'];
+      this.email = user['email'];
+      nisn = user['nisn']?.toString() ?? user['email']?.toString();
+      kelas = user['kelas']?.toString() ?? 'XII Rekayasa Perangkat Lunak 1';
       role = user['role'];
       return null;
     } catch (e) {
       return 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
     }
+  }
+
+  /// Memperbarui data profil terbaru dari backend
+  Future<void> reloadProfile() async {
+    if (userId == null) return;
+    try {
+      final res = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/me?user_id=$userId'),
+      );
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        if (data['success'] == true) {
+          final user = data['data'];
+          nama = user['nama'] ?? nama;
+          email = user['email'] ?? email;
+          nisn = user['nisn']?.toString() ?? nisn;
+          kelas = user['kelas']?.toString() ?? kelas;
+          role = user['role'] ?? role;
+        }
+      }
+    } catch (_) {}
   }
 
   /// Panggil POST /api/auth/register, simpan session user jika berhasil.
@@ -85,6 +110,8 @@ class AuthService {
       userId = user['id'];
       this.nama = user['nama'];
       this.email = user['email'];
+      nisn = user['nisn']?.toString() ?? user['email']?.toString();
+      kelas = user['kelas']?.toString() ?? 'XII Rekayasa Perangkat Lunak 1';
       role = user['role'];
       return null;
     } catch (e) {
@@ -96,6 +123,8 @@ class AuthService {
     userId = null;
     nama = null;
     email = null;
+    nisn = null;
+    kelas = null;
     role = null;
   }
 }

@@ -62,6 +62,8 @@ class UserSiswaController extends Controller
         $user = User::create([
             'nama'     => trim($request->nama),
             'email'    => trim($request->email),
+            'nisn'     => trim($request->email),
+            'kelas'    => $request->filled('kelas') ? trim($request->kelas) : 'XII Rekayasa Perangkat Lunak 1',
             'password' => Hash::make($request->password),
             'role'     => 'siswa',
         ]);
@@ -112,6 +114,7 @@ class UserSiswaController extends Controller
         $validator = Validator::make($request->all(), [
             'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/u'],
             'email'    => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:users,email,' . $id],
+            'kelas'    => 'nullable|string|max:100',
             'password' => 'nullable|string|min:6',
         ], [
             'nama.required'     => 'Nama siswa wajib diisi.',
@@ -131,6 +134,10 @@ class UserSiswaController extends Controller
 
         $user->nama  = trim($request->nama);
         $user->email = trim($request->email);
+        $user->nisn  = trim($request->email);
+        if ($request->filled('kelas')) {
+            $user->kelas = trim($request->kelas);
+        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);

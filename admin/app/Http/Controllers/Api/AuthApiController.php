@@ -29,8 +29,12 @@ class AuthApiController extends Controller
             ], 422);
         }
 
-        // Cari user berdasarkan email dan role jika ditentukan
-        $query = User::where('email', $request->email);
+        // Cari user berdasarkan email atau nisn dan role jika ditentukan
+        $loginInput = trim($request->email);
+        $query = User::where(function ($q) use ($loginInput) {
+            $q->where('email', $loginInput)
+              ->orWhere('nisn', $loginInput);
+        });
         if ($request->filled('role')) {
             $query->where('role', $request->role);
         } else {
@@ -51,7 +55,9 @@ class AuthApiController extends Controller
             'data'    => [
                 'id'    => $user->id,
                 'nama'  => $user->nama,
-                'email' => $user->email,
+                'email' => $user->display_email,
+                'nisn'  => $user->nisn,
+                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ]);
@@ -66,6 +72,7 @@ class AuthApiController extends Controller
             'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/u'],
             'email'    => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:users,email'],
             'password' => 'required|string|min:6',
+            'kelas'    => 'nullable|string|max:100',
         ], [
             'nama.required'     => 'Nama lengkap wajib diisi.',
             'nama.regex'        => 'Nama hanya boleh berisi huruf.',
@@ -86,6 +93,8 @@ class AuthApiController extends Controller
         $user = User::create([
             'nama'     => trim($request->nama),
             'email'    => trim($request->email),
+            'nisn'     => trim($request->email),
+            'kelas'    => $request->filled('kelas') ? trim($request->kelas) : 'XII Rekayasa Perangkat Lunak 1',
             'password' => Hash::make($request->password),
             'role'     => 'siswa',
         ]);
@@ -96,7 +105,9 @@ class AuthApiController extends Controller
             'data'    => [
                 'id'    => $user->id,
                 'nama'  => $user->nama,
-                'email' => $user->email,
+                'email' => $user->display_email,
+                'nisn'  => $user->nisn,
+                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ], 201);
@@ -119,7 +130,9 @@ class AuthApiController extends Controller
             'data'    => [
                 'id'    => $user->id,
                 'nama'  => $user->nama,
-                'email' => $user->email,
+                'email' => $user->display_email,
+                'nisn'  => $user->nisn,
+                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ]);

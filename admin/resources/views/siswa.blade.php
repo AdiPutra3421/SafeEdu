@@ -99,6 +99,12 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label" for="kelasInput">Kelas Siswa</label>
+          <input type="text" id="kelasInput" class="form-control" placeholder="Contoh: XII Rekayasa Perangkat Lunak 1" maxlength="100">
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Kelas siswa (opsional, default: XII Rekayasa Perangkat Lunak 1).</small>
+        </div>
+
+        <div class="form-group">
           <label class="form-label" for="passwordInput" id="passwordLabel">Password *</label>
           <input type="password" id="passwordInput" class="form-control" placeholder="Minimal 6 karakter" minlength="6">
           <small id="passwordHelp" style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;"></small>
@@ -188,7 +194,10 @@
               <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
                 ${initials}
               </div>
-              <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(s.nama)}</div>
+              <div>
+                <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(s.nama)}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(s.kelas || 'XII Rekayasa Perangkat Lunak 1')}</div>
+              </div>
             </div>
           </td>
           <td>
@@ -225,6 +234,7 @@
       document.getElementById('siswa-id').value = siswa.id;
       document.getElementById('namaInput').value = siswa.nama;
       document.getElementById('emailInput').value = siswa.email;
+      document.getElementById('kelasInput').value = siswa.kelas || 'XII Rekayasa Perangkat Lunak 1';
       passwordInput.value = '';
       passwordInput.required = false;
       passwordLabel.innerText = 'Password Baru (Opsional)';
@@ -233,6 +243,7 @@
       title.innerText = 'Tambah Siswa Baru';
       form.reset();
       document.getElementById('siswa-id').value = '';
+      document.getElementById('kelasInput').value = 'XII Rekayasa Perangkat Lunak 1';
       passwordInput.value = '';
       passwordInput.required = true;
       passwordLabel.innerText = 'Password *';
@@ -270,6 +281,7 @@
     const payload = {
       nama: nama,
       email: email,
+      kelas: document.getElementById('kelasInput').value.trim() || 'XII Rekayasa Perangkat Lunak 1',
     };
 
     const password = document.getElementById('passwordInput').value;

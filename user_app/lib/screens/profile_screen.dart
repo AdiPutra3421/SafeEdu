@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/report_model.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 
@@ -251,17 +252,34 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: onRefresh == null
-          ? _buildContent()
-          : RefreshIndicator(
-              onRefresh: onRefresh!,
-              color: AppColors.primary,
-              child: _buildContent(),
-            ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await AuthService.instance.reloadProfile();
+          if (onRefresh != null) {
+            await onRefresh!();
+          }
+        },
+        color: AppColors.primary,
+        child: _buildContent(),
+      ),
     );
   }
 
   Widget _buildContent() {
+    final studentName = AuthService.instance.nama?.isNotEmpty == true
+        ? AuthService.instance.nama!
+        : 'Siswa SafeEdu';
+    final nisn = AuthService.instance.nisn ?? AuthService.instance.email ?? '-';
+    final kelas = AuthService.instance.kelas ?? 'XII Rekayasa Perangkat Lunak 1';
+    final email = AuthService.instance.email ?? '$nisn@safeedu.sch.id';
+
+    final nameParts = studentName.trim().split(RegExp(r'\s+'));
+    final initials = nameParts.length > 1
+        ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
+        : (nameParts.isNotEmpty && nameParts[0].isNotEmpty
+            ? nameParts[0][0].toUpperCase()
+            : 'SW');
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -297,10 +315,10 @@ class ProfileScreen extends StatelessWidget {
                         color: AppColors.primaryLight,
                         border: Border.all(color: AppColors.primary, width: 2),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'AF',
-                          style: TextStyle(
+                          initials,
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primary,
@@ -316,13 +334,18 @@ class ProfileScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Ahmad Fauzi',
-                                style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textMain),
+                              Expanded(
+                                child: Text(
+                                  studentName,
+                                  style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textMain),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 3),
@@ -341,18 +364,18 @@ class ProfileScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          const Text('NISN: 20240911',
-                              style: TextStyle(
+                          Text('NISN: $nisn',
+                              style: const TextStyle(
                                   fontSize: 12, color: AppColors.textMuted)),
                           const SizedBox(height: 2),
-                          const Text('XII Rekayasa Perangkat Lunak 1',
-                              style: TextStyle(
+                          Text(kelas,
+                              style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                   color: AppColors.secondaryMuted)),
                           const SizedBox(height: 2),
-                          const Text('ahmad.fauzi@safeedu.sch.id',
-                              style: TextStyle(
+                          Text(email,
+                              style: const TextStyle(
                                   fontSize: 11, color: AppColors.textLight)),
                         ],
                       ),

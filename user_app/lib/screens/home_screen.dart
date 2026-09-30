@@ -344,20 +344,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Halo, Budi Siswa',
-                                style: TextStyle(
+                                'Halo, ${AuthService.instance.nama ?? 'Siswa'}',
+                                style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'NISN: 20240911 • XII RPL 1',
-                                style: TextStyle(
+                                'NISN: ${AuthService.instance.nisn ?? AuthService.instance.email ?? '-'} • ${AuthService.instance.kelas ?? 'XII RPL 1'}',
+                                style: const TextStyle(
                                     color: Color(0xFFBFDBFE), fontSize: 12),
                               ),
                             ],

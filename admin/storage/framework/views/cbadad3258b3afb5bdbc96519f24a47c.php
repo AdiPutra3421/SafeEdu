@@ -85,14 +85,21 @@
         <input type="hidden" id="siswa-id">
         
         <div class="form-group">
-          <label class="form-label" for="namaInput">Nama Lengkap Siswa *</label>
-          <input type="text" id="namaInput" class="form-control" required placeholder="Contoh: Budi Santoso" maxlength="100">
+          <label class="form-label" for="namaInput">Nama Lengkap Siswa (Hanya Huruf) *</label>
+          <input type="text" id="namaInput" class="form-control" required placeholder="Contoh: Budi Santoso" maxlength="100" pattern="[a-zA-Z\s]+" title="Nama hanya boleh berisi huruf dan spasi" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Nama hanya boleh huruf dan spasi (tanpa angka/simbol).</small>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="emailInput">NISN atau Email Login *</label>
-          <input type="text" id="emailInput" class="form-control" required placeholder="Contoh: 20240911 atau budi@safeedu.sch.id" maxlength="100">
-          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Digunakan sebagai identitas masuk pada aplikasi mobile.</small>
+          <label class="form-label" for="emailInput">NISN Siswa (Hanya 10 Angka) *</label>
+          <input type="text" id="emailInput" class="form-control" required placeholder="Contoh: 2024091101" maxlength="10" minlength="10" inputmode="numeric" pattern="[0-9]{10}" title="NISN harus tepat 10 digit angka" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">NISN wajib tepat 10 angka digit (hanya angka). Digunakan untuk login aplikasi mobile.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="kelasInput">Kelas Siswa</label>
+          <input type="text" id="kelasInput" class="form-control" placeholder="Contoh: XII Rekayasa Perangkat Lunak 1" maxlength="100">
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Kelas siswa (opsional, default: XII Rekayasa Perangkat Lunak 1).</small>
         </div>
 
         <div class="form-group">
@@ -185,7 +192,10 @@
               <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
                 ${initials}
               </div>
-              <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(s.nama)}</div>
+              <div>
+                <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(s.nama)}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(s.kelas || 'XII Rekayasa Perangkat Lunak 1')}</div>
+              </div>
             </div>
           </td>
           <td>
@@ -222,6 +232,7 @@
       document.getElementById('siswa-id').value = siswa.id;
       document.getElementById('namaInput').value = siswa.nama;
       document.getElementById('emailInput').value = siswa.email;
+      document.getElementById('kelasInput').value = siswa.kelas || 'XII Rekayasa Perangkat Lunak 1';
       passwordInput.value = '';
       passwordInput.required = false;
       passwordLabel.innerText = 'Password Baru (Opsional)';
@@ -230,6 +241,7 @@
       title.innerText = 'Tambah Siswa Baru';
       form.reset();
       document.getElementById('siswa-id').value = '';
+      document.getElementById('kelasInput').value = 'XII Rekayasa Perangkat Lunak 1';
       passwordInput.value = '';
       passwordInput.required = true;
       passwordLabel.innerText = 'Password *';
@@ -247,12 +259,27 @@
     e.preventDefault();
     const id = document.getElementById('siswa-id').value;
     const submitBtn = document.getElementById('submitBtn');
+
+    const nama = document.getElementById('namaInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+
+    if (!/^[a-zA-Z\s]+$/.test(nama)) {
+      alert('Nama siswa hanya boleh berisi huruf dan spasi.');
+      return;
+    }
+
+    if (!/^[0-9]{10}$/.test(email)) {
+      alert('NISN siswa harus tepat 10 angka numerik.');
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.innerText = 'Menyimpan...';
 
     const payload = {
-      nama: document.getElementById('namaInput').value.trim(),
-      email: document.getElementById('emailInput').value.trim(),
+      nama: nama,
+      email: email,
+      kelas: document.getElementById('kelasInput').value.trim() || 'XII Rekayasa Perangkat Lunak 1',
     };
 
     const password = document.getElementById('passwordInput').value;
