@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/facility_model.dart';
+import '../services/api_config.dart';
 import '../theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -26,7 +27,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
     setState(() => _isLoading = true);
     try {
       final res =
-          await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/api/fasilitas'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -55,17 +56,49 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
         .toList();
   }
 
-  void _updateKondisi(dynamic facility, String newKondisi) {
-    // API logic will go here if needed, but for now we just change state locally to simulate
-    setState(() {
-      facility['status_kondisi'] = newKondisi;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Status fasilitas diperbarui'),
-        backgroundColor: AppColors.statusSuccessText,
-      ),
-    );
+  Future<void> _updateKondisi(dynamic facility, String newKondisi) async {
+    final facilityId = facility['id'];
+    try {
+      final res = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/api/fasilitas/$facilityId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'status_kondisi': newKondisi,
+        }),
+      );
+
+      if (res.statusCode == 200) {
+        setState(() {
+          facility['status_kondisi'] = newKondisi;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Status fasilitas berhasil diperbarui di server'),
+            backgroundColor: AppColors.statusSuccessText,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal memperbarui status fasilitas di server'),
+            backgroundColor: AppColors.statusDangerText,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.statusDangerText,
+        ),
+      );
+    }
   }
 
   @override

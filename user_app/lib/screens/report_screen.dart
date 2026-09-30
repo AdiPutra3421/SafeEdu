@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/report_model.dart';
@@ -70,7 +71,7 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isLoadingFasilitas = true);
     try {
       final res =
-          await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/api/fasilitas'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -149,11 +150,14 @@ class _ReportScreenState extends State<ReportScreen> {
 
   String? _validateLocation(String? value) {
     final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Lokasi insiden wajib dicantumkan';
+    if (!RegExp(r'^[a-zA-Z0-9\s]+$').hasMatch(text)) {
+      return 'Lokasi insiden hanya boleh berisi huruf dan angka';
+    }
     final letters = RegExp(r'[a-zA-Z]').allMatches(text).length;
     final compactLength = text.replaceAll(RegExp(r'\s+'), '').length;
-    if (text.isEmpty) return 'Lokasi insiden wajib dicantumkan';
     if (letters < 3 || compactLength == 0 || letters / compactLength < 0.25) {
-      return 'Masukkan lokasi yang jelas, bukan huruf atau angka acak';
+      return 'Masukkan lokasi yang jelas, bukan angka acak';
     }
     if (text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length <
             2 ||
@@ -595,6 +599,9 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _titleController,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
+                ],
                 decoration: InputDecoration(
                   hintText: isFacility
                       ? 'Contoh: AC Meneteskan Air di Lab 302'
@@ -606,8 +613,11 @@ class _ReportScreenState extends State<ReportScreen> {
                   final v = val == null ? '' : val.trim();
                   if (v.isEmpty) return 'Judul laporan wajib diisi';
                   if (v.length < 10) return 'Judul laporan minimal 10 karakter';
+                  if (!RegExp(r'^[a-zA-Z0-9\s]+$').hasMatch(v)) {
+                    return 'Judul laporan hanya boleh berisi huruf dan angka';
+                  }
                   if (!_isMeaningfulText(v)) {
-                    return 'Judul harus berupa kata yang jelas, tidak boleh hanya angka atau simbol acak';
+                    return 'Judul harus berupa kata yang jelas, tidak boleh hanya angka acak';
                   }
                   return null;
                 },
@@ -666,8 +676,11 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _locationController,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
+                ],
                 decoration: const InputDecoration(
-                  hintText: 'Contoh: Gedung B, Lantai 2, Ruang Kelas 204',
+                  hintText: 'Contoh: Gedung B Lantai 2 Ruang Kelas 204',
                   hintStyle:
                       TextStyle(fontSize: 13, color: AppColors.textLight),
                   prefixIcon: Icon(Icons.location_on_outlined,
@@ -701,9 +714,12 @@ class _ReportScreenState extends State<ReportScreen> {
               TextFormField(
                 controller: _descController,
                 maxLines: 4,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
+                ],
                 decoration: const InputDecoration(
                   hintText:
-                      'Jelaskan kronologi kejadian secara runtut, tanda-tanda kerusakan, atau pihak yang terlibat...',
+                      'Jelaskan kronologi kejadian secara runtut tanda kerusakan atau pihak yang terlibat...',
                   hintStyle:
                       TextStyle(fontSize: 13, color: AppColors.textLight),
                 ),
@@ -712,8 +728,11 @@ class _ReportScreenState extends State<ReportScreen> {
                   if (v.length < 30) {
                     return 'Mohon jelaskan kronologi kejadian secara detail (minimal 30 karakter)';
                   }
+                  if (!RegExp(r'^[a-zA-Z0-9\s]+$').hasMatch(v)) {
+                    return 'Rincian kronologi hanya boleh berisi huruf dan angka';
+                  }
                   if (!_isMeaningfulText(v, minLetterRatio: 0.3)) {
-                    return 'Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya angka atau simbol acak';
+                    return 'Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya angka acak';
                   }
                   return null;
                 },

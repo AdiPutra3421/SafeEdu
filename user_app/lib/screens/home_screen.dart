@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/catalog_model.dart';
+import '../services/api_config.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
@@ -67,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     try {
       final res =
-          await http.get(Uri.parse('http://127.0.0.1:8000/api/fasilitas'));
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/api/fasilitas'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true) {
@@ -86,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchNews() async {
     try {
       final res =
-          await http.get(Uri.parse('http://127.0.0.1:8000/api/konten-sekolah'));
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/api/konten-sekolah'));
       if (res.statusCode != 200) return;
       final data = json.decode(res.body);
       if (data['success'] != true || data['data'] is! List || !mounted) return;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/task_model.dart';
+import '../services/api_config.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 
 class TechnicianDashboardScreen extends StatefulWidget {
@@ -28,8 +30,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Future<void> _fetchTasks() async {
     setState(() => _isLoading = true);
     try {
-      final res =
-          await http.get(Uri.parse('http://127.0.0.1:8000/api/penugasan'));
+      final teknisiId = AuthService.instance.userId;
+      final uri = teknisiId != null
+          ? Uri.parse('${ApiConfig.baseUrl}/api/penugasan?teknisi_id=$teknisiId')
+          : Uri.parse('${ApiConfig.baseUrl}/api/penugasan');
+      final res = await http.get(uri);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success']) {
@@ -50,7 +55,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       int id, String status, String keterangan) async {
     try {
       final res = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/penugasan/$id/status'),
+        Uri.parse('${ApiConfig.baseUrl}/api/penugasan/$id/status'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -322,16 +327,16 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'SafeEdu Teknisi',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  'Bambang Teknisi',
-                  style: TextStyle(
+                  AuthService.instance.nama ?? 'Teknisi Lapangan',
+                  style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textMuted,
                       fontWeight: FontWeight.normal),
