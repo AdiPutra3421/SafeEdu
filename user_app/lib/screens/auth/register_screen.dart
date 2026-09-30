@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../main.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
@@ -28,8 +29,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     final error = await AuthService.instance.register(
-      nama: _nameController.text,
-      email: _nisnController.text,
+      nama: _nameController.text.trim(),
+      email: _nisnController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -89,13 +90,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _nisnController,
                     decoration: const InputDecoration(
-                      labelText: 'NISN',
+                      labelText: 'NISN (10 Digit Angka)',
                       prefixIcon: Icon(Icons.badge_outlined),
                       border: OutlineInputBorder(),
+                      helperText: 'Tepat 10 angka digit',
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'NISN tidak boleh kosong';
+                      if (value == null || value.trim().isEmpty) {
+                        return 'NISN tidak boleh kosong';
+                      }
+                      final trimmed = value.trim();
+                      if (!RegExp(r'^\d{10}$').hasMatch(trimmed)) {
+                        return 'NISN harus terdiri dari 10 angka';
+                      }
                       return null;
                     },
                   ),
@@ -106,9 +118,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'Nama Lengkap',
                       prefixIcon: Icon(Icons.person_outline),
                       border: OutlineInputBorder(),
+                      helperText: 'Hanya boleh huruf',
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                    ],
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Nama tidak boleh kosong';
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nama tidak boleh kosong';
+                      }
+                      final trimmed = value.trim();
+                      if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(trimmed)) {
+                        return 'Nama hanya boleh berupa huruf';
+                      }
                       return null;
                     },
                   ),

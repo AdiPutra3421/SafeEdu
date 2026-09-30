@@ -28,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/konten-sekolah', function () {
         return view('konten-sekolah');
     })->name('konten-sekolah');
+
+    Route::get('/siswa', function () {
+        return view('siswa');
+    })->name('siswa');
 });
 
 Route::middleware('auth')->group(function () {

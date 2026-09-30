@@ -68,6 +68,15 @@
           </svg>
           Berita & Panduan
         </a>
+        <a href="<?php echo e(route('siswa')); ?>" class="nav-item <?php echo e(request()->routeIs('siswa') ? 'active' : ''); ?>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Data Siswa
+        </a>
 
         <div class="nav-label" style="margin-top: 20px;">Akun</div>
         <form method="POST" action="<?php echo e(route('logout')); ?>">
@@ -84,9 +93,9 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="admin-avatar"><?php echo e(substr(Auth::user()->name, 0, 2)); ?></div>
+        <div class="admin-avatar"><?php echo e(substr(Auth::user()->nama ?? Auth::user()->name ?? 'AD', 0, 2)); ?></div>
         <div class="admin-info">
-          <div class="admin-name"><?php echo e(Auth::user()->name); ?></div>
+          <div class="admin-name"><?php echo e(Auth::user()->nama ?? Auth::user()->name); ?></div>
           <div class="admin-role"><?php echo e(Auth::user()->email); ?></div>
         </div>
       </div>

@@ -3045,3 +3045,9 @@ Did you mean one of these?
 #64 C:/Users/Pongo/Documents/kuliah/semester 3/SafeEdu/admin/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('C://Users//Pongo//...')
 #65 {main}
 "} 
+[2026-09-30 15:53:21] local.ERROR: Undefined array key "message" {"exception":"[object] (ErrorException(code: 0): Undefined array key \"message\" at C:/Users/Pongo/.gemini/antigravity-ide/brain/ad4d331c-9241-405d-9b36-b39b8f4113e7/scratch/test_crud_siswa.php:23)
+[stacktrace]
+#0 C:/Users/Pongo/Documents/kuliah/semester 3/SafeEdu/admin/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(265): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(2, 'Undefined array...', 'C://Users//Pongo//...', 23)
+#1 C:/Users/Pongo/.gemini/antigravity-ide/brain/ad4d331c-9241-405d-9b36-b39b8f4113e7/scratch/test_crud_siswa.php(23): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure}(2, 'Undefined array...', 'C://Users//Pongo//...', 23)
+#2 {main}
+"} 

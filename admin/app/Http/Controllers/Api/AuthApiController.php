@@ -63,13 +63,15 @@ class AuthApiController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama'     => 'required|string|max:100',
-            'email'    => 'required|string|max:100|unique:users,email',
+            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/u'],
+            'email'    => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:users,email'],
             'password' => 'required|string|min:6',
         ], [
             'nama.required'     => 'Nama lengkap wajib diisi.',
-            'email.required'    => 'NISN atau Email wajib diisi.',
-            'email.unique'      => 'NISN atau Email ini sudah terdaftar.',
+            'nama.regex'        => 'Nama hanya boleh berisi huruf.',
+            'email.required'    => 'NISN wajib diisi.',
+            'email.regex'       => 'NISN harus terdiri dari tepat 10 angka.',
+            'email.unique'      => 'NISN ini sudah terdaftar.',
             'password.required' => 'Password wajib diisi.',
             'password.min'      => 'Password minimal 6 karakter.',
         ]);
