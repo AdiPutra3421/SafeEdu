@@ -617,7 +617,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     return 'Judul laporan hanya boleh berisi huruf dan angka';
                   }
                   if (!_isMeaningfulText(v)) {
-                    return 'Judul harus berupa kata yang jelas, tidak boleh hanya angka acak';
+                    return 'Judul harus berupa kata yang jelas, tidak boleh hanya huruf dan angka acak';
                   }
                   return null;
                 },
@@ -732,7 +732,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     return 'Rincian kronologi hanya boleh berisi huruf dan angka';
                   }
                   if (!_isMeaningfulText(v, minLetterRatio: 0.3)) {
-                    return 'Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya angka acak';
+                    return 'Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya huruf dan angka acak';
                   }
                   return null;
                 },
