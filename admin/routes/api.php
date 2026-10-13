@@ -46,5 +46,5 @@ Route::apiResource('fasilitas', FasilitasController::class);
 Route::apiResource('siswa', UserSiswaController::class);
 Route::get('/konten-sekolah', [KontenSekolahController::class, 'index']);
 Route::post('/konten-sekolah', [KontenSekolahController::class, 'store']);
-Route::put('/konten-sekolah/{id}', [KontenSekolahController::class, 'update']);
+Route::match(['put', 'post'], '/konten-sekolah/{id}', [KontenSekolahController::class, 'update']);
 Route::delete('/konten-sekolah/{id}', [KontenSekolahController::class, 'destroy']);

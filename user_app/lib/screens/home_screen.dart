@@ -440,86 +440,117 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               SizedBox(
-                height: 180,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _newsList.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final news = _newsList[index];
-                    final isEthics = news.category == 'Kode Etik';
-                    return Container(
-                      width: 290,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: isEthics
-                                      ? AppColors.ethicsBg
-                                      : AppColors.facilityBg,
-                                  borderRadius: BorderRadius.circular(6),
+                height: 220,
+                child: _newsList.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Belum ada berita & panduan sekolah',
+                          style: TextStyle(fontSize: 12, color: AppColors.textLight),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _newsList.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final news = _newsList[index];
+                          final isEthics = news.category == 'Kode Etik';
+                          return Container(
+                            width: 270,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.border),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: Text(
-                                  news.category,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: isEthics
-                                        ? AppColors.ethicsText
-                                        : AppColors.facilityText,
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _showNewsDetail(context, news),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        height: 105,
+                                        width: double.infinity,
+                                        child: (news.imageUrl != null && news.imageUrl!.isNotEmpty)
+                                            ? Image.network(
+                                                news.imageUrl!,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => _buildFallbackBanner(news),
+                                              )
+                                            : _buildFallbackBanner(news),
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: isEthics ? AppColors.ethicsBg : AppColors.facilityBg,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      news.category,
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: isEthics ? AppColors.ethicsText : AppColors.facilityText,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    news.date,
+                                                    style: const TextStyle(fontSize: 10.5, color: AppColors.textLight),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                news.title,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.textMain,
+                                                  height: 1.25,
+                                                ),
+                                              ),
+                                              const Spacer(),
+                                              Text(
+                                                news.summary,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                              Text(news.date,
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textLight)),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            news.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textMain,
-                                height: 1.3),
-                          ),
-                          const Spacer(),
-                          Text(
-                            news.summary,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 11, color: AppColors.textMuted),
-                          ),
-                        ],
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
 
               const SizedBox(height: 24),
@@ -673,6 +704,119 @@ class _HomeScreenState extends State<HomeScreen> {
             color: isSelected ? Colors.white : AppColors.textMain,
             fontSize: 12,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackBanner(CampusNews news) {
+    final isPanduan = news.category == 'Panduan';
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isPanduan
+              ? [const Color(0xFFE0E7FF), const Color(0xFFC7D2FE)]
+              : [const Color(0xFFDCFCE7), const Color(0xFFBBF7D0)],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          isPanduan ? Icons.menu_book_rounded : Icons.campaign_rounded,
+          size: 36,
+          color: isPanduan ? const Color(0xFF4338CA) : const Color(0xFF15803D),
+        ),
+      ),
+    );
+  }
+
+  void _showNewsDetail(BuildContext context, CampusNews news) {
+    final isEthics = news.category == 'Kode Etik';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        builder: (_, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(20),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              if (news.imageUrl != null && news.imageUrl!.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    news.imageUrl!,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildFallbackBanner(news),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isEthics ? AppColors.ethicsBg : AppColors.facilityBg,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      news.category,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isEthics ? AppColors.ethicsText : AppColors.facilityText,
+                      ),
+                    ),
+                  ),
+                  Text(news.date, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                news.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textMain,
+                  height: 1.3,
+                ),
+              ),
+              const Divider(height: 24),
+              Text(
+                news.fullContent.isNotEmpty ? news.fullContent : news.summary,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textMain,
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),
