@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/facility_model.dart';
 import '../services/api_config.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import 'auth/login_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -101,6 +102,69 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
     }
   }
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.statusDangerText),
+            SizedBox(width: 10),
+            Text(
+              'Konfirmasi Keluar',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun Teknisi? Anda perlu login kembali untuk menerima dan memproses penugasan.',
+          style: TextStyle(fontSize: 13.5, color: AppColors.textMuted),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Batal',
+                style: TextStyle(color: AppColors.textMain)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.statusDangerText,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ya, Keluar',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      AuthService.instance.logout();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda telah berhasil keluar dari akun Teknisi.'),
+          backgroundColor: AppColors.secondary,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,6 +172,14 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
       appBar: AppBar(
         title: const Text('Status Fasilitas'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded,
+                color: AppColors.statusDangerText),
+            tooltip: 'Keluar dari Akun Teknisi',
+            onPressed: () => _confirmLogout(context),
+          ),
+        ],
       ),
       body: Column(
         children: [

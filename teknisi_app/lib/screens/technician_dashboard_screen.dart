@@ -5,6 +5,7 @@ import '../models/task_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import 'auth/login_screen.dart';
 
 class TechnicianDashboardScreen extends StatefulWidget {
   const TechnicianDashboardScreen({super.key});
@@ -308,91 +309,249 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     );
   }
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.statusDangerText),
+            SizedBox(width: 10),
+            Text(
+              'Konfirmasi Keluar',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun Teknisi? Anda perlu login kembali untuk menerima dan memproses penugasan.',
+          style: TextStyle(fontSize: 13.5, color: AppColors.textMuted),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Batal',
+                style: TextStyle(color: AppColors.textMain)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.statusDangerText,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ya, Keluar',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      AuthService.instance.logout();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda telah berhasil keluar dari akun Teknisi.'),
+          backgroundColor: AppColors.secondary,
+        ),
+      );
+    }
+  }
+
+  void _showProfileSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final nama = AuthService.instance.nama ?? 'Teknisi Lapangan';
+        final email = AuthService.instance.email ?? 'teknisi@safeedu.sch.id';
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.engineering_rounded,
+                        color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          nama,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textMain),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          email,
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Status Operasional',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textMain)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isOnDuty
+                            ? AppColors.statusSuccessBg
+                            : AppColors.subtle,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isOnDuty ? 'On Duty' : 'Off Duty',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isOnDuty
+                              ? AppColors.statusSuccessText
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: const Text('Keluar dari Akun Teknisi'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.statusDangerText,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _confirmLogout(context);
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.accentTeal],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.engineering_rounded,
-                  color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _showProfileSheet(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, AppColors.accentTeal],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.engineering_rounded,
+                      color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 8),
                 const Text(
                   'SafeEdu Teknisi',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
-                Text(
-                  AuthService.instance.nama ?? 'Teknisi Lapangan',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.normal),
-                ),
               ],
             ),
-          ],
+          ),
         ),
         actions: [
-          // On-duty Switch
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color:
-                        isOnDuty ? AppColors.statusSuccessBg : AppColors.subtle,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isOnDuty
-                              ? AppColors.statusSuccessText
-                              : AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        isOnDuty ? 'On Duty' : 'Off Duty',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isOnDuty
-                              ? AppColors.statusSuccessText
-                              : AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch(
-                  value: isOnDuty,
-                  activeThumbColor: AppColors.accentTeal,
-                  onChanged: (v) => setState(() => isOnDuty = v),
-                ),
-              ],
-            ),
-          )
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Switch(
+                value: isOnDuty,
+                activeThumbColor: AppColors.accentTeal,
+                onChanged: (v) => setState(() => isOnDuty = v),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout_rounded,
+                    color: AppColors.statusDangerText),
+                tooltip: 'Keluar dari Akun Teknisi',
+                onPressed: () => _confirmLogout(context),
+              ),
+            ],
+          ),
         ],
       ),
       body: CustomScrollView(
@@ -422,24 +581,43 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Pusat Respon Lapangan',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AuthService.instance.nama ?? 'Teknisi SafeEdu',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Terima instruksi admin & laporkan progres kerja',
-                              style: TextStyle(
-                                  color: Color(0xFF94A3B8), fontSize: 12),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isOnDuty
+                                          ? const Color(0xFF4ADE80)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isOnDuty
+                                        ? 'Status: On Duty (Siap Terima Tugas)'
+                                        : 'Status: Off Duty',
+                                    style: const TextStyle(
+                                        color: Color(0xFF94A3B8), fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                         Container(
                           padding: const EdgeInsets.all(10),

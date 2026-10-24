@@ -3,6 +3,7 @@ import '../models/report_model.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
+import 'auth/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final List<PengaduanModel> userReports;
@@ -238,6 +239,69 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.statusDangerText),
+            SizedBox(width: 10),
+            Text(
+              'Konfirmasi Keluar',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun SafeEdu? Anda perlu login kembali untuk mengakses pelaporan.',
+          style: TextStyle(fontSize: 13.5, color: AppColors.textMuted),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Batal',
+                style: TextStyle(color: AppColors.textMain)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.statusDangerText,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ya, Keluar',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      AuthService.instance.logout();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda telah berhasil keluar dari akun.'),
+          backgroundColor: AppColors.secondary,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -247,8 +311,9 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon:
-                const Icon(Icons.settings_outlined, color: AppColors.textMain),
-            onPressed: () {},
+                const Icon(Icons.logout_rounded, color: AppColors.statusDangerText),
+            tooltip: 'Keluar dari Akun',
+            onPressed: () => _confirmLogout(context),
           ),
         ],
       ),
@@ -260,12 +325,12 @@ class ProfileScreen extends StatelessWidget {
           }
         },
         color: AppColors.primary,
-        child: _buildContent(),
+        child: _buildContent(context),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     final studentName = AuthService.instance.nama?.isNotEmpty == true
         ? AuthService.instance.nama!
         : 'Siswa SafeEdu';
@@ -572,8 +637,65 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 24),
+
+          // Pengaturan Akun & Logout Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Pengaturan Akun',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMain,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Kelola sesi aktif akun siswa Anda di perangkat ini.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.logout_rounded,
+                        size: 18, color: AppColors.statusDangerText),
+                    label: const Text(
+                      'Keluar dari Akun Siswa',
+                      style: TextStyle(
+                        color: AppColors.statusDangerText,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor:
+                          AppColors.statusDangerBg.withValues(alpha: 0.4),
+                      side: const BorderSide(
+                          color: Color(0xFFFCA5A5), width: 1.2),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () => _confirmLogout(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 32),
         ],
       ),
     );

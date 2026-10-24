@@ -58,6 +58,7 @@ class _ReportScreenState extends State<ReportScreen> {
     'Merokok & Vandalisme',
     'Pelanggaran Tata Tertib',
     'Diskriminasi & Intimidasi',
+    'Pelanggaran Privasi',
     'Lainnya (Sertakan Kronologi)',
   ];
 

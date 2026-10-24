@@ -137,4 +137,15 @@ class AuthApiController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Logout API untuk aplikasi mobile (Siswa & Teknisi).
+     */
+    public function logout(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout berhasil.',
+        ]);
+    }
 }

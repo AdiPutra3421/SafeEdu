@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import 'notifikasi_screen.dart';
+import 'auth/login_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -62,6 +63,69 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (context) => const NotifikasiScreen()),
     );
     _fetchUnreadCount();
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.statusDangerText),
+            SizedBox(width: 10),
+            Text(
+              'Konfirmasi Keluar',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun SafeEdu? Anda perlu login kembali untuk mengakses pelaporan.',
+          style: TextStyle(fontSize: 13.5, color: AppColors.textMuted),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Batal',
+                style: TextStyle(color: AppColors.textMain)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.statusDangerText,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ya, Keluar',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      AuthService.instance.logout();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda telah berhasil keluar dari akun.'),
+          backgroundColor: AppColors.secondary,
+        ),
+      );
+    }
   }
 
   Future<void> _fetchFacilities() async {
@@ -307,6 +371,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: AppColors.statusDangerText),
+            tooltip: 'Keluar dari Akun Siswa',
+            onPressed: () => _confirmLogout(context),
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -455,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         separatorBuilder: (_, __) => const SizedBox(width: 12),
                         itemBuilder: (context, index) {
                           final news = _newsList[index];
-                          final isEthics = news.category == 'Kode Etik';
+                          final isPanduan = news.category == 'Panduan';
                           return Container(
                             width: 270,
                             decoration: BoxDecoration(
@@ -502,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                                     decoration: BoxDecoration(
-                                                      color: isEthics ? AppColors.ethicsBg : AppColors.facilityBg,
+                                                      color: isPanduan ? AppColors.ethicsBg : AppColors.facilityBg,
                                                       borderRadius: BorderRadius.circular(6),
                                                     ),
                                                     child: Text(
@@ -510,7 +579,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       style: TextStyle(
                                                         fontSize: 10,
                                                         fontWeight: FontWeight.w700,
-                                                        color: isEthics ? AppColors.ethicsText : AppColors.facilityText,
+                                                        color: isPanduan ? AppColors.ethicsText : AppColors.facilityText,
                                                       ),
                                                     ),
                                                   ),
@@ -733,7 +802,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showNewsDetail(BuildContext context, CampusNews news) {
-    final isEthics = news.category == 'Kode Etik';
+    final isPanduan = news.category == 'Panduan';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -781,7 +850,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isEthics ? AppColors.ethicsBg : AppColors.facilityBg,
+                      color: isPanduan ? AppColors.ethicsBg : AppColors.facilityBg,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -789,7 +858,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: isEthics ? AppColors.ethicsText : AppColors.facilityText,
+                        color: isPanduan ? AppColors.ethicsText : AppColors.facilityText,
                       ),
                     ),
                   ),
