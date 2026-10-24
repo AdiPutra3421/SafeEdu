@@ -28,6 +28,7 @@ admin/bootstrap/cache/*
 admin/.phpunit.result.cache
 admin/node_modules/
 admin/public/hot
+admin/public/storage
 
 # IDE & OS
 .idea/
