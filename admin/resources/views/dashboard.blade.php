@@ -199,35 +199,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Recent Dispatches & Activity -->
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <h3>Aktivitas Laporan Terkini</h3>
-        <p>Laporan yang baru saja masuk dari siswa</p>
-      </div>
-      <a href="{{ route('laporan') }}" class="btn btn-outline btn-sm">Lihat Semua Data</a>
-    </div>
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID Tiket</th>
-            <th>Jenis Laporan</th>
-            <th>Judul & Deskripsi</th>
-            <th>Pelapor</th>
-            <th>Urgensi</th>
-            <th>Status Respon</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="recent-reports-table">
-          <!-- Injected via JavaScript -->
-        </tbody>
-      </table>
-    </div>
-  </div>
 </main>
 @endsection
 
@@ -338,42 +309,6 @@
         document.getElementById('stat-resolved').innerText = selesai;
 
         updateReportTypeChart(fasilitas, etik);
-
-        // Render Aktivitas Terakhir
-        const tbody = document.getElementById('recent-reports-table');
-        const recent = data.slice(0, 5);
-        
-        if (recent.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Belum ada aktivitas</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = recent.map(item => {
-          let badgeClass = 'badge-resolved';
-          if(item.status === 'menunggu') badgeClass = 'badge-ethics'; // Red warning
-          if(item.status === 'diproses') badgeClass = 'badge-pending'; // Yellow
-          
-          let jenisLaporan = item.kategori ? item.kategori.nama : '-';
-          let pelapor = item.is_anonim ? 'Anonim' : (item.pelapor ? item.pelapor.nama : 'Siswa');
-          let urgency = item.kategori?.jenis === 'etik' ? '<span class="badge badge-ethics">Tinggi</span>' : '<span class="badge badge-pending">Normal</span>';
-
-          return `
-            <tr>
-              <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()}</span></td>
-              <td>${jenisLaporan}</td>
-              <td>
-                <div style="font-weight:600; color:var(--text-main);">${item.judul || '-'}</div>
-                <div style="font-size:0.8rem; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">${item.deskripsi || '-'}</div>
-              </td>
-              <td>${pelapor}</td>
-              <td>${urgency}</td>
-              <td><span class="badge ${badgeClass}">${item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span></td>
-              <td>
-                <a href="/laporan/${item.id}" class="btn btn-outline btn-sm">Detail</a>
-              </td>
-            </tr>
-          `;
-        }).join('');
       }
     } catch (err) {
       console.error(err);
