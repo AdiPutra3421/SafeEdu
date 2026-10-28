@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Login Siswa',
+                    'Login User',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary,
@@ -89,12 +89,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'NISN atau Email',
-                      prefixIcon: Icon(Icons.person_outline),
+                      labelText: 'Email',
+                      hintText: 'nama@example.com',
+                      prefixIcon: Icon(Icons.email_outlined),
                       border: OutlineInputBorder(),
                     ),
+                    keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'NISN atau Email tidak boleh kosong';
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Email tidak boleh kosong';
+                      }
                       return null;
                     },
                   ),
@@ -124,7 +128,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     obscureText: _obscurePassword,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Password tidak boleh kosong';
+                      if (value == null || value.isEmpty) {
+                        return 'Password tidak boleh kosong';
+                      }
                       return null;
                     },
                   ),
@@ -176,10 +182,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const RegisterScreen()),
                       );
                     },
-                    child: const Text('Belum punya akun? Daftar sebagai Siswa'),
+                    child: const Text('Belum punya akun? Daftar User'),
                   ),
                 ],
               ),

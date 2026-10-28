@@ -6,7 +6,7 @@ void main() {
   testWidgets('Login screen renders for unauthenticated user', (tester) async {
     await tester.pumpWidget(const SafeEduUserApp());
 
-    expect(find.text('Login Siswa'), findsOneWidget);
+    expect(find.text('Login User'), findsOneWidget);
 
     await tester.pump();
   });

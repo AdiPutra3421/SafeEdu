@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SafeEdu Siswa',
+                Text('SafeEdu',
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 Text('Portal Pelaporan & Keselamatan',
@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Halo, ${AuthService.instance.nama ?? 'Siswa'}',
+                                'Halo, ${AuthService.instance.nama ?? 'User'}',
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -356,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'NISN: ${AuthService.instance.nisn ?? AuthService.instance.email ?? '-'} • ${AuthService.instance.kelas ?? 'XII RPL 1'}',
+                                AuthService.instance.email ?? '-',
                                 style: const TextStyle(
                                     color: Color(0xFFBFDBFE), fontSize: 12),
                               ),

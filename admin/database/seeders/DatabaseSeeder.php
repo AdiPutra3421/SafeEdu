@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::create([
-            'nama' => 'Siswa User',
+            'nama' => 'User SafeEdu',
             'email' => 'user',
             'password' => bcrypt('user'),
             'role' => 'siswa'

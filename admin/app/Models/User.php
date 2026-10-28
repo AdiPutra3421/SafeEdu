@@ -14,8 +14,6 @@ class User extends Authenticatable
     protected $fillable = [
         'nama',
         'email',
-        'nisn',
-        'kelas',
         'password',
         'role',
     ];
@@ -25,30 +23,13 @@ class User extends Authenticatable
         return $this->nama;
     }
 
-    public function getNisnAttribute($value)
-    {
-        if (!empty($value)) {
-            return $value;
-        }
-        if (preg_match('/^[0-9]{10}$/', (string)$this->attributes['email'] ?? '')) {
-            return $this->attributes['email'];
-        }
-        return null;
-    }
-
-    public function getKelasAttribute($value)
-    {
-        return $value ?: ($this->role === 'siswa' ? 'XII Rekayasa Perangkat Lunak 1' : null);
-    }
-
     public function getDisplayEmailAttribute()
     {
         $rawEmail = (string)($this->attributes['email'] ?? '');
         if (str_contains($rawEmail, '@')) {
             return $rawEmail;
         }
-        $identifier = $this->nisn ?: $rawEmail;
-        return $identifier ? ($identifier . '@safeedu.sch.id') : '-';
+        return $rawEmail ? ($rawEmail . '@safeedu.sch.id') : '-';
     }
 
     protected $hidden = [
