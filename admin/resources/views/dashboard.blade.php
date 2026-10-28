@@ -10,10 +10,6 @@
     <p>Ikhtisar penerimaan laporan fasilitas, pelanggaran kode etik, dan status respon penanganan.</p>
   </div>
   <div class="topbar-actions">
-    <div class="system-status-indicator">
-      <span class="status-dot-pulse"></span>
-      Sistem Aktif & Terhubung
-    </div>
     <a href="{{ route('laporan') }}" class="btn btn-primary btn-sm">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="12" y1="5" x2="12" y2="19"/>
