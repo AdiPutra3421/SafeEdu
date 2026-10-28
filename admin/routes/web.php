@@ -34,6 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/konten-sekolah', function () {
         return view('konten-sekolah');
     })->name('konten-sekolah');
+
+    Route::get('/teknisi', function () {
+        return view('teknisi');
+    })->name('teknisi');
 });
 
 Route::middleware('auth')->group(function () {

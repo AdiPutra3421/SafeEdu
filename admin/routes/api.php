@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\NotifikasiController;
 use App\Http\Controllers\Api\FasilitasController;
 use App\Http\Controllers\Api\KontenSekolahController;
 use App\Http\Controllers\Api\UserSiswaController;
+use App\Http\Controllers\Api\UserTeknisiController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -45,6 +46,7 @@ Route::prefix('penugasan')->group(function () {
 
 // API routes for Web Admin
 Route::apiResource('fasilitas', FasilitasController::class);
+Route::apiResource('teknisi', UserTeknisiController::class);
 Route::apiResource('siswa', UserSiswaController::class);
 Route::get('/konten-sekolah', [KontenSekolahController::class, 'index']);
 Route::post('/konten-sekolah', [KontenSekolahController::class, 'store']);
