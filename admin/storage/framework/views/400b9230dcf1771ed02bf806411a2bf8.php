@@ -17,6 +17,7 @@
       <table class="data-table">
         <thead>
           <tr>
+            <th style="width:70px;">Gambar</th>
             <th>Jenis</th>
             <th>Judul</th>
             <th>Ringkasan</th>
@@ -40,6 +41,7 @@
     <div class="modal-body">
       <form id="contentForm" onsubmit="handleContentSubmit(event)">
         <input type="hidden" id="content-id">
+        <input type="hidden" id="remove-gambar" value="0">
         <div class="form-group">
           <label class="form-label" for="content-type">Jenis Konten *</label>
           <select id="content-type" class="form-control" required>
@@ -50,6 +52,14 @@
         <div class="form-group">
           <label class="form-label" for="content-title">Judul *</label>
           <input type="text" id="content-title" class="form-control" maxlength="180" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="content-image">Gambar / Banner (Opsional)</label>
+          <input type="file" id="content-image" class="form-control" accept="image/*" onchange="handleImagePreview(event)">
+          <div id="image-preview-wrapper" style="margin-top: 10px; display: none; align-items: center; gap: 12px;">
+            <img id="image-preview-img" src="" alt="Preview" style="width: 100px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
+            <button type="button" class="btn btn-outline btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2;" onclick="clearSelectedImage()">Hapus Gambar</button>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="content-summary">Ringkasan</label>
@@ -64,7 +74,7 @@
         </label>
         <div class="modal-footer" style="margin-top:20px; padding:12px 0 0 0;">
           <button type="button" class="btn btn-outline" onclick="closeContentModal()">Batal</button>
-          <button type="submit" class="btn btn-primary">Simpan Konten</button>
+          <button type="submit" class="btn btn-primary" id="save-content-btn">Simpan Konten</button>
         </div>
       </form>
     </div>
@@ -89,11 +99,17 @@
   function renderContent() {
     const tbody = document.getElementById('content-table-body');
     if (!contentData.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">Belum ada konten</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#94a3b8">Belum ada konten</td></tr>';
       return;
     }
     tbody.innerHTML = contentData.map(item => `
       <tr>
+        <td>
+          ${item.gambar_url 
+            ? `<img src="${item.gambar_url}" alt="${item.judul}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;">` 
+            : `<div style="width:52px;height:40px;border-radius:6px;background:#f1f5f9;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.65rem;">No Img</div>`
+          }
+        </td>
         <td><span class="badge ${item.tipe === 'berita' ? 'badge-facility' : 'badge-ethics'}">${item.tipe === 'berita' ? 'Berita' : 'Panduan'}</span></td>
         <td style="font-weight:600;color:var(--text-main)">${item.judul}</td>
         <td style="font-size:.82rem;color:var(--text-muted)">${item.ringkasan || '-'}</td>
@@ -106,9 +122,32 @@
       </tr>`).join('');
   }
 
+  function handleImagePreview(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('image-preview-img').src = e.target.result;
+        document.getElementById('image-preview-wrapper').style.display = 'flex';
+        document.getElementById('remove-gambar').value = '0';
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function clearSelectedImage() {
+    document.getElementById('content-image').value = '';
+    document.getElementById('image-preview-img').src = '';
+    document.getElementById('image-preview-wrapper').style.display = 'none';
+    document.getElementById('remove-gambar').value = '1';
+  }
+
   function openContentModal(id = null) {
     document.getElementById('contentForm').reset();
     document.getElementById('content-active').checked = true;
+    document.getElementById('remove-gambar').value = '0';
+    document.getElementById('content-image').value = '';
+
     if (id) {
       const item = contentData.find(content => content.id === id);
       document.getElementById('content-modal-title').innerText = 'Edit Konten';
@@ -118,9 +157,17 @@
       document.getElementById('content-summary').value = item.ringkasan || '';
       document.getElementById('content-body').value = item.isi;
       document.getElementById('content-active').checked = !!item.aktif;
+
+      if (item.gambar_url) {
+        document.getElementById('image-preview-img').src = item.gambar_url;
+        document.getElementById('image-preview-wrapper').style.display = 'flex';
+      } else {
+        document.getElementById('image-preview-wrapper').style.display = 'none';
+      }
     } else {
       document.getElementById('content-modal-title').innerText = 'Tambah Konten';
       document.getElementById('content-id').value = '';
+      document.getElementById('image-preview-wrapper').style.display = 'none';
     }
     document.getElementById('contentModal').classList.add('active');
   }
@@ -132,25 +179,46 @@
   async function handleContentSubmit(event) {
     event.preventDefault();
     const id = document.getElementById('content-id').value;
-    const payload = {
-      tipe: document.getElementById('content-type').value,
-      judul: document.getElementById('content-title').value,
-      ringkasan: document.getElementById('content-summary').value,
-      isi: document.getElementById('content-body').value,
-      aktif: document.getElementById('content-active').checked
-    };
-    const response = await fetch(id ? `/api/konten-sekolah/${id}` : '/api/konten-sekolah', {
-      method: id ? 'PUT' : 'POST',
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const json = await response.json();
-    if (!json.success) {
-      alert('Gagal menyimpan: ' + JSON.stringify(json.errors || json.message));
-      return;
+    const submitBtn = document.getElementById('save-content-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Menyimpan...';
+
+    const formData = new FormData();
+    formData.append('tipe', document.getElementById('content-type').value);
+    formData.append('judul', document.getElementById('content-title').value);
+    formData.append('ringkasan', document.getElementById('content-summary').value);
+    formData.append('isi', document.getElementById('content-body').value);
+    formData.append('aktif', document.getElementById('content-active').checked ? '1' : '0');
+
+    if (document.getElementById('remove-gambar').value === '1') {
+      formData.append('remove_gambar', '1');
     }
-    closeContentModal();
-    await fetchContent();
+
+    const fileInput = document.getElementById('content-image');
+    if (fileInput.files.length > 0) {
+      formData.append('gambar', fileInput.files[0]);
+    }
+
+    try {
+      const url = id ? `/api/konten-sekolah/${id}` : '/api/konten-sekolah';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: formData
+      });
+      const json = await response.json();
+      if (!json.success) {
+        alert('Gagal menyimpan: ' + JSON.stringify(json.errors || json.message));
+        return;
+      }
+      closeContentModal();
+      await fetchContent();
+    } catch (e) {
+      alert('Terjadi kesalahan koneksi saat menyimpan konten.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Simpan Konten';
+    }
   }
 
   async function deleteContent(id) {

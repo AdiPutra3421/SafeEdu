@@ -18,6 +18,7 @@ Route::get('/user', function (Request $request) {
 Route::post('/auth/login', [AuthApiController::class, 'login']);
 Route::post('/auth/register', [AuthApiController::class, 'register']);
 Route::get('/auth/me', [AuthApiController::class, 'me']);
+Route::match(['post', 'put'], '/auth/profile', [AuthApiController::class, 'updateProfile']);
 Route::post('/auth/logout', [AuthApiController::class, 'logout']);
 
 // API routes for Siswa (User App)

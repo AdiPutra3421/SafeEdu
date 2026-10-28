@@ -139,6 +139,72 @@ class AuthApiController extends Controller
     }
 
     /**
+     * Update profil siswa dari user_app.
+     */
+    public function updateProfile(Request $request)
+    {
+        $userId = $request->input('user_id', $request->query('user_id'));
+        $user = User::where('id', $userId)->where('role', 'siswa')->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa tidak ditemukan.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'nama'             => ['required', 'string', 'max:100', 'regex:/^[\pL\s\.\,\'\-]+$/u'],
+            'kelas'            => 'nullable|string|max:100',
+            'current_password' => 'nullable|string',
+            'password'         => 'nullable|string|min:6',
+        ], [
+            'nama.required'    => 'Nama lengkap wajib diisi.',
+            'nama.regex'       => 'Nama hanya boleh berisi huruf dan tanda baca umum.',
+            'password.min'     => 'Password baru minimal 6 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        if ($request->filled('password')) {
+            if ($request->filled('current_password')) {
+                if (!Hash::check($request->current_password, $user->password)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kata sandi saat ini tidak sesuai.',
+                        'errors'  => ['current_password' => ['Kata sandi saat ini tidak sesuai.']],
+                    ], 422);
+                }
+            }
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->nama = trim($request->nama);
+        if ($request->has('kelas')) {
+            $user->kelas = trim($request->kelas);
+        }
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil diperbarui.',
+            'data'    => [
+                'id'    => $user->id,
+                'nama'  => $user->nama,
+                'email' => $user->display_email,
+                'nisn'  => $user->nisn,
+                'kelas' => $user->kelas,
+                'role'  => $user->role,
+            ],
+        ]);
+    }
+
+    /**
      * Logout API untuk aplikasi mobile (Siswa & Teknisi).
      */
     public function logout(Request $request)

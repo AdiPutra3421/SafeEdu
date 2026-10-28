@@ -119,7 +119,76 @@ class AuthService {
     }
   }
 
+  /// Memperbarui profil siswa ke backend (nama, kelas, dan kata sandi opsional)
+  Future<String?> updateProfile({
+    required String nama,
+    String? kelas,
+    String? currentPassword,
+    String? newPassword,
+  }) async {
+    if (userId == null) {
+      return 'Sesi login tidak valid. Silakan login kembali.';
+    }
+
+    try {
+      final body = <String, dynamic>{
+        'user_id': userId,
+        'nama': nama.trim(),
+      };
+      if (kelas != null && kelas.trim().isNotEmpty) {
+        body['kelas'] = kelas.trim();
+      }
+      if (currentPassword != null && currentPassword.isNotEmpty) {
+        body['current_password'] = currentPassword;
+      }
+      if (newPassword != null && newPassword.isNotEmpty) {
+        body['password'] = newPassword;
+      }
+
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(body),
+      );
+
+      final data = json.decode(res.body);
+
+      if (res.statusCode != 200 || data['success'] != true) {
+        if (data['errors'] != null && data['errors'] is Map) {
+          final firstError = (data['errors'] as Map).values.first;
+          if (firstError is List && firstError.isNotEmpty) {
+            return firstError.first.toString();
+          }
+          return firstError.toString();
+        }
+        return data['message'] ?? 'Gagal memperbarui profil.';
+      }
+
+      final user = data['data'];
+      this.nama = user['nama'] ?? this.nama;
+      this.email = user['email'] ?? this.email;
+      this.nisn = user['nisn']?.toString() ?? this.nisn;
+      this.kelas = user['kelas']?.toString() ?? this.kelas;
+      this.role = user['role'] ?? this.role;
+      return null;
+    } catch (e) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+    }
+  }
+
   void logout() {
+    if (userId != null) {
+      try {
+        http.post(
+          Uri.parse('${ApiConfig.baseUrl}/api/auth/logout'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({'user_id': userId}),
+        );
+      } catch (_) {}
+    }
     userId = null;
     nama = null;
     email = null;
