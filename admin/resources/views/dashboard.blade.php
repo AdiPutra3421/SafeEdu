@@ -176,12 +176,8 @@
         </div>
       </div>
       <div class="card-body">
-        <div class="donut-chart-wrap">
-          <svg class="donut-svg" viewBox="0 0 160 160">
-            <circle class="donut-circle-bg" cx="80" cy="80" r="60"/>
-            <circle class="donut-circle-1" cx="80" cy="80" r="60" id="donut-slice-facility"/>
-            <circle class="donut-circle-2" cx="80" cy="80" r="60" id="donut-slice-ethics"/>
-          </svg>
+        <div class="donut-chart-wrap" style="height: 210px;">
+          <canvas id="report-type-chart" aria-label="Rasio jenis laporan"></canvas>
         </div>
 
         <div class="donut-legend">
@@ -236,8 +232,69 @@
 @endsection
 
 @section('scripts')
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
+  let reportTypeChart = null;
+
+  function initReportTypeChart() {
+    const canvas = document.getElementById('report-type-chart');
+    if (!canvas || typeof Chart === 'undefined') {
+      return;
+    }
+
+    reportTypeChart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Fasilitas Sekolah', 'Pelanggaran Kode Etik'],
+        datasets: [{
+          data: [0, 0],
+          backgroundColor: ['#2563eb', '#f43f5e'],
+          borderWidth: 0,
+          hoverOffset: 6,
+          cutout: '68%'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 500
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label(context) {
+                const total = context.dataset.data.reduce((sum, value) => sum + Number(value || 0), 0);
+                const value = Number(context.parsed || 0);
+                const pct = total === 0 ? 0 : Math.round((value / total) * 100);
+                return `${context.label}: ${value} Laporan (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function updateReportTypeChart(fasilitas, etik) {
+    if (!reportTypeChart) {
+      initReportTypeChart();
+    }
+
+    if (!reportTypeChart) {
+      return;
+    }
+
+    reportTypeChart.data.datasets[0].data = [fasilitas, etik];
+    reportTypeChart.update();
+
+    document.getElementById('legend-facility-count').innerText = fasilitas + ' Laporan';
+    document.getElementById('legend-ethics-count').innerText = etik + ' Laporan';
+  }
+
   async function fetchDashboard() {
     try {
       const response = await fetch('/api/pengaduan');
@@ -280,24 +337,7 @@
         document.getElementById('stat-dispatched').innerText = proses;
         document.getElementById('stat-resolved').innerText = selesai;
 
-        // Pie Chart
-        const circumference = 2 * Math.PI * 60; // radius = 60
-        if (total === 0) {
-            document.getElementById('donut-slice-facility').style.strokeDasharray = `0 ${circumference}`;
-            document.getElementById('donut-slice-ethics').style.strokeDasharray = `0 ${circumference}`;
-        } else {
-            const fasilDash = (fasilPercent / 100) * circumference;
-            const etikDash = (etikPercent / 100) * circumference;
-            
-            document.getElementById('donut-slice-facility').style.strokeDasharray = `${fasilDash} ${circumference}`;
-            document.getElementById('donut-slice-facility').style.strokeDashoffset = `0`;
-            
-            document.getElementById('donut-slice-ethics').style.strokeDasharray = `${etikDash} ${circumference}`;
-            document.getElementById('donut-slice-ethics').style.strokeDashoffset = `-${fasilDash}`;
-        }
-
-        document.getElementById('legend-facility-count').innerText = fasilitas + ' Laporan';
-        document.getElementById('legend-ethics-count').innerText = etik + ' Laporan';
+        updateReportTypeChart(fasilitas, etik);
 
         // Render Aktivitas Terakhir
         const tbody = document.getElementById('recent-reports-table');
@@ -340,7 +380,10 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', fetchDashboard);
+  document.addEventListener('DOMContentLoaded', () => {
+    initReportTypeChart();
+    fetchDashboard();
+  });
 </script>
 
 @endsection
