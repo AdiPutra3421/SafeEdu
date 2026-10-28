@@ -43,7 +43,7 @@
             <polyline points="10 9 9 9 8 9"/>
           </svg>
           Laporan User
-          <span class="nav-badge" id="sidebar-pending-badge">2</span>
+          <span class="nav-badge" id="sidebar-pending-badge"></span>
         </a>
         <a href="<?php echo e(route('konfirmasi')); ?>" class="nav-item <?php echo e(request()->routeIs('konfirmasi') ? 'active' : ''); ?>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -79,16 +79,16 @@
         </a>
 
         <div class="nav-label" style="margin-top: 20px;">Akun</div>
-        <form method="POST" action="<?php echo e(route('logout')); ?>">
+        <form method="POST" action="<?php echo e(route('logout')); ?>" id="admin-logout-form">
             <?php echo csrf_field(); ?>
-            <a href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="nav-item text-danger">
+            <button type="submit" class="nav-item nav-logout-btn" onclick="return confirm('Apakah Anda yakin ingin keluar dari sesi Admin?')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>
                 <line x1="21" y1="12" x2="9" y2="12"></line>
               </svg>
-              Logout
-            </a>
+              Keluar (Logout)
+            </button>
         </form>
       </nav>
 

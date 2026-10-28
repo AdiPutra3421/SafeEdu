@@ -17,6 +17,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('laporan', compact('teknisi'));
     })->name('laporan');
 
+    Route::get('/laporan/{id}', function ($id) {
+        $teknisi = \App\Models\User::where('role', 'teknisi')->get();
+        $pengaduan = \App\Models\Pengaduan::find($id);
+        return view('laporan-detail', compact('teknisi', 'pengaduan'));
+    })->name('laporan');
+
     Route::get('/konfirmasi', function () {
         return view('konfirmasi');
     })->name('konfirmasi');

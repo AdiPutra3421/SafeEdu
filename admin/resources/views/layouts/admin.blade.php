@@ -43,7 +43,7 @@
             <polyline points="10 9 9 9 8 9"/>
           </svg>
           Laporan User
-          <span class="nav-badge" id="sidebar-pending-badge">2</span>
+          <span class="nav-badge" id="sidebar-pending-badge"></span>
         </a>
         <a href="{{ route('konfirmasi') }}" class="nav-item {{ request()->routeIs('konfirmasi') ? 'active' : '' }}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
