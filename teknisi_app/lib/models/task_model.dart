@@ -44,7 +44,7 @@ class PenugasanModel {
       judulLaporan: pengaduan['judul'] ?? 'Tanpa Judul',
       lokasi: pengaduan['lokasi_kejadian'] ?? 'Tidak diketahui',
       deskripsiLaporan: pengaduan['deskripsi'] ?? '',
-      pelapor: (pengaduan['pelapor'] != null) ? pengaduan['pelapor']['nama'] : 'Siswa',
+      pelapor: (pengaduan['pelapor'] != null) ? pengaduan['pelapor']['nama'] : 'User',
       keteranganTeknisi: logs.isNotEmpty ? logs.last['catatan_teknisi'] : null,
       tanggalUpdate: logs.isNotEmpty ? logs.last['created_at'] : null,
       tanggalPenugasan: json['created_at'] ?? '',

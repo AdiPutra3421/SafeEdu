@@ -13,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nisnController = TextEditingController();
+  final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final error = await AuthService.instance.register(
       nama: _nameController.text.trim(),
-      email: _nisnController.text.trim(),
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -72,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Pendaftaran Siswa',
+                    'Pendaftaran User',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary,
@@ -89,25 +89,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 48),
                   TextFormField(
-                    controller: _nisnController,
+                    controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'NISN (10 Digit Angka)',
-                      prefixIcon: Icon(Icons.badge_outlined),
+                      labelText: 'Email',
+                      hintText: 'nama@example.com',
+                      prefixIcon: Icon(Icons.email_outlined),
                       border: OutlineInputBorder(),
-                      helperText: 'Tepat 10 angka digit',
                     ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                    ],
+                    keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'NISN tidak boleh kosong';
+                        return 'Email tidak boleh kosong';
                       }
                       final trimmed = value.trim();
-                      if (!RegExp(r'^\d{10}$').hasMatch(trimmed)) {
-                        return 'NISN harus terdiri dari 10 angka';
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(trimmed)) {
+                        return 'Format email tidak valid';
                       }
                       return null;
                     },
@@ -161,8 +158,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     obscureText: _obscurePassword,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Password tidak boleh kosong';
-                      if (value.length < 6) return 'Password minimal 6 karakter';
+                      if (value == null || value.isEmpty) {
+                        return 'Password tidak boleh kosong';
+                      }
+                      if (value.length < 6) {
+                        return 'Password minimal 6 karakter';
+                      }
                       return null;
                     },
                   ),
@@ -223,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nisnController.dispose();
+    _emailController.dispose();
     _nameController.dispose();
     _passwordController.dispose();
     super.dispose();

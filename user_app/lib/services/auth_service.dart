@@ -10,8 +10,6 @@ class AuthService {
   int? userId;
   String? nama;
   String? email;
-  String? nisn;
-  String? kelas;
   String? role;
 
   bool get isLoggedIn => userId != null;
@@ -42,8 +40,6 @@ class AuthService {
       userId = user['id'];
       nama = user['nama'];
       this.email = user['email'];
-      nisn = user['nisn']?.toString() ?? user['email']?.toString();
-      kelas = user['kelas']?.toString() ?? 'XII Rekayasa Perangkat Lunak 1';
       role = user['role'];
       return null;
     } catch (e) {
@@ -64,8 +60,6 @@ class AuthService {
           final user = data['data'];
           nama = user['nama'] ?? nama;
           email = user['email'] ?? email;
-          nisn = user['nisn']?.toString() ?? nisn;
-          kelas = user['kelas']?.toString() ?? kelas;
           role = user['role'] ?? role;
         }
       }
@@ -110,8 +104,6 @@ class AuthService {
       userId = user['id'];
       this.nama = user['nama'];
       this.email = user['email'];
-      nisn = user['nisn']?.toString() ?? user['email']?.toString();
-      kelas = user['kelas']?.toString() ?? 'XII Rekayasa Perangkat Lunak 1';
       role = user['role'];
       return null;
     } catch (e) {
@@ -119,10 +111,9 @@ class AuthService {
     }
   }
 
-  /// Memperbarui profil siswa ke backend (nama, kelas, dan kata sandi opsional)
+  /// Memperbarui profil user ke backend (nama dan kata sandi opsional)
   Future<String?> updateProfile({
     required String nama,
-    String? kelas,
     String? currentPassword,
     String? newPassword,
   }) async {
@@ -135,9 +126,6 @@ class AuthService {
         'user_id': userId,
         'nama': nama.trim(),
       };
-      if (kelas != null && kelas.trim().isNotEmpty) {
-        body['kelas'] = kelas.trim();
-      }
       if (currentPassword != null && currentPassword.isNotEmpty) {
         body['current_password'] = currentPassword;
       }
@@ -170,8 +158,6 @@ class AuthService {
       final user = data['data'];
       this.nama = user['nama'] ?? this.nama;
       this.email = user['email'] ?? this.email;
-      this.nisn = user['nisn']?.toString() ?? this.nisn;
-      this.kelas = user['kelas']?.toString() ?? this.kelas;
       this.role = user['role'] ?? this.role;
       return null;
     } catch (e) {
@@ -192,8 +178,6 @@ class AuthService {
     userId = null;
     nama = null;
     email = null;
-    nisn = null;
-    kelas = null;
     role = null;
   }
 }

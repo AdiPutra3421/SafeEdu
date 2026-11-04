@@ -268,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Profil Siswa & Riwayat'),
+        title: const Text('Profil & Riwayat'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.textMain),
@@ -294,19 +294,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildContent(BuildContext context) {
-    final studentName = AuthService.instance.nama?.isNotEmpty == true
+    final userName = AuthService.instance.nama?.isNotEmpty == true
         ? AuthService.instance.nama!
-        : 'Siswa SafeEdu';
-    final nisn = AuthService.instance.nisn ?? AuthService.instance.email ?? '-';
-    final kelas = AuthService.instance.kelas ?? 'XII Rekayasa Perangkat Lunak 1';
-    final email = AuthService.instance.email ?? '$nisn@safeedu.sch.id';
+        : 'User SafeEdu';
+    final email = AuthService.instance.email ?? '-';
 
-    final nameParts = studentName.trim().split(RegExp(r'\s+'));
+    final nameParts = userName.trim().split(RegExp(r'\s+'));
     final initials = nameParts.length > 1
         ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
         : (nameParts.isNotEmpty && nameParts[0].isNotEmpty
             ? nameParts[0][0].toUpperCase()
-            : 'SW');
+            : 'US');
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -314,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Student ID Card
+          // User Profile Card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -364,7 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  studentName,
+                                  userName,
                                   style: const TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
@@ -382,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Text(
-                                  'Siswa Aktif',
+                                  'User Aktif',
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
@@ -392,19 +390,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text('NISN: $nisn',
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.textMuted)),
-                          const SizedBox(height: 2),
-                          Text(kelas,
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.secondaryMuted)),
-                          const SizedBox(height: 2),
                           Text(email,
                               style: const TextStyle(
-                                  fontSize: 11, color: AppColors.textLight)),
+                                  fontSize: 12, color: AppColors.textMuted)),
                         ],
                       ),
                     ),

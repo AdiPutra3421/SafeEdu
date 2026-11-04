@@ -1,10 +1,12 @@
+
+
 <?php $__env->startSection('title', 'Berita & Panduan Sekolah'); ?>
 
 <?php $__env->startSection('content'); ?>
 <header class="topbar">
   <div class="page-title">
     <h2>Berita & Panduan Sekolah</h2>
-    <p>Kelola informasi dan panduan yang tampil di beranda aplikasi siswa.</p>
+    <p>Kelola informasi dan panduan yang tampil di beranda aplikasi user.</p>
   </div>
   <div class="topbar-actions">
     <button class="btn btn-primary" onclick="openContentModal()">+ Tambah Konten</button>
@@ -70,7 +72,7 @@
           <textarea id="content-body" class="form-control" rows="7" required></textarea>
         </div>
         <label style="display:flex; gap:8px; align-items:center; font-size:.85rem;">
-          <input type="checkbox" id="content-active" checked> Tampilkan di aplikasi siswa
+          <input type="checkbox" id="content-active" checked> Tampilkan di aplikasi user
         </label>
         <div class="modal-footer" style="margin-top:20px; padding:12px 0 0 0;">
           <button type="button" class="btn btn-outline" onclick="closeContentModal()">Batal</button>

@@ -231,7 +231,7 @@ class _ReportScreenState extends State<ReportScreen> {
                               : 'Kategori: $_selectedCategory',
                           style: const TextStyle(fontSize: 12)),
                       Text(
-                          'Pelapor: ${_isAnonymous ? 'Anonim (Dirahasiakan)' : 'Budi Siswa (Terbuka)'}',
+                          'Pelapor: ${_isAnonymous ? 'Anonim (Dirahasiakan)' : "${AuthService.instance.nama ?? 'User'} (Terbuka)"}',
                           style: const TextStyle(fontSize: 12)),
                     ],
                   ),
@@ -829,7 +829,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                 style: TextStyle(
                                     fontSize: 13, fontWeight: FontWeight.w600)),
                             Text(
-                                'Identitas nama & kelas disembunyikan dari publik',
+                                'Identitas nama disembunyikan dari publik',
                                 style: TextStyle(
                                     fontSize: 11, color: AppColors.textMuted)),
                           ],

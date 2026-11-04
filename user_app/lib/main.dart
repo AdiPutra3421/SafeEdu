@@ -20,7 +20,7 @@ class SafeEduUserApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SafeEdu Siswa',
+      title: 'SafeEdu',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const LoginScreen(),
@@ -114,7 +114,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline_rounded),
             activeIcon: Icon(Icons.person_rounded),
-            label: 'Profil Siswa',
+            label: 'Profil',
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import 'auth/login_screen.dart';
@@ -14,7 +15,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _namaController;
-  late TextEditingController _kelasController;
   late TextEditingController _currentPasswordController;
   late TextEditingController _newPasswordController;
   late TextEditingController _confirmPasswordController;
@@ -27,27 +27,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool _isLoading = false;
   bool _hasChanges = false;
 
-  final List<String> _commonClasses = [
-    'X Rekayasa Perangkat Lunak 1',
-    'X Rekayasa Perangkat Lunak 2',
-    'XI Rekayasa Perangkat Lunak 1',
-    'XI Rekayasa Perangkat Lunak 2',
-    'XII Rekayasa Perangkat Lunak 1',
-    'XII Rekayasa Perangkat Lunak 2',
-    'X Teknik Komputer & Jaringan 1',
-    'XI Teknik Komputer & Jaringan 1',
-    'XII Teknik Komputer & Jaringan 1',
-    'X Multimedia 1',
-    'XI Multimedia 1',
-    'XII Multimedia 1',
-  ];
-
   @override
   void initState() {
     super.initState();
     final auth = AuthService.instance;
     _namaController = TextEditingController(text: auth.nama ?? '');
-    _kelasController = TextEditingController(text: auth.kelas ?? '');
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
@@ -56,7 +40,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void dispose() {
     _namaController.dispose();
-    _kelasController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -91,7 +74,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     final error = await AuthService.instance.updateProfile(
       nama: _namaController.text.trim(),
-      kelas: _kelasController.text.trim(),
       currentPassword: _isChangingPassword && _currentPasswordController.text.isNotEmpty
           ? _currentPasswordController.text
           : null,
@@ -191,113 +173,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
-  void _showClassPickerDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.65,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Pilih Rombongan Belajar / Kelas',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMain,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Pilih kelas resmi yang sesuai dengan data Dapodik Anda.',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: _commonClasses.length,
-                  separatorBuilder: (_, __) =>
-                      const Divider(height: 1, color: AppColors.border),
-                  itemBuilder: (context, index) {
-                    final item = _commonClasses[index];
-                    final isSelected = _kelasController.text == item;
-                    return ListTile(
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      leading: Icon(
-                        isSelected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textLight,
-                        size: 20,
-                      ),
-                      title: Text(
-                        item,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textMain,
-                        ),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          _kelasController.text = item;
-                        });
-                        Navigator.pop(ctx);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = AuthService.instance;
-    final studentName = auth.nama?.isNotEmpty == true ? auth.nama! : 'Siswa SafeEdu';
-    final nisn = auth.nisn ?? auth.email ?? '-';
-    final email = auth.email ?? '$nisn@safeedu.sch.id';
+    final userName = auth.nama?.isNotEmpty == true ? auth.nama! : 'User SafeEdu';
+    final email = auth.email ?? '-';
 
-    final nameParts = studentName.trim().split(RegExp(r'\s+'));
+    final nameParts = userName.trim().split(RegExp(r'\s+'));
     final initials = nameParts.length > 1
         ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
         : (nameParts.isNotEmpty && nameParts[0].isNotEmpty
             ? nameParts[0][0].toUpperCase()
-            : 'SW');
+            : 'US');
 
     return PopScope(
       canPop: true,
@@ -363,7 +250,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              studentName,
+                              userName,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -383,7 +270,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Text(
-                                    'Siswa Aktif',
+                                    'User Aktif',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
@@ -392,12 +279,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'NISN: $nisn',
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
-                                    color: AppColors.textMuted,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Text(
+                                    email,
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -411,10 +302,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
                 const SizedBox(height: 24),
 
-                // Section 1: Informasi Biodata Siswa
+                // Section 1: Informasi Biodata User
                 _buildSectionHeader(
                   icon: Icons.person_outline_rounded,
-                  title: 'Data Diri Siswa',
+                  title: 'Data Diri User',
                   subtitle: 'Informasi identitas Anda yang terdaftar pada sistem',
                 ),
                 const SizedBox(height: 12),
@@ -445,84 +336,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         decoration: const InputDecoration(
                           hintText: 'Masukkan nama lengkap',
                           prefixIcon: Icon(Icons.person_rounded, size: 20),
+                          helperText: 'Hanya boleh huruf',
                         ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                        ],
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Nama lengkap tidak boleh kosong.';
                           }
-                          if (!RegExp(r"^[\p{L}\s\.\,\'\-]+$", unicode: true)
-                              .hasMatch(value.trim())) {
-                            return 'Nama hanya boleh berupa huruf dan spasi.';
+                          if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value.trim())) {
+                            return 'Nama hanya boleh berupa huruf.';
                           }
                           return null;
                         },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Kelas Field
-                      const Text(
-                        'Kelas / Rombongan Belajar',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMain,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _kelasController,
-                        decoration: InputDecoration(
-                          hintText: 'Pilih atau ketik kelas',
-                          prefixIcon: const Icon(Icons.school_rounded, size: 20),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.arrow_drop_down_circle_outlined,
-                                size: 20, color: AppColors.primary),
-                            tooltip: 'Pilih dari daftar kelas',
-                            onPressed: _showClassPickerDialog,
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Kelas tidak boleh kosong.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // NISN (Read-Only)
-                      const Row(
-                        children: [
-                          Text(
-                            'NISN (Nomor Induk Siswa Nasional)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textMain,
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          Icon(Icons.lock_outline_rounded,
-                              size: 14, color: AppColors.textMuted),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        initialValue: nisn,
-                        readOnly: true,
-                        style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600),
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.badge_outlined,
-                              size: 20, color: AppColors.textLight),
-                          fillColor: AppColors.subtle,
-                          filled: true,
-                          helperText:
-                              'NISN diverifikasi otomatis melalui data sekolah.',
-                          helperStyle: const TextStyle(
-                              fontSize: 11, color: AppColors.textLight),
-                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -549,8 +376,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         style: const TextStyle(
                             color: AppColors.textMuted,
                             fontWeight: FontWeight.w500),
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.alternate_email_rounded,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.alternate_email_rounded,
                               size: 20, color: AppColors.textLight),
                           fillColor: AppColors.subtle,
                           filled: true,
@@ -772,9 +599,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               Text(
                                 'Simpan Perubahan',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14),
                               ),
                             ],
                           ),
@@ -783,10 +609,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
                 const SizedBox(height: 28),
 
-                // Section 3: Sesi Akun & Logout (DITARUH DI SINI)
+                // Section 3: Sesi Akun & Logout
                 _buildSectionHeader(
                   icon: Icons.manage_accounts_rounded,
-                  title: 'Sesi Akun Siswa',
+                  title: 'Sesi Akun User',
                   subtitle: 'Kelola sesi aktif dan keluar dari perangkat ini',
                 ),
                 const SizedBox(height: 12),
@@ -840,7 +666,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           icon: const Icon(Icons.logout_rounded,
                               size: 18, color: AppColors.statusDangerText),
                           label: const Text(
-                            'Keluar dari Akun Siswa',
+                            'Keluar dari Akun User',
                             style: TextStyle(
                               color: AppColors.statusDangerText,
                               fontWeight: FontWeight.w700,

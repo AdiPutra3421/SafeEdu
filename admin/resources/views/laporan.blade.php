@@ -5,7 +5,7 @@
 @section('content')
 <header class="topbar">
   <div class="page-title">
-    <h2>Daftar Laporan Siswa</h2>
+    <h2>Daftar Laporan User</h2>
     <p>Filter antara laporan fasilitas dan pelanggaran kode etik, lalu verifikasi dan teruskan ke teknisi.</p>
   </div>
   <div class="topbar-actions">
@@ -65,7 +65,7 @@
             <th>Kategori & Jenis</th>
             <th>Judul Laporan & Kronologi</th>
             <th>Lokasi Insiden</th>
-            <th>Pelapor (Siswa)</th>
+            <th>Pelapor (User)</th>
             <th>Tingkat Urgensi</th>
             <th>Status Respon</th>
             <th>Aksi Verifikasi</th>
@@ -242,7 +242,7 @@
           <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${type}</span></td>
           <td style="font-weight:600; color:var(--text-main);">${judul}</td>
           <td style="font-size:0.85rem;">${item.lokasi_kejadian || '-'}</td>
-          <td>${item.is_anonim ? '<i>Anonim</i>' : 'Siswa'}</td>
+          <td>${item.is_anonim ? '<i>Anonim</i>' : 'User'}</td>
           <td><span class="badge" style="background:#fef3c7; color:#d97706;">Sedang</span></td>
           <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
           <td>
@@ -275,7 +275,7 @@
     const item = laporanData.find(x => x.id === id);
     if(!item) return;
 
-    document.getElementById('modal-report-id').innerText = `RPT-${item.id} - ${item.is_anonim ? 'Anonim' : 'Siswa'} (Dikirim: ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+    document.getElementById('modal-report-id').innerText = `RPT-${item.id} - ${item.is_anonim ? 'Anonim' : 'User'} (Dikirim: ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
     document.getElementById('modal-report-title').innerText = item.judul;
     document.getElementById('modal-report-location').innerText = `Lokasi: ${item.lokasi_kejadian}`;
     document.getElementById('modal-report-desc').innerText = item.deskripsi;

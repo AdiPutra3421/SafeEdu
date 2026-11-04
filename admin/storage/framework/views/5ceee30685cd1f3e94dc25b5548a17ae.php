@@ -8,10 +8,6 @@
     <p>Ikhtisar penerimaan laporan fasilitas, pelanggaran kode etik, dan status respon penanganan.</p>
   </div>
   <div class="topbar-actions">
-    <div class="system-status-indicator">
-      <span class="status-dot-pulse"></span>
-      Sistem Aktif & Terhubung
-    </div>
     <a href="<?php echo e(route('laporan')); ?>" class="btn btn-primary btn-sm">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -174,12 +170,8 @@
         </div>
       </div>
       <div class="card-body">
-        <div class="donut-chart-wrap">
-          <svg class="donut-svg" viewBox="0 0 160 160">
-            <circle class="donut-circle-bg" cx="80" cy="80" r="60"/>
-            <circle class="donut-circle-1" cx="80" cy="80" r="60" id="donut-slice-facility"/>
-            <circle class="donut-circle-2" cx="80" cy="80" r="60" id="donut-slice-ethics"/>
-          </svg>
+        <div class="donut-chart-wrap" style="height: 210px;">
+          <canvas id="report-type-chart" aria-label="Rasio jenis laporan"></canvas>
         </div>
 
         <div class="donut-legend">
@@ -201,41 +193,73 @@
       </div>
     </div>
   </div>
-
-  <!-- Recent Dispatches & Activity -->
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <h3>Aktivitas Laporan Terkini</h3>
-        <p>Laporan yang baru saja masuk dari siswa</p>
-      </div>
-      <a href="<?php echo e(route('laporan')); ?>" class="btn btn-outline btn-sm">Lihat Semua Data</a>
-    </div>
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID Tiket</th>
-            <th>Jenis Laporan</th>
-            <th>Judul & Deskripsi</th>
-            <th>Pelapor</th>
-            <th>Urgensi</th>
-            <th>Status Respon</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="recent-reports-table">
-          <!-- Injected via JavaScript -->
-        </tbody>
-      </table>
-    </div>
-  </div>
 </main>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
+  let reportTypeChart = null;
+
+  function initReportTypeChart() {
+    const canvas = document.getElementById('report-type-chart');
+    if (!canvas || typeof Chart === 'undefined') {
+      return;
+    }
+
+    reportTypeChart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Fasilitas Sekolah', 'Pelanggaran Kode Etik'],
+        datasets: [{
+          data: [0, 0],
+          backgroundColor: ['#2563eb', '#f43f5e'],
+          borderWidth: 0,
+          hoverOffset: 6,
+          cutout: '68%'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 500
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label(context) {
+                const total = context.dataset.data.reduce((sum, value) => sum + Number(value || 0), 0);
+                const value = Number(context.parsed || 0);
+                const pct = total === 0 ? 0 : Math.round((value / total) * 100);
+                return `${context.label}: ${value} Laporan (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function updateReportTypeChart(fasilitas, etik) {
+    if (!reportTypeChart) {
+      initReportTypeChart();
+    }
+
+    if (!reportTypeChart) {
+      return;
+    }
+
+    reportTypeChart.data.datasets[0].data = [fasilitas, etik];
+    reportTypeChart.update();
+
+    document.getElementById('legend-facility-count').innerText = fasilitas + ' Laporan';
+    document.getElementById('legend-ethics-count').innerText = etik + ' Laporan';
+  }
+
   async function fetchDashboard() {
     try {
       const response = await fetch('/api/pengaduan');
@@ -278,67 +302,17 @@
         document.getElementById('stat-dispatched').innerText = proses;
         document.getElementById('stat-resolved').innerText = selesai;
 
-        // Pie Chart
-        const circumference = 2 * Math.PI * 60; // radius = 60
-        if (total === 0) {
-            document.getElementById('donut-slice-facility').style.strokeDasharray = `0 ${circumference}`;
-            document.getElementById('donut-slice-ethics').style.strokeDasharray = `0 ${circumference}`;
-        } else {
-            const fasilDash = (fasilPercent / 100) * circumference;
-            const etikDash = (etikPercent / 100) * circumference;
-            
-            document.getElementById('donut-slice-facility').style.strokeDasharray = `${fasilDash} ${circumference}`;
-            document.getElementById('donut-slice-facility').style.strokeDashoffset = `0`;
-            
-            document.getElementById('donut-slice-ethics').style.strokeDasharray = `${etikDash} ${circumference}`;
-            document.getElementById('donut-slice-ethics').style.strokeDashoffset = `-${fasilDash}`;
-        }
-
-        document.getElementById('legend-facility-count').innerText = fasilitas + ' Laporan';
-        document.getElementById('legend-ethics-count').innerText = etik + ' Laporan';
-
-        // Render Aktivitas Terakhir
-        const tbody = document.getElementById('recent-reports-table');
-        const recent = data.slice(0, 5);
-        
-        if (recent.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Belum ada aktivitas</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = recent.map(item => {
-          let badgeClass = 'badge-resolved';
-          if(item.status === 'menunggu') badgeClass = 'badge-ethics'; // Red warning
-          if(item.status === 'diproses') badgeClass = 'badge-pending'; // Yellow
-          
-          let jenisLaporan = item.kategori ? item.kategori.nama : '-';
-          let pelapor = item.is_anonim ? 'Anonim' : (item.pelapor ? item.pelapor.nama : 'Siswa');
-          let urgency = item.kategori?.jenis === 'etik' ? '<span class="badge badge-ethics">Tinggi</span>' : '<span class="badge badge-pending">Normal</span>';
-
-          return `
-            <tr>
-              <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()}</span></td>
-              <td>${jenisLaporan}</td>
-              <td>
-                <div style="font-weight:600; color:var(--text-main);">${item.judul || '-'}</div>
-                <div style="font-size:0.8rem; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">${item.deskripsi || '-'}</div>
-              </td>
-              <td>${pelapor}</td>
-              <td>${urgency}</td>
-              <td><span class="badge ${badgeClass}">${item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span></td>
-              <td>
-                <a href="/laporan/${item.id}" class="btn btn-outline btn-sm">Detail</a>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        updateReportTypeChart(fasilitas, etik);
       }
     } catch (err) {
       console.error(err);
     }
   }
 
-  document.addEventListener('DOMContentLoaded', fetchDashboard);
+  document.addEventListener('DOMContentLoaded', () => {
+    initReportTypeChart();
+    fetchDashboard();
+  });
 </script>
 
 <?php $__env->stopSection(); ?>

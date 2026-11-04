@@ -22,7 +22,7 @@ Route::get('/auth/me', [AuthApiController::class, 'me']);
 Route::match(['post', 'put'], '/auth/profile', [AuthApiController::class, 'updateProfile']);
 Route::post('/auth/logout', [AuthApiController::class, 'logout']);
 
-// API routes for Siswa (User App)
+// API routes for User (User App)
 Route::prefix('pengaduan')->group(function () {
     Route::get('/', [PengaduanController::class, 'index']);
     Route::post('/', [PengaduanController::class, 'store']);
@@ -48,6 +48,7 @@ Route::prefix('penugasan')->group(function () {
 Route::apiResource('fasilitas', FasilitasController::class);
 Route::apiResource('teknisi', UserTeknisiController::class);
 Route::apiResource('siswa', UserSiswaController::class);
+Route::apiResource('users', UserSiswaController::class);
 Route::get('/konten-sekolah', [KontenSekolahController::class, 'index']);
 Route::post('/konten-sekolah', [KontenSekolahController::class, 'store']);
 Route::match(['put', 'post'], '/konten-sekolah/{id}', [KontenSekolahController::class, 'update']);

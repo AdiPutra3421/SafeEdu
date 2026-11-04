@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\Validator;
 class UserSiswaController extends Controller
 {
     /**
-     * Tampilkan daftar seluruh siswa.
+     * Tampilkan daftar seluruh user.
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'siswa')
+        $query = User::whereIn('role', ['siswa', 'user'])
             ->withCount('pengaduans')
             ->orderBy('id', 'desc');
 
@@ -34,20 +34,20 @@ class UserSiswaController extends Controller
     }
 
     /**
-     * Simpan akun siswa baru.
+     * Simpan akun user baru.
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/u'],
-            'email'    => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:users,email'],
+            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => 'required|string|min:6',
         ], [
-            'nama.required'     => 'Nama siswa wajib diisi.',
-            'nama.regex'        => 'Nama siswa hanya boleh berisi huruf.',
-            'email.required'    => 'NISN wajib diisi.',
-            'email.regex'       => 'NISN harus terdiri dari tepat 10 angka.',
-            'email.unique'      => 'NISN ini sudah digunakan oleh akun lain.',
+            'nama.required'     => 'Nama wajib diisi.',
+            'nama.regex'        => 'Nama hanya boleh berisi huruf.',
+            'email.required'    => 'Email wajib diisi.',
+            'email.email'       => 'Format email tidak valid.',
+            'email.unique'      => 'Email ini sudah digunakan oleh akun lain.',
             'password.required' => 'Password wajib diisi.',
             'password.min'      => 'Password minimal 6 karakter.',
         ]);
@@ -62,32 +62,30 @@ class UserSiswaController extends Controller
         $user = User::create([
             'nama'     => trim($request->nama),
             'email'    => trim($request->email),
-            'nisn'     => trim($request->email),
-            'kelas'    => $request->filled('kelas') ? trim($request->kelas) : 'XII Rekayasa Perangkat Lunak 1',
             'password' => Hash::make($request->password),
             'role'     => 'siswa',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Akun siswa berhasil ditambahkan.',
+            'message' => 'Akun user berhasil ditambahkan.',
             'data'    => $user->loadCount('pengaduans'),
         ], 201);
     }
 
     /**
-     * Detail akun siswa.
+     * Detail akun user.
      */
     public function show($id)
     {
-        $user = User::where('role', 'siswa')
+        $user = User::whereIn('role', ['siswa', 'user'])
             ->withCount('pengaduans')
             ->find($id);
 
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data siswa tidak ditemukan.',
+                'message' => 'Data user tidak ditemukan.',
             ], 404);
         }
 
@@ -98,30 +96,29 @@ class UserSiswaController extends Controller
     }
 
     /**
-     * Perbarui data siswa.
+     * Perbarui data user.
      */
     public function update(Request $request, $id)
     {
-        $user = User::where('role', 'siswa')->find($id);
+        $user = User::whereIn('role', ['siswa', 'user'])->find($id);
 
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data siswa tidak ditemukan.',
+                'message' => 'Data user tidak ditemukan.',
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/u'],
-            'email'    => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:users,email,' . $id],
-            'kelas'    => 'nullable|string|max:100',
+            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
             'password' => 'nullable|string|min:6',
         ], [
-            'nama.required'     => 'Nama siswa wajib diisi.',
-            'nama.regex'        => 'Nama siswa hanya boleh berisi huruf.',
-            'email.required'    => 'NISN wajib diisi.',
-            'email.regex'       => 'NISN harus terdiri dari tepat 10 angka.',
-            'email.unique'      => 'NISN ini sudah digunakan oleh akun lain.',
+            'nama.required'     => 'Nama wajib diisi.',
+            'nama.regex'        => 'Nama hanya boleh berisi huruf.',
+            'email.required'    => 'Email wajib diisi.',
+            'email.email'       => 'Format email tidak valid.',
+            'email.unique'      => 'Email ini sudah digunakan oleh akun lain.',
             'password.min'      => 'Password minimal 6 karakter.',
         ]);
 
@@ -134,10 +131,6 @@ class UserSiswaController extends Controller
 
         $user->nama  = trim($request->nama);
         $user->email = trim($request->email);
-        $user->nisn  = trim($request->email);
-        if ($request->filled('kelas')) {
-            $user->kelas = trim($request->kelas);
-        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -147,22 +140,22 @@ class UserSiswaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Data siswa berhasil diperbarui.',
+            'message' => 'Data user berhasil diperbarui.',
             'data'    => $user->loadCount('pengaduans'),
         ]);
     }
 
     /**
-     * Hapus data siswa.
+     * Hapus data user.
      */
     public function destroy($id)
     {
-        $user = User::where('role', 'siswa')->find($id);
+        $user = User::whereIn('role', ['siswa', 'user'])->find($id);
 
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data siswa tidak ditemukan.',
+                'message' => 'Data user tidak ditemukan.',
             ], 404);
         }
 
@@ -170,7 +163,7 @@ class UserSiswaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Data siswa berhasil dihapus.',
+            'message' => 'Data user berhasil dihapus.',
         ]);
     }
 }

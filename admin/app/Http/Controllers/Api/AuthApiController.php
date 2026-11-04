@@ -11,15 +11,15 @@ use Illuminate\Support\Facades\Validator;
 class AuthApiController extends Controller
 {
     /**
-     * Login API untuk aplikasi Flutter siswa.
-     * Menerima email/NISN dan password, mengembalikan data user.
+     * Login API untuk aplikasi Flutter (User & Teknisi).
+     * Menerima email dan password, mengembalikan data user.
      */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email'    => 'required|string',
             'password' => 'required|string',
-            'role'     => 'nullable|string|in:siswa,teknisi,admin',
+            'role'     => 'nullable|string|in:siswa,teknisi,admin,user',
         ]);
 
         if ($validator->fails()) {
@@ -29,23 +29,32 @@ class AuthApiController extends Controller
             ], 422);
         }
 
-        // Cari user berdasarkan email atau nisn dan role jika ditentukan
+        // Cari user berdasarkan email dan role jika ditentukan
         $loginInput = trim($request->email);
-        $query = User::where(function ($q) use ($loginInput) {
-            $q->where('email', $loginInput)
-              ->orWhere('nisn', $loginInput);
-        });
+        $query = User::where('email', $loginInput);
+
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $role = $request->role === 'user' ? 'siswa' : $request->role;
+            $query->where('role', $role);
         } else {
-            $query->whereIn('role', ['siswa', 'teknisi']);
+            $query->whereIn('role', ['siswa', 'user', 'teknisi']);
         }
         $user = $query->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
+            $notFoundMsg = ($request->role === 'teknisi')
+                ? 'Akun teknisi tidak ditemukan.'
+                : 'Email belum terdaftar. Silakan daftar terlebih dahulu.';
             return response()->json([
                 'success' => false,
-                'message' => 'Email atau password salah.',
+                'message' => $notFoundMsg,
+            ], 404);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kata sandi salah. Silakan coba lagi.',
             ], 401);
         }
 
@@ -56,29 +65,26 @@ class AuthApiController extends Controller
                 'id'    => $user->id,
                 'nama'  => $user->nama,
                 'email' => $user->display_email,
-                'nisn'  => $user->nisn,
-                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ]);
     }
 
     /**
-     * Registrasi akun siswa baru dari user_app.
+     * Registrasi akun user baru dari user_app.
      */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/u'],
-            'email'    => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:users,email'],
-            'password' => 'required|string|min:6',
-            'kelas'    => 'nullable|string|max:100',
+            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6'],
         ], [
             'nama.required'     => 'Nama lengkap wajib diisi.',
             'nama.regex'        => 'Nama hanya boleh berisi huruf.',
-            'email.required'    => 'NISN wajib diisi.',
-            'email.regex'       => 'NISN harus terdiri dari tepat 10 angka.',
-            'email.unique'      => 'NISN ini sudah terdaftar.',
+            'email.required'    => 'Email wajib diisi.',
+            'email.email'       => 'Format email tidak valid.',
+            'email.unique'      => 'Email ini sudah terdaftar. Silakan gunakan email lain atau langsung login.',
             'password.required' => 'Password wajib diisi.',
             'password.min'      => 'Password minimal 6 karakter.',
         ]);
@@ -86,6 +92,7 @@ class AuthApiController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => $validator->errors()->first(),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -93,8 +100,6 @@ class AuthApiController extends Controller
         $user = User::create([
             'nama'     => trim($request->nama),
             'email'    => trim($request->email),
-            'nisn'     => trim($request->email),
-            'kelas'    => $request->filled('kelas') ? trim($request->kelas) : 'XII Rekayasa Perangkat Lunak 1',
             'password' => Hash::make($request->password),
             'role'     => 'siswa',
         ]);
@@ -106,8 +111,6 @@ class AuthApiController extends Controller
                 'id'    => $user->id,
                 'nama'  => $user->nama,
                 'email' => $user->display_email,
-                'nisn'  => $user->nisn,
-                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ], 201);
@@ -119,10 +122,10 @@ class AuthApiController extends Controller
     public function me(Request $request)
     {
         $userId = $request->query('user_id');
-        $user = User::where('id', $userId)->where('role', 'siswa')->first();
+        $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user'])->first();
 
         if (!$user) {
-            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
+            return response()->json(['success' => false, 'message' => 'Data user tidak ditemukan.'], 404);
         }
 
         return response()->json([
@@ -131,36 +134,33 @@ class AuthApiController extends Controller
                 'id'    => $user->id,
                 'nama'  => $user->nama,
                 'email' => $user->display_email,
-                'nisn'  => $user->nisn,
-                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ]);
     }
 
     /**
-     * Update profil siswa dari user_app.
+     * Update profil user dari user_app.
      */
     public function updateProfile(Request $request)
     {
         $userId = $request->input('user_id', $request->query('user_id'));
-        $user = User::where('id', $userId)->where('role', 'siswa')->first();
+        $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user'])->first();
 
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data siswa tidak ditemukan.',
+                'message' => 'Data user tidak ditemukan.',
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'nama'             => ['required', 'string', 'max:100', 'regex:/^[\pL\s\.\,\'\-]+$/u'],
-            'kelas'            => 'nullable|string|max:100',
+            'nama'             => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
             'current_password' => 'nullable|string',
             'password'         => 'nullable|string|min:6',
         ], [
             'nama.required'    => 'Nama lengkap wajib diisi.',
-            'nama.regex'       => 'Nama hanya boleh berisi huruf dan tanda baca umum.',
+            'nama.regex'       => 'Nama hanya boleh berisi huruf.',
             'password.min'     => 'Password baru minimal 6 karakter.',
         ]);
 
@@ -185,9 +185,6 @@ class AuthApiController extends Controller
         }
 
         $user->nama = trim($request->nama);
-        if ($request->has('kelas')) {
-            $user->kelas = trim($request->kelas);
-        }
         $user->save();
 
         return response()->json([
@@ -197,15 +194,13 @@ class AuthApiController extends Controller
                 'id'    => $user->id,
                 'nama'  => $user->nama,
                 'email' => $user->display_email,
-                'nisn'  => $user->nisn,
-                'kelas' => $user->kelas,
                 'role'  => $user->role,
             ],
         ]);
     }
 
     /**
-     * Logout API untuk aplikasi mobile (Siswa & Teknisi).
+     * Logout API untuk aplikasi mobile (User & Teknisi).
      */
     public function logout(Request $request)
     {
