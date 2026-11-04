@@ -1,7 +1,0 @@
-com.example.user_app-debug-0 D:\SafeEdu\user_app\android\app\src\debug\res
-com.example.user_app-main-1 D:\SafeEdu\user_app\android\app\src\main\res
-com.example.user_app-pngs-2 D:\SafeEdu\user_app\build\app\generated\res\pngs\debug
-com.example.user_app-updated_navigation_xml-3 D:\SafeEdu\user_app\build\app\generated\updated_navigation_xml\debug
-com.example.user_app-packageDebugResources-4 D:\SafeEdu\user_app\build\app\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.example.user_app-packageDebugResources-5 D:\SafeEdu\user_app\build\app\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.example.user_app-debug-6 D:\SafeEdu\user_app\build\app\intermediates\merged_res\debug\mergeDebugResources

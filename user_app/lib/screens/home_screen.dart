@@ -763,14 +763,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               if (news.imageUrl != null && news.imageUrl!.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    news.imageUrl!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildFallbackBanner(news),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      news.imageUrl!,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => _buildFallbackBanner(news),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
