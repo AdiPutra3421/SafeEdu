@@ -1,0 +1,75 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\KontenSekolah;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class KontenSekolahTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_it_creates_news_with_valid_content(): void
+    {
+        $response = $this->postJson('/api/konten-sekolah', [
+            'tipe' => 'berita',
+            'judul' => 'Informasi Kegiatan Sekolah',
+            'ringkasan' => 'Informasi singkat kegiatan sekolah untuk semua siswa.',
+            'isi' => 'Sekolah akan mengadakan kegiatan bersama pada hari Jumat. Seluruh siswa diharapkan hadir tepat waktu.',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.judul', 'Informasi Kegiatan Sekolah');
+
+        $this->assertDatabaseHas('konten_sekolah', [
+            'judul' => 'Informasi Kegiatan Sekolah',
+        ]);
+    }
+
+    public function test_it_rejects_invalid_news_fields_and_script_content(): void
+    {
+        $validData = [
+            'tipe' => 'berita',
+            'judul' => 'Informasi Kegiatan Sekolah',
+            'ringkasan' => 'Informasi singkat kegiatan sekolah untuk semua siswa.',
+            'isi' => 'Sekolah akan mengadakan kegiatan bersama pada hari Jumat. Seluruh siswa diharapkan hadir tepat waktu.',
+        ];
+
+        $invalidCases = [
+            ['judul' => 'Berita', 'field' => 'judul'],
+            ['judul' => '1234567890', 'field' => 'judul'],
+            ['judul' => 'Berita @ Sekolah', 'field' => 'judul'],
+            ['gambar_url' => 'https://example.com/banner.gif', 'field' => 'gambar_url'],
+            ['ringkasan' => 'Terlalu singkat', 'field' => 'ringkasan'],
+            ['isi' => 'Konten yang terlalu singkat.', 'field' => 'isi'],
+            ['isi' => 'Berita ini berisi teks <script>alert("x")</script> yang dilarang.', 'field' => 'isi'],
+        ];
+
+        foreach ($invalidCases as $invalidCase) {
+            $payload = $validData;
+            $field = $invalidCase['field'];
+            $payload[$field] = $invalidCase[$field];
+
+            $this->postJson('/api/konten-sekolah', $payload)
+                ->assertUnprocessable()
+                ->assertJsonStructure(['errors' => [$field]]);
+        }
+    }
+
+    public function test_it_rejects_a_title_used_by_another_content(): void
+    {
+        KontenSekolah::create([
+            'tipe' => 'panduan',
+            'judul' => 'Informasi Kegiatan Sekolah',
+            'isi' => 'Isi panduan sekolah.',
+        ]);
+
+        $this->postJson('/api/konten-sekolah', [
+            'tipe' => 'berita',
+            'judul' => 'Informasi Kegiatan Sekolah',
+            'isi' => 'Sekolah akan mengadakan kegiatan bersama pada hari Jumat. Seluruh siswa diharapkan hadir tepat waktu.',
+        ])->assertUnprocessable()
+            ->assertJsonPath('errors.judul.0', 'Judul konten sudah digunakan.');
+    }
+}

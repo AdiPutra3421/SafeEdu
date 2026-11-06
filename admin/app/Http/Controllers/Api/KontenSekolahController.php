@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\KontenSekolah;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -28,7 +29,7 @@ class KontenSekolahController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateContent($request);
-        if ($validated instanceof \Illuminate\Http\JsonResponse) {
+        if ($validated instanceof JsonResponse) {
             return $validated;
         }
 
@@ -58,7 +59,7 @@ class KontenSekolahController extends Controller
         }
 
         $validated = $this->validateContent($request);
-        if ($validated instanceof \Illuminate\Http\JsonResponse) {
+        if ($validated instanceof JsonResponse) {
             return $validated;
         }
 
@@ -107,15 +108,68 @@ class KontenSekolahController extends Controller
         return response()->json(['success' => true, 'message' => 'Konten berhasil dihapus.']);
     }
 
-    private function validateContent(Request $request): array|\Illuminate\Http\JsonResponse
+    private function validateContent(Request $request): array|JsonResponse
     {
+        $isBerita = $request->input('tipe') === 'berita';
+        $judulRules = ['required', 'string', 'max:180'];
+
+        if ($isBerita) {
+            $judulRules[] = 'min:10';
+            $judulRules[] = 'regex:/^(?=.*\p{L})[\p{L}\p{N} .,!?‘():\/-]+$/u';
+        }
+
+        $judulRules[] = function ($attribute, $value, $fail) use ($request) {
+            if (! is_string($value)) {
+                return;
+            }
+
+            $duplicates = KontenSekolah::query()->where('judul', $value);
+            if ($request->route('id')) {
+                $duplicates->where('id', '!=', $request->route('id'));
+            }
+
+            if ($duplicates->get(['judul'])->contains(fn ($content) => $content->judul === $value)) {
+                $fail('Judul konten sudah digunakan.');
+            }
+        };
+
+        $ringkasanRules = $isBerita
+            ? ['nullable', 'string', 'min:20', 'max:300', function ($attribute, $value, $fail) {
+                if (! is_string($value)) {
+                    return;
+                }
+
+                if (trim($value) === '') {
+                    $fail('Ringkasan tidak boleh hanya berisi spasi.');
+                }
+            }]
+            : ['nullable', 'string', 'max:500'];
+
+        $isiRules = ['required', 'string'];
+        if ($isBerita) {
+            $isiRules[] = 'min:50';
+            $isiRules[] = function ($attribute, $value, $fail) {
+                if (! is_string($value)) {
+                    return;
+                }
+
+                if (mb_strlen(trim($value)) < 50) {
+                    $fail('Isi konten berita minimal 50 karakter selain spasi.');
+                }
+
+                if (preg_match('/<\s*\/?\s*[a-z][^>]*>|<\?|javascript\s*:|on[a-z]+\s*=|\b(?:eval|function)\s*\(|\b(?:const|let|var)\s+\w+\s*=|\b(?:document|window|console)\s*\./iu', $value)) {
+                    $fail('Isi konten tidak boleh memuat kode atau script.');
+                }
+            };
+        }
+
         $validator = Validator::make($request->all(), [
             'tipe' => 'required|in:berita,panduan',
-            'judul' => 'required|string|max:180',
-            'ringkasan' => 'nullable|string|max:500',
-            'isi' => 'required|string',
-            'gambar' => 'nullable|file|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
-            'gambar_url' => 'nullable|string|max:500',
+            'judul' => $judulRules,
+            'ringkasan' => $ringkasanRules,
+            'isi' => $isiRules,
+            'gambar' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'gambar_url' => $isBerita ? 'prohibited' : 'nullable|string|max:500',
             'aktif' => 'nullable',
         ]);
 
