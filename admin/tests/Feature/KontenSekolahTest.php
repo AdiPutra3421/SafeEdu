@@ -72,4 +72,31 @@ class KontenSekolahTest extends TestCase
         ])->assertUnprocessable()
             ->assertJsonPath('errors.judul.0', 'Judul konten sudah digunakan.');
     }
+
+    public function test_updating_content_to_inactive_hides_it_from_users(): void
+    {
+        $content = KontenSekolah::create([
+            'tipe' => 'panduan',
+            'judul' => 'Panduan Penggunaan Fasilitas',
+            'isi' => 'Panduan penggunaan fasilitas sekolah.',
+            'aktif' => true,
+        ]);
+
+        $this->postJson("/api/konten-sekolah/{$content->id}", [
+            'tipe' => 'panduan',
+            'judul' => 'Panduan Penggunaan Fasilitas',
+            'isi' => 'Panduan penggunaan fasilitas sekolah.',
+            'aktif' => '0',
+        ])->assertOk()
+            ->assertJsonPath('data.aktif', false);
+
+        $this->getJson('/api/konten-sekolah')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson('/api/konten-sekolah?admin=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.aktif', false);
+    }
 }

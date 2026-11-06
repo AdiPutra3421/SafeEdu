@@ -55,7 +55,7 @@
         <div class="form-group">
           <label class="form-label" for="content-title">Judul *</label>
           <input type="text" id="content-title" class="form-control" maxlength="180" required>
-          <small id="content-title-hint" style="color:var(--text-muted);">Untuk berita: 10-180 karakter, gunakan huruf/angka dan tanda baca umum.</small>
+          <small id="content-title-hint" style="color:var(--text-muted);">Judul berita minimal 10-180 karakter, gunakan huruf/angka dan tanda baca umum.</small>
         </div>
         <div class="form-group">
           <label class="form-label" for="content-image">Gambar / Banner (Opsional)</label>
@@ -69,7 +69,7 @@
         <div class="form-group">
           <label class="form-label" for="content-summary">Ringkasan</label>
           <textarea id="content-summary" class="form-control" rows="2" maxlength="300"></textarea>
-          <small style="color:var(--text-muted);">Untuk berita, jika diisi: 20-300 karakter. Tulis gambaran singkat, bukan salinan seluruh isi.</small>
+          <small style="color:var(--text-muted);">Tulis gambaran singkat, bukan salinan seluruh isi.</small>
         </div>
         <div class="form-group">
           <label class="form-label" for="content-body">Isi Konten *</label>
@@ -130,9 +130,11 @@
         <td style="font-size:.82rem;color:var(--text-muted);min-width:240px;max-width:420px;"><div style="white-space:pre-wrap;max-height:120px;overflow:auto;">${escapeHtml(item.isi)}</div></td>
         <td><span class="badge ${item.aktif ? 'badge-resolved' : 'badge-ethics'}">${item.aktif ? 'Tampil' : 'Disembunyikan'}</span></td>
         <td style="font-size:.8rem;color:var(--text-muted)">${new Date(item.updated_at).toLocaleDateString('id-ID')}</td>
-        <td>
+        <td style="white-space:nowrap;">
+          <div style="display:flex;align-items:center;gap:4px;">
           <button class="btn btn-outline btn-sm" onclick="openContentModal(${item.id})">Edit</button>
-          <button class="btn btn-sm" style="color:#e11d48;border-color:#fecdd3;background:#fff1f2;margin-left:4px" onclick="deleteContent(${item.id})">Hapus</button>
+          <button class="btn btn-sm" style="color:#e11d48;border-color:#fecdd3;background:#fff1f2" onclick="deleteContent(${item.id})">Hapus</button>
+          </div>
         </td>
       </tr>`).join('');
   }
