@@ -54,12 +54,13 @@
         <div class="form-group">
           <label class="form-label" for="content-title">Judul *</label>
           <input type="text" id="content-title" class="form-control" maxlength="180" required>
-          <small id="content-title-hint" style="color:var(--text-muted);">Judul berita minimal 10-180 karakter, gunakan huruf/angka dan tanda baca umum.</small>
+          <small id="content-title-hint" style="color:var(--text-muted);">Judul berita minimal 10 karakter, gunakan huruf/angka dan tanda baca umum.</small>
+          <small id="content-title-warning" role="status" aria-live="polite" style="display:none;color:#b45309;"></small>
         </div>
         <div class="form-group">
           <label class="form-label" for="content-image">Gambar / Banner (Opsional)</label>
           <input type="file" id="content-image" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onchange="handleImagePreview(event)">
-          <small style="color:var(--text-muted);">JPG, JPEG, PNG, atau WEBP; maksimal 2 MB. Gunakan gambar relevan dan tidak mengandung unsur SARA/pornografi.</small>
+          <small style="color:var(--text-muted);">JPG, JPEG, PNG, atau WEBP; maksimal 2 MB. </small>
           <div id="image-preview-wrapper" style="margin-top: 10px; display: none; align-items: center; gap: 12px;">
             <img id="image-preview-img" src="" alt="Preview" style="width: 100px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
             <button type="button" class="btn btn-outline btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2;" onclick="clearSelectedImage()">Hapus Gambar</button>
@@ -68,7 +69,8 @@
         <div class="form-group">
           <label class="form-label" for="content-body">Isi Konten *</label>
           <textarea id="content-body" class="form-control" rows="7" required></textarea>
-          <small style="color:var(--text-muted);">Minimal 50 karakter. Jangan masukkan kode atau script.</small>
+          <small style="color:var(--text-muted);">Minimal 50 karakter untuk berita. Tulis informasi yang jelas dan mudah dipahami; jangan masukkan kode atau script.</small>
+          <small id="content-body-warning" role="status" aria-live="polite" style="display:none;color:#b45309;"></small>
         </div>
         <label style="display:flex; gap:8px; align-items:center; font-size:.85rem;">
           <input type="checkbox" id="content-active" checked> Tampilkan di aplikasi user
@@ -139,6 +141,39 @@
 
     title.minLength = isBerita ? 10 : 1;
     body.minLength = isBerita ? 50 : 1;
+  }
+
+  function isLikelyRandomText(value) {
+    const text = value.trim().toLocaleLowerCase();
+    if (!text) return false;
+
+    if (/(.{2,})\1{2,}/iu.test(text) || /(\p{L})\1{3,}/iu.test(text)) return true;
+
+    const words = text.match(/[\p{L}\p{N}]+/gu) || [];
+    const wordCounts = new Map();
+    for (const word of words) {
+      wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+      if (wordCounts.get(word) >= 3) return true;
+    }
+
+    const letters = text.match(/\p{L}/gu) || [];
+    const vowels = text.match(/[aeiouáéíóú]/giu) || [];
+    return letters.length >= 10 && vowels.length / letters.length < 0.2;
+  }
+
+  function updateContentQualityWarnings() {
+    const title = document.getElementById('content-title');
+    const body = document.getElementById('content-body');
+    const titleWarning = document.getElementById('content-title-warning');
+    const bodyWarning = document.getElementById('content-body-warning');
+    const warning = 'Teks ini tampak seperti input acak. Gunakan kalimat yang jelas dan relevan.';
+
+    titleWarning.textContent = isLikelyRandomText(title.value) ? warning : '';
+    titleWarning.style.display = titleWarning.textContent ? 'block' : 'none';
+    bodyWarning.textContent = isLikelyRandomText(body.value) ? warning : '';
+    bodyWarning.style.display = bodyWarning.textContent ? 'block' : 'none';
+
+    return !titleWarning.textContent && !bodyWarning.textContent;
   }
 
   function cleanNewsTitle(value) {
@@ -227,6 +262,7 @@
       document.getElementById('image-preview-wrapper').style.display = 'none';
     }
     updateContentRequirements();
+    updateContentQualityWarnings();
     document.getElementById('contentModal').classList.add('active');
   }
 
@@ -236,6 +272,14 @@
 
   async function handleContentSubmit(event) {
     event.preventDefault();
+    if (!updateContentQualityWarnings()) {
+      const firstInvalidField = document.getElementById('content-title-warning').textContent
+        ? document.getElementById('content-title')
+        : document.getElementById('content-body');
+      firstInvalidField.focus();
+      return;
+    }
+
     const id = document.getElementById('content-id').value;
     const submitBtn = document.getElementById('save-content-btn');
     submitBtn.disabled = true;
@@ -288,7 +332,10 @@
   document.getElementById('content-type').addEventListener('change', updateContentRequirements);
   document.getElementById('content-title').addEventListener('beforeinput', handleNewsTitleBeforeInput);
   document.getElementById('content-title').addEventListener('input', sanitizeNewsTitle);
+  document.getElementById('content-title').addEventListener('input', updateContentQualityWarnings);
   document.getElementById('content-title').addEventListener('paste', handleNewsTitlePaste);
+  document.getElementById('content-body').addEventListener('input', updateContentQualityWarnings);
+  document.getElementById('content-type').addEventListener('change', updateContentQualityWarnings);
   document.addEventListener('DOMContentLoaded', fetchContent);
 </script>
 @endsection

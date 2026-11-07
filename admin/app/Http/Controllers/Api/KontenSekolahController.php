@@ -118,6 +118,12 @@ class KontenSekolahController extends Controller
             $judulRules[] = 'regex:/^(?=.*\p{L})[\p{L}\p{N} .,!?‘():\/-]+$/u';
         }
 
+        $judulRules[] = function ($attribute, $value, $fail) {
+            if (is_string($value) && $this->isLikelyRandomText($value)) {
+                $fail('Judul harus berupa teks yang jelas dan bukan input acak.');
+            }
+        };
+
         $judulRules[] = function ($attribute, $value, $fail) use ($request) {
             if (! is_string($value)) {
                 return;
@@ -145,7 +151,11 @@ class KontenSekolahController extends Controller
             }]
             : ['nullable', 'string', 'max:500'];
 
-        $isiRules = ['required', 'string'];
+        $isiRules = ['required', 'string', function ($attribute, $value, $fail) {
+            if (is_string($value) && $this->isLikelyRandomText($value)) {
+                $fail('Isi konten harus berupa teks yang jelas dan bukan input acak.');
+            }
+        }];
         if ($isBerita) {
             $isiRules[] = 'min:50';
             $isiRules[] = function ($attribute, $value, $fail) {
@@ -181,5 +191,25 @@ class KontenSekolahController extends Controller
         unset($validated['gambar'], $validated['gambar_url']);
 
         return $validated;
+    }
+
+    private function isLikelyRandomText(string $value): bool
+    {
+        $text = mb_strtolower(trim($value));
+
+        if (preg_match('/(.{2,})\1{2,}/iu', $text) || preg_match('/(\p{L})\1{3,}/iu', $text)) {
+            return true;
+        }
+
+        preg_match_all('/[\p{L}\p{N}]+/u', $text, $wordMatches);
+        if (array_filter(array_count_values($wordMatches[0]), fn ($count) => $count >= 3)) {
+            return true;
+        }
+
+        preg_match_all('/\p{L}/u', $text, $letterMatches);
+        preg_match_all('/[aeiouáéíóú]/iu', $text, $vowelMatches);
+        $letterCount = count($letterMatches[0]);
+
+        return $letterCount >= 10 && count($vowelMatches[0]) / $letterCount < 0.2;
     }
 }

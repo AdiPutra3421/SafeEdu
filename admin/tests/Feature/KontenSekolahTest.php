@@ -39,10 +39,12 @@ class KontenSekolahTest extends TestCase
         $invalidCases = [
             ['judul' => 'Berita', 'field' => 'judul'],
             ['judul' => '1234567890', 'field' => 'judul'],
+            ['judul' => 'asdfghjkl zxcvbnm', 'field' => 'judul'],
             ['judul' => 'Berita @ Sekolah', 'field' => 'judul'],
             ['gambar_url' => 'https://example.com/banner.gif', 'field' => 'gambar_url'],
             ['ringkasan' => 'Terlalu singkat', 'field' => 'ringkasan'],
             ['isi' => 'Konten yang terlalu singkat.', 'field' => 'isi'],
+            ['isi' => 'asdfghjkl zxcvbnm asdfghjkl zxcvbnm asdfghjkl zxcvbnm', 'field' => 'isi'],
             ['isi' => 'Berita ini berisi teks <script>alert("x")</script> yang dilarang.', 'field' => 'isi'],
         ];
 
@@ -55,6 +57,27 @@ class KontenSekolahTest extends TestCase
                 ->assertUnprocessable()
                 ->assertJsonStructure(['errors' => [$field]]);
         }
+    }
+
+    public function test_it_rejects_likely_random_guide_content(): void
+    {
+        $validData = [
+            'tipe' => 'panduan',
+            'judul' => 'Panduan Kegiatan Sekolah',
+            'isi' => 'Panduan ini menjelaskan langkah kegiatan sekolah secara jelas dan mudah diikuti.',
+        ];
+
+        $this->postJson('/api/konten-sekolah', [
+            ...$validData,
+            'judul' => 'asdfghjkl zxcvbnm',
+        ])->assertUnprocessable()
+            ->assertJsonStructure(['errors' => ['judul']]);
+
+        $this->postJson('/api/konten-sekolah', [
+            ...$validData,
+            'isi' => 'asdfghjkl zxcvbnm asdfghjkl zxcvbnm asdfghjkl zxcvbnm',
+        ])->assertUnprocessable()
+            ->assertJsonStructure(['errors' => ['isi']]);
     }
 
     public function test_it_rejects_a_title_used_by_another_content(): void
