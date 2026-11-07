@@ -197,12 +197,7 @@ class KontenSekolahController extends Controller
     {
         $text = mb_strtolower(trim($value));
 
-        if (preg_match('/(.{2,})\1{2,}/iu', $text) || preg_match('/(\p{L})\1{3,}/iu', $text)) {
-            return true;
-        }
-
-        preg_match_all('/[\p{L}\p{N}]+/u', $text, $wordMatches);
-        if (array_filter(array_count_values($wordMatches[0]), fn ($count) => $count >= 3)) {
+        if (preg_match('/(\p{L})\1{3,}/iu', $text)) {
             return true;
         }
 

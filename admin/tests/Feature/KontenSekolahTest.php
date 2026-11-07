@@ -27,6 +27,15 @@ class KontenSekolahTest extends TestCase
         ]);
     }
 
+    public function test_it_accepts_long_content_with_repeated_common_words(): void
+    {
+        $this->postJson('/api/konten-sekolah', [
+            'tipe' => 'berita',
+            'judul' => 'Informasi Kegiatan di Sekolah',
+            'isi' => 'Sekolah mengadakan kegiatan di sekolah untuk seluruh warga sekolah. Kegiatan sekolah ini membantu siswa mengenal lingkungan sekolah dan menjaga kebersihan sekolah bersama-sama.',
+        ])->assertCreated();
+    }
+
     public function test_it_rejects_invalid_news_fields_and_script_content(): void
     {
         $validData = [

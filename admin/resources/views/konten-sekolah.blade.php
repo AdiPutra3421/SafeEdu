@@ -83,6 +83,17 @@
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="contentImageModal" onclick="closeContentImagePreview(event)">
+  <div class="modal-dialog" style="width:min(900px, 90vw);">
+    <div class="modal-header">
+      <h3 id="content-image-title">Pratinjau Gambar</h3>
+      <button type="button" class="close-btn" aria-label="Tutup pratinjau gambar" onclick="closeContentImagePreview()">&times;</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <img id="content-image-large" src="" alt="" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:8px;">
+    </div>
+  </div>
+</div>
 <div class="toast-container" id="toastContainer"></div>
 @endsection
 
@@ -116,7 +127,7 @@
       <tr>
         <td>
           ${item.gambar_url
-            ? `<img src="${escapeHtml(item.gambar_url)}" alt="${escapeHtml(item.judul)}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;">`
+            ? `<button type="button" aria-label="Lihat gambar ${escapeHtml(item.judul)}" onclick="openContentImagePreview(${item.id})" style="padding:0;border:0;background:none;cursor:zoom-in;"><img src="${escapeHtml(item.gambar_url)}" alt="${escapeHtml(item.judul)}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;"></button>`
             : `<div style="width:52px;height:40px;border-radius:6px;background:#f1f5f9;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.65rem;">No Img</div>`
           }
         </td>
@@ -134,6 +145,22 @@
       </tr>`).join('');
   }
 
+  function openContentImagePreview(id) {
+    const item = contentData.find(content => content.id === id);
+    if (!item || !item.gambar_url) return;
+
+    document.getElementById('content-image-title').textContent = item.judul;
+    document.getElementById('content-image-large').src = item.gambar_url;
+    document.getElementById('content-image-large').alt = item.judul;
+    document.getElementById('contentImageModal').classList.add('active');
+  }
+
+  function closeContentImagePreview(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('contentImageModal').classList.remove('active');
+    document.getElementById('content-image-large').src = '';
+  }
+
   function updateContentRequirements() {
     const isBerita = document.getElementById('content-type').value === 'berita';
     const title = document.getElementById('content-title');
@@ -147,14 +174,7 @@
     const text = value.trim().toLocaleLowerCase();
     if (!text) return false;
 
-    if (/(.{2,})\1{2,}/iu.test(text) || /(\p{L})\1{3,}/iu.test(text)) return true;
-
-    const words = text.match(/[\p{L}\p{N}]+/gu) || [];
-    const wordCounts = new Map();
-    for (const word of words) {
-      wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
-      if (wordCounts.get(word) >= 3) return true;
-    }
+    if (/(\p{L})\1{3,}/iu.test(text)) return true;
 
     const letters = text.match(/\p{L}/gu) || [];
     const vowels = text.match(/[aeiouáéíóú]/giu) || [];
@@ -336,6 +356,9 @@
   document.getElementById('content-title').addEventListener('paste', handleNewsTitlePaste);
   document.getElementById('content-body').addEventListener('input', updateContentQualityWarnings);
   document.getElementById('content-type').addEventListener('change', updateContentQualityWarnings);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeContentImagePreview();
+  });
   document.addEventListener('DOMContentLoaded', fetchContent);
 </script>
 @endsection
