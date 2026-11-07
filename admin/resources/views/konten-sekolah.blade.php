@@ -22,7 +22,6 @@
             <th style="width:70px;">Gambar</th>
             <th>Jenis</th>
             <th>Judul</th>
-            <th>Ringkasan</th>
             <th>Isi Konten</th>
             <th>Status</th>
             <th>Diubah</th>
@@ -67,11 +66,6 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label" for="content-summary">Ringkasan</label>
-          <textarea id="content-summary" class="form-control" rows="2" maxlength="300"></textarea>
-          <small style="color:var(--text-muted);">Tulis gambaran singkat, bukan salinan seluruh isi.</small>
-        </div>
-        <div class="form-group">
           <label class="form-label" for="content-body">Isi Konten *</label>
           <textarea id="content-body" class="form-control" rows="7" required></textarea>
           <small style="color:var(--text-muted);">Minimal 50 karakter. Jangan masukkan kode atau script.</small>
@@ -106,7 +100,7 @@
   function renderContent() {
     const tbody = document.getElementById('content-table-body');
     if (!contentData.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">Belum ada konten</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#94a3b8">Belum ada konten</td></tr>';
       return;
     }
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -126,7 +120,6 @@
         </td>
         <td><span class="badge ${item.tipe === 'berita' ? 'badge-facility' : 'badge-ethics'}">${item.tipe === 'berita' ? 'Berita' : 'Panduan'}</span></td>
         <td style="font-weight:600;color:var(--text-main)">${escapeHtml(item.judul)}</td>
-        <td style="font-size:.82rem;color:var(--text-muted)">${escapeHtml(item.ringkasan || '-')}</td>
         <td style="font-size:.82rem;color:var(--text-muted);min-width:240px;max-width:420px;"><div style="white-space:pre-wrap;max-height:120px;overflow:auto;">${escapeHtml(item.isi)}</div></td>
         <td><span class="badge ${item.aktif ? 'badge-resolved' : 'badge-ethics'}">${item.aktif ? 'Tampil' : 'Disembunyikan'}</span></td>
         <td style="font-size:.8rem;color:var(--text-muted)">${new Date(item.updated_at).toLocaleDateString('id-ID')}</td>
@@ -142,12 +135,9 @@
   function updateContentRequirements() {
     const isBerita = document.getElementById('content-type').value === 'berita';
     const title = document.getElementById('content-title');
-    const summary = document.getElementById('content-summary');
     const body = document.getElementById('content-body');
 
     title.minLength = isBerita ? 10 : 1;
-    summary.minLength = isBerita ? 20 : 0;
-    summary.maxLength = isBerita ? 300 : 500;
     body.minLength = isBerita ? 50 : 1;
   }
 
@@ -222,7 +212,6 @@
       document.getElementById('content-id').value = item.id;
       document.getElementById('content-type').value = item.tipe;
       document.getElementById('content-title').value = item.judul;
-      document.getElementById('content-summary').value = item.ringkasan || '';
       document.getElementById('content-body').value = item.isi;
       document.getElementById('content-active').checked = !!item.aktif;
 
@@ -255,7 +244,6 @@
     const formData = new FormData();
     formData.append('tipe', document.getElementById('content-type').value);
     formData.append('judul', document.getElementById('content-title').value);
-    formData.append('ringkasan', document.getElementById('content-summary').value);
     formData.append('isi', document.getElementById('content-body').value);
     formData.append('aktif', document.getElementById('content-active').checked ? '1' : '0');
 
