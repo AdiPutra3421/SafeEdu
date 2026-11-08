@@ -189,28 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.w700,
                     color: AppColors.textMain),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined,
-                      size: 16, color: AppColors.textMuted),
-                  const SizedBox(width: 4),
-                  Text(item.location,
-                      style: const TextStyle(
-                          fontSize: 13, color: AppColors.textMuted)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(Icons.access_time_rounded,
-                      size: 16, color: AppColors.textMuted),
-                  const SizedBox(width: 4),
-                  Text(item.operatingHours,
-                      style: const TextStyle(
-                          fontSize: 13, color: AppColors.textMuted)),
-                ],
-              ),
+
+              // REVISI: Bagian lokasi dan jam operasional dihapus dari pop-up detail fasilitas
+
               const SizedBox(height: 16),
               Text(
                 item.description,
@@ -445,7 +426,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? const Center(
                         child: Text(
                           'Belum ada berita & panduan sekolah',
-                          style: TextStyle(fontSize: 12, color: AppColors.textLight),
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.textLight),
                         ),
                       )
                     : ListView.separated(
@@ -477,16 +459,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: InkWell(
                                   onTap: () => _showNewsDetail(context, news),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       SizedBox(
                                         height: 105,
                                         width: double.infinity,
-                                        child: (news.imageUrl != null && news.imageUrl!.isNotEmpty)
+                                        child: (news.imageUrl != null &&
+                                                news.imageUrl!.isNotEmpty)
                                             ? Image.network(
                                                 news.imageUrl!,
                                                 fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) => _buildFallbackBanner(news),
+                                                errorBuilder: (_, __, ___) =>
+                                                    _buildFallbackBanner(news),
                                               )
                                             : _buildFallbackBanner(news),
                                       ),
@@ -494,29 +479,48 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Padding(
                                           padding: const EdgeInsets.all(12),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 3),
                                                     decoration: BoxDecoration(
-                                                      color: isPanduan ? AppColors.ethicsBg : AppColors.facilityBg,
-                                                      borderRadius: BorderRadius.circular(6),
+                                                      color: isPanduan
+                                                          ? AppColors.ethicsBg
+                                                          : AppColors
+                                                              .facilityBg,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              6),
                                                     ),
                                                     child: Text(
                                                       news.category,
                                                       style: TextStyle(
                                                         fontSize: 10,
-                                                        fontWeight: FontWeight.w700,
-                                                        color: isPanduan ? AppColors.ethicsText : AppColors.facilityText,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: isPanduan
+                                                            ? AppColors
+                                                                .ethicsText
+                                                            : AppColors
+                                                                .facilityText,
                                                       ),
                                                     ),
                                                   ),
                                                   Text(
                                                     news.date,
-                                                    style: const TextStyle(fontSize: 10.5, color: AppColors.textLight),
+                                                    style: const TextStyle(
+                                                        fontSize: 10.5,
+                                                        color: AppColors
+                                                            .textLight),
                                                   ),
                                                 ],
                                               ),
@@ -537,7 +541,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 news.summary,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                                                style: const TextStyle(
+                                                    fontSize: 10.5,
+                                                    color: AppColors.textMuted),
                                               ),
                                             ],
                                           ),
@@ -555,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 24),
 
-              // Section: Katalog Fasilitas & Layanan
+              // Section: Katalog Fasilitas & Sarana
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -572,107 +578,121 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-              // Filter chips for catalog
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildCatalogFilterChip('Semua'),
-                    const SizedBox(width: 8),
-                    _buildCatalogFilterChip('Akademik'),
-                    const SizedBox(width: 8),
-                    _buildCatalogFilterChip('Olahraga'),
-                    const SizedBox(width: 8),
-                    _buildCatalogFilterChip('Layanan'),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Facility List
-              ListView.builder(
-                shrinkWrap: true,
+              // REVISI: Filter kategori dihapus.
+              // Mengubah ListView menjadi GridView (2 kolom) untuk tampilan "kotak-kotak"
+              GridView.builder(
+                shrinkWrap:
+                    true, // Agar tidak error di dalam SingleChildScrollView
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // 2 kotak berjejer ke samping
+                  crossAxisSpacing: 12, // Jarak antar kotak ke samping
+                  mainAxisSpacing: 12, // Jarak antar kotak ke bawah
+                  childAspectRatio: 1.1, // Rasio lebar dibanding tinggi kotak
+                ),
                 itemCount: filteredFacilities.length,
                 itemBuilder: (context, index) {
                   final item = filteredFacilities[index];
-                  IconData leadingIcon = Icons.domain;
-                  if (item.iconType == 'computer') leadingIcon = Icons.computer;
-                  if (item.iconType == 'book') {
-                    leadingIcon = Icons.menu_book_rounded;
-                  }
-                  if (item.iconType == 'sports') {
-                    leadingIcon = Icons.sports_basketball_rounded;
-                  }
-                  if (item.iconType == 'counseling') {
-                    leadingIcon = Icons.favorite_outline_rounded;
-                  }
-                  if (item.iconType == 'sanitation') {
-                    leadingIcon = Icons.water_drop_outlined;
-                  }
 
-                  return Card(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      leading: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(leadingIcon,
-                            color: AppColors.primary, size: 22),
-                      ),
-                      title: Text(
-                        item.name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 3),
-                          Text('📍 ${item.location}',
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.textMuted)),
-                          const SizedBox(height: 2),
-                          Text('🕒 ${item.operatingHours}',
-                              style: const TextStyle(
-                                  fontSize: 11, color: AppColors.textLight)),
+                  // Widget kotak fasilitas
+                  return GestureDetector(
+                    onTap: () => _showFacilityDetail(item),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: item.status == 'Bisa Digunakan'
-                              ? AppColors.statusSuccessBg
-                              : (item.status == 'Tidak Bisa Digunakan'
-                                  ? AppColors.statusDangerBg
-                                  : AppColors.statusPendingBg),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          item.status,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: item.status == 'Bisa Digunakan'
-                                ? AppColors.statusSuccessText
-                                : (item.status == 'Tidak Bisa Digunakan'
-                                    ? AppColors.statusDangerText
-                                    : AppColors.statusPendingText),
+                      child: Stack(
+                        children: [
+                          // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                        ),
+
+                          // 2. Lapisan Gradient Gelap di Bawah agar teks terbaca
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.7),
+                                  ],
+                                  stops: const [
+                                    0.5,
+                                    1.0
+                                  ], // Gradient mulai di tengah
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 3. Status Badge di Pojok Kanan Atas
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: item.status == 'Bisa Digunakan'
+                                    ? AppColors.statusSuccessBg
+                                        .withValues(alpha: 0.9)
+                                    : (item.status == 'Tidak Bisa Digunakan'
+                                        ? AppColors.statusDangerBg
+                                            .withValues(alpha: 0.9)
+                                        : AppColors.statusPendingBg
+                                            .withValues(alpha: 0.9)),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.status,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: item.status == 'Bisa Digunakan'
+                                      ? AppColors.statusSuccessText
+                                      : (item.status == 'Tidak Bisa Digunakan'
+                                          ? AppColors.statusDangerText
+                                          : AppColors.statusPendingText),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 4. Nama Fasilitas di Kiri Bawah
+                          Positioned(
+                            left: 10,
+                            right: 10,
+                            bottom: 12,
+                            child: Text(
+                              item.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      onTap: () => _showFacilityDetail(item),
                     ),
                   );
                 },
@@ -781,9 +801,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isPanduan ? AppColors.ethicsBg : AppColors.facilityBg,
+                      color:
+                          isPanduan ? AppColors.ethicsBg : AppColors.facilityBg,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -791,11 +813,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: isPanduan ? AppColors.ethicsText : AppColors.facilityText,
+                        color: isPanduan
+                            ? AppColors.ethicsText
+                            : AppColors.facilityText,
                       ),
                     ),
                   ),
-                  Text(news.date, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+                  Text(news.date,
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.textLight)),
                 ],
               ),
               const SizedBox(height: 12),

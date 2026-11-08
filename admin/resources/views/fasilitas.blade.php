@@ -26,10 +26,8 @@
         <thead>
           <tr>
             <th>ID Fasilitas</th>
-            <th>Nama Fasilitas</th>
-            <th>Lokasi</th>
-            <th>Kondisi Saat Ini</th>
-            <th>Deskripsi / Info</th>
+            <th>Nama Fasilitas / Sarana</th>
+            <th>Deskripsi</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -57,20 +55,6 @@
         <div class="form-group">
           <label class="form-label" for="namaInput">Nama Fasilitas / Sarana *</label>
           <input type="text" id="namaInput" class="form-control" required placeholder="Contoh: AC Split 1.5 PK Lab Komputer 2">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="lokasiInput">Lokasi Detail *</label>
-          <input type="text" id="lokasiInput" class="form-control" required placeholder="Contoh: Gedung B, Lantai 3, Lab 302">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="kondisiSelect">Kondisi Saat Ini</label>
-          <select id="kondisiSelect" class="form-control">
-            <option value="Bisa Digunakan">Bisa Digunakan (Normal)</option>
-            <option value="Dalam Perbaikan">Dalam Perbaikan (Rusak Ringan/Berat)</option>
-            <option value="Tidak Bisa Digunakan">Tidak Bisa Digunakan (Rusak Total)</option>
-          </select>
         </div>
 
         <div class="form-group">
@@ -126,21 +110,15 @@
   function renderTable() {
     const tbody = document.getElementById('fasilitas-table-body');
     if (fasilitasData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
       return;
     }
 
     tbody.innerHTML = fasilitasData.map(f => {
-      let badgeClass = 'badge-resolved';
-      if(f.status_kondisi === 'Dalam Perbaikan') badgeClass = 'badge-pending';
-      if(f.status_kondisi === 'Tidak Bisa Digunakan') badgeClass = 'badge-ethics';
-
       return `
         <tr>
           <td><strong>FAS-${f.id}</strong></td>
           <td style="font-weight:600; color:var(--text-main);">${f.nama}</td>
-          <td style="font-size:0.85rem;">${f.lokasi}</td>
-          <td><span class="badge ${badgeClass}">${f.status_kondisi}</span></td>
           <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
           <td>
             <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${f.id})">Edit</button>
@@ -157,8 +135,6 @@
       document.getElementById('modal-title').innerText = 'Edit Fasilitas';
       document.getElementById('fasilitas-id').value = f.id;
       document.getElementById('namaInput').value = f.nama;
-      document.getElementById('lokasiInput').value = f.lokasi;
-      document.getElementById('kondisiSelect').value = f.status_kondisi;
       document.getElementById('deskripsiInput').value = f.deskripsi || '';
     } else {
       document.getElementById('modal-title').innerText = 'Tambah Fasilitas Baru';
@@ -177,8 +153,6 @@
     const id = document.getElementById('fasilitas-id').value;
     const newData = {
       nama: document.getElementById('namaInput').value,
-      lokasi: document.getElementById('lokasiInput').value,
-      status_kondisi: document.getElementById('kondisiSelect').value,
       deskripsi: document.getElementById('deskripsiInput').value,
     };
 
