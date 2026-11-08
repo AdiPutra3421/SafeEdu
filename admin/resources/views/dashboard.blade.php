@@ -314,6 +314,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initReportTypeChart();
     fetchDashboard();
+    setInterval(fetchDashboard, 30000);
   });
 </script>
 

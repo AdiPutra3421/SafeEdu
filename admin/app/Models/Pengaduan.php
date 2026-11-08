@@ -18,7 +18,6 @@ class Pengaduan extends Model
         'status',
         'is_anonim',
         'foto_bukti',
-        'file_bukti_url',
         'rating_kepuasan',
         'ulasan_pelapor',
         'verified_at',

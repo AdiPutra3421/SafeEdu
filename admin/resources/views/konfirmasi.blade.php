@@ -42,8 +42,7 @@
       <button class="filter-btn active" onclick="setConfFilter('all', this)">Semua Pesan</button>
       <button class="filter-btn" onclick="setConfFilter('in_progress', this)">Sedang Dikerjakan</button>
       <button class="filter-btn" onclick="setConfFilter('completed', this)">Pekerjaan Selesai</button>
-      <button class="filter-btn" onclick="setConfFilter('unverified', this)">Perlu Approval Admin</button>
-      <button class="filter-btn" onclick="setConfFilter('unconfirmed', this)">Belum Dikonfirmasi</button>
+      <button class="filter-btn" onclick="setConfFilter('assigned', this)">Belum Dikonfirmasi</button>
     </div>
 
     <div style="font-size: 0.82rem; color: var(--text-muted);">
@@ -107,16 +106,6 @@
     }
   }
 
-  async function handleApprove(confId) {
-    // Just mock the approval since we don't have a verified column in DB
-    const idx = confData.findIndex(c => c.id == confId);
-    if (idx > -1) {
-      confData[idx].verified = true;
-      showToast('Laporan teknisi berhasil divalidasi dan tiket ditutup.');
-      renderConfirmations();
-    }
-  }
-
   function renderConfirmations() {
     const container = document.getElementById('confirmationList');
 
@@ -132,7 +121,7 @@
     const filtered = confData.filter(item => {
       if (currentConfFilter === 'in_progress') return item.status !== 'selesai';
       if (currentConfFilter === 'completed') return item.status === 'selesai';
-      if (currentConfFilter === 'unverified') return !item.verified;
+      if (currentConfFilter === 'assigned') return item.status === 'ditugaskan';
       return true;
     });
 
@@ -163,15 +152,12 @@
         statusBadge = `<span class="badge badge-dispatched">Dalam Pengerjaan</span>`;
       }
 
-      const approvalButton = item.verified
+      const statusSummary = isFinished
         ? `<span style="font-size: 0.78rem; color: var(--status-success-text); font-weight: 600; display: flex; align-items: center; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Divalidasi Admin
+            Status selesai tersimpan
           </span>`
-        : `<button class="btn btn-primary btn-sm" onclick="handleApprove('${item.id}')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Validasi & Tutup
-          </button>`;
+        : `<span style="font-size: 0.78rem; color: var(--text-muted);">${item.status === 'diterima' ? 'Teknisi sedang menangani laporan' : 'Menunggu konfirmasi teknisi'}</span>`;
 
       const logs = item.log_pengerjaans || [];
       const latestLog = logs.length > 0 ? logs[logs.length - 1].catatan_teknisi : (item.catatan_admin || 'Belum ada catatan');
@@ -205,7 +191,7 @@
 
           <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.72rem; color: var(--text-muted);">Tugas ID: ${item.id}</span>
-            <div>${approvalButton}</div>
+            <div>${statusSummary}</div>
           </div>
         </div>
       `;
@@ -214,6 +200,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     fetchConfirmations();
+    setInterval(fetchConfirmations, 30000);
   });
 </script>
 @endsection

@@ -15,6 +15,7 @@ class Notifikasi extends Model
         'judul',
         'pesan',
         'is_read',
+        'pengaduan_id',
     ];
 
     protected $casts = [

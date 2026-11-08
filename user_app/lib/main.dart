@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'models/report_model.dart';
 import 'screens/home_screen.dart';
@@ -8,7 +11,6 @@ import 'services/auth_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 void main() {
   runApp(const SafeEduUserApp());
@@ -40,11 +42,22 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   // Student reports state
   List<PengaduanModel> _reports = [];
+  Timer? _reportRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchReports();
+    _reportRefreshTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _fetchReports(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _reportRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchReports() async {
@@ -56,15 +69,16 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           .get(Uri.parse('${ApiConfig.baseUrl}/api/pengaduan?user_id=$userId'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        if (data['success'] == true) {
+        if (data['success'] == true && mounted) {
           final List<dynamic> list = data['data'];
           setState(() {
-            _reports = list.map((item) => PengaduanModel.fromMap(item)).toList();
+            _reports =
+                list.map((item) => PengaduanModel.fromMap(item)).toList();
           });
         }
       }
     } catch (e) {
-      print('Error fetching reports: $e');
+      debugPrint('Error fetching reports: $e');
     }
   }
 
@@ -76,6 +90,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   void _switchTab(int index) {
+    if (index == 2) {
+      _fetchReports();
+    }
     setState(() {
       _currentIndex = index;
     });

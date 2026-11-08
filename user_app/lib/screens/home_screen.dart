@@ -149,71 +149,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment:
+                    MainAxisAlignment.end, // Ubah posisi ke kanan
                 children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: item.status == 'Bisa Digunakan'
-                          ? AppColors.statusSuccessBg
-                          : (item.status == 'Tidak Bisa Digunakan'
-                              ? AppColors.statusDangerBg
-                              : AppColors.statusPendingBg),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      item.status,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: item.status == 'Bisa Digunakan'
-                            ? AppColors.statusSuccessText
-                            : (item.status == 'Tidak Bisa Digunakan'
-                                ? AppColors.statusDangerText
-                                : AppColors.statusPendingText),
-                      ),
-                    ),
-                  ),
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.textMuted),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                item.name,
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMain),
-              ),
-
-              // REVISI: Bagian lokasi dan jam operasional dihapus dari pop-up detail fasilitas
-
-              const SizedBox(height: 16),
-              Text(
-                item.description,
-                style: const TextStyle(
-                    fontSize: 13.5,
-                    color: AppColors.secondaryMuted,
-                    height: 1.5),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.report_problem_outlined, size: 18),
-                  label: const Text('Laporkan Kerusakan pada Fasilitas Ini'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateToTab(1); // switch to Tab 1 (Pelaporan)
-                  },
-                ),
               ),
             ],
           ),
@@ -580,8 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 16),
 
-              // REVISI: Filter kategori dihapus.
-              // Mengubah ListView menjadi GridView (2 kolom) untuk tampilan "kotak-kotak"
+              // GridView (2 kolom) untuk tampilan "kotak-kotak"
               GridView.builder(
                 shrinkWrap:
                     true, // Agar tidak error di dalam SingleChildScrollView
@@ -636,39 +578,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                     0.5,
                                     1.0
                                   ], // Gradient mulai di tengah
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // 3. Status Badge di Pojok Kanan Atas
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: item.status == 'Bisa Digunakan'
-                                    ? AppColors.statusSuccessBg
-                                        .withValues(alpha: 0.9)
-                                    : (item.status == 'Tidak Bisa Digunakan'
-                                        ? AppColors.statusDangerBg
-                                            .withValues(alpha: 0.9)
-                                        : AppColors.statusPendingBg
-                                            .withValues(alpha: 0.9)),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.status,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: item.status == 'Bisa Digunakan'
-                                      ? AppColors.statusSuccessText
-                                      : (item.status == 'Tidak Bisa Digunakan'
-                                          ? AppColors.statusDangerText
-                                          : AppColors.statusPendingText),
                                 ),
                               ),
                             ),

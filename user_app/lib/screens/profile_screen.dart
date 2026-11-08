@@ -237,7 +237,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       size: 12,
                       color: isDone
                           ? const Color(0xFF047857)
-                          : (isCurrent ? AppColors.primary : AppColors.textLight),
+                          : (isCurrent
+                              ? AppColors.primary
+                              : AppColors.textLight),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -271,7 +273,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profil & Riwayat'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textMain),
+            icon:
+                const Icon(Icons.settings_outlined, color: AppColors.textMain),
             tooltip: 'Pengaturan Profil',
             onPressed: _openProfileSettings,
           ),
@@ -460,15 +463,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   itemCount: widget.userReports.length,
                   itemBuilder: (context, index) {
                     final rep = widget.userReports[index];
+                    final displayStatus = switch (rep.status) {
+                      'selesai' => 'Selesai',
+                      'diproses' when rep.penugasanStatus == 'diterima' =>
+                        'Dikerjakan Teknisi',
+                      'diproses' => 'Menunggu Teknisi',
+                      'ditolak' => 'Ditolak',
+                      _ => 'Menunggu Verifikasi',
+                    };
 
                     Color statusBg = AppColors.statusPendingBg;
                     Color statusText = AppColors.statusPendingText;
-                    if (rep.status == 'dalam pengerjaan') {
+                    if (rep.status == 'diproses') {
                       statusBg = AppColors.statusProcessBg;
                       statusText = AppColors.statusProcessText;
                     } else if (rep.status == 'selesai') {
                       statusBg = AppColors.statusSuccessBg;
                       statusText = AppColors.statusSuccessText;
+                    } else if (rep.status == 'ditolak') {
+                      statusBg = AppColors.statusDangerBg;
+                      statusText = AppColors.statusDangerText;
                     }
 
                     return Card(
@@ -532,7 +546,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    rep.status.toUpperCase(),
+                                    displayStatus.toUpperCase(),
                                     style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w600,

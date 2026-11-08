@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pengaduan;
+use App\Models\Fasilitas;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -143,7 +144,7 @@ class PengaduanController extends Controller
             'lokasi_kejadian' => trim($request->lokasi_kejadian),
             'status' => 'menunggu',
             'is_anonim' => $request->is_anonim == 'true' || $request->is_anonim == '1' || $request->is_anonim === true,
-            'file_bukti_url' => $fileUrl,
+            'foto_bukti' => $fileUrl,
         ]);
 
         return response()->json([

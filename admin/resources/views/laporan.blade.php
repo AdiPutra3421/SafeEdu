@@ -223,6 +223,7 @@
     }
 
     tbody.innerHTML = filtered.map(item => {
+      const taskStatus = item.penugasans?.[0]?.status;
       let badgeClass = 'badge-resolved';
       let statusLabel = 'Selesai';
       if(item.status === 'menunggu') {
@@ -230,7 +231,9 @@
         statusLabel = 'Menunggu';
       } else if(item.status === 'diproses') {
         badgeClass = 'badge-pending';
-        statusLabel = 'Diproses Teknisi';
+        statusLabel = taskStatus === 'diterima'
+          ? 'Dikerjakan Teknisi'
+          : 'Menunggu Teknisi';
       }
       
       const judul = item.judul || '-';
@@ -338,7 +341,10 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', fetchLaporan);
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchLaporan();
+    setInterval(fetchLaporan, 30000);
+  });
 </script>
 
 @endsection

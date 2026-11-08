@@ -1,6 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../models/task_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -20,39 +22,56 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   String selectedFilter = 'Semua';
 
   List<PenugasanModel> _tasks = [];
-  bool _isLoading = true;
+  bool _isFetchingTasks = false;
+  Timer? _taskRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchTasks();
+    _taskRefreshTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _fetchTasks(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _taskRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchTasks() async {
-    setState(() => _isLoading = true);
+    if (_isFetchingTasks) return;
+    _isFetchingTasks = true;
     try {
       final teknisiId = AuthService.instance.userId;
       final uri = teknisiId != null
-          ? Uri.parse('${ApiConfig.baseUrl}/api/penugasan?teknisi_id=$teknisiId')
+          ? Uri.parse(
+              '${ApiConfig.baseUrl}/api/penugasan?teknisi_id=$teknisiId')
           : Uri.parse('${ApiConfig.baseUrl}/api/penugasan');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        if (data['success']) {
+        if (data['success'] == true && mounted) {
           final List<dynamic> list = data['data'];
           setState(() {
             _tasks = list.map((json) => PenugasanModel.fromJson(json)).toList();
           });
+        } else if (data['success'] != true) {
+          debugPrint('Gagal memuat penugasan: ${data['message'] ?? res.body}');
         }
+      } else {
+        debugPrint('Gagal memuat penugasan (${res.statusCode}): ${res.body}');
       }
     } catch (e) {
-      print('Error fetching tasks: $e');
+      debugPrint('Error fetching tasks: $e');
     } finally {
-      setState(() => _isLoading = false);
+      _isFetchingTasks = false;
     }
   }
 
-  Future<void> _updateTaskStatus(
+  Future<String?> _updateTaskStatus(
       int id, String status, String keterangan) async {
     try {
       final res = await http.post(
@@ -66,13 +85,24 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           'catatan_teknisi': keterangan,
         }),
       );
-      if (res.statusCode == 200) {
-        _fetchTasks();
-      } else {
-        print(res.body);
+      final Map<String, dynamic> body = json.decode(res.body);
+      if (res.statusCode != 200 || body['success'] != true) {
+        final errors = body['errors'];
+        if (errors is Map) {
+          final messages = errors.values
+              .whereType<List>()
+              .expand((messages) => messages)
+              .join(' ');
+          if (messages.isNotEmpty) return messages;
+        }
+        return body['message']?.toString() ??
+            'Gagal memperbarui status (${res.statusCode}).';
       }
+
+      await _fetchTasks();
+      return null;
     } catch (e) {
-      print('Error update task: $e');
+      return 'Tidak dapat menghubungi server untuk memperbarui status: $e';
     }
   }
 
@@ -100,6 +130,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     String chosenStatus = task.statusPenugasan == 'ditugaskan'
         ? 'diterima'
         : task.statusPenugasan;
+    bool isSubmitting = false;
+    final messenger = ScaffoldMessenger.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -269,34 +301,41 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.send_rounded, size: 18),
-                        label: const Text('Kirim Konfirmasi ke Portal Admin'),
-                        onPressed: () {
-                          _updateTaskStatus(task.idPenugasan, chosenStatus,
-                              notesController.text.trim());
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: AppColors.secondary,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.check_circle,
-                                      color: Color(0xFF4ADE80), size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Konfirmasi Penugasan #${task.idPenugasan} terkirim ke Admin!',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w500),
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                setModalState(() => isSubmitting = true);
+                                final error = await _updateTaskStatus(
+                                  task.idPenugasan,
+                                  chosenStatus,
+                                  notesController.text.trim(),
+                                );
+                                if (!ctx.mounted) return;
+
+                                if (error != null) {
+                                  setModalState(() => isSubmitting = false);
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(error),
+                                      backgroundColor:
+                                          AppColors.statusDangerText,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                Navigator.pop(ctx);
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Status penugasan #${task.idPenugasan} diperbarui menjadi ${chosenStatus == 'selesai' ? 'Selesai' : 'Dalam Pengerjaan'}.',
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                );
+                              },
+                        label: Text(isSubmitting
+                            ? 'Menyimpan status...'
+                            : 'Kirim Konfirmasi ke Portal Admin'),
                       ),
                     ),
                   ],
