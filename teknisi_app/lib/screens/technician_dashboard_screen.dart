@@ -29,30 +29,44 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   }
 
   Future<void> _fetchTasks() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
+
     try {
       final teknisiId = AuthService.instance.userId;
       final uri = teknisiId != null
           ? Uri.parse('${ApiConfig.baseUrl}/api/penugasan?teknisi_id=$teknisiId')
           : Uri.parse('${ApiConfig.baseUrl}/api/penugasan');
       final res = await http.get(uri);
+
+      if (!mounted) return;
+
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        if (data['success']) {
-          final List<dynamic> list = data['data'];
+        if (data is Map && data['success'] == true && data['data'] is List) {
+          final list = data['data'] as List;
           setState(() {
-            _tasks = list.map((json) => PenugasanModel.fromJson(json)).toList();
+            _tasks = list
+                .map((item) => PenugasanModel.fromJson(item as Map<String, dynamic>))
+                .toList();
           });
+          return;
         }
       }
+
+      setState(() => _tasks = const []);
     } catch (e) {
-      print('Error fetching tasks: $e');
+      if (!mounted) return;
+      setState(() => _tasks = const []);
+      debugPrint('Error fetching tasks: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Future<void> _updateTaskStatus(
+  Future<bool> _updateTaskStatus(
       int id, String status, String keterangan) async {
     try {
       final res = await http.post(
@@ -66,13 +80,17 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           'catatan_teknisi': keterangan,
         }),
       );
+
       if (res.statusCode == 200) {
-        _fetchTasks();
-      } else {
-        print(res.body);
+        await _fetchTasks();
+        return true;
       }
+
+      debugPrint(res.body);
+      return false;
     } catch (e) {
-      print('Error update task: $e');
+      debugPrint('Error update task: $e');
+      return false;
     }
   }
 
@@ -270,32 +288,48 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.send_rounded, size: 18),
                         label: const Text('Kirim Konfirmasi ke Portal Admin'),
-                        onPressed: () {
-                          _updateTaskStatus(task.idPenugasan, chosenStatus,
-                              notesController.text.trim());
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: AppColors.secondary,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.check_circle,
-                                      color: Color(0xFF4ADE80), size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Konfirmasi Penugasan #${task.idPenugasan} terkirim ke Admin!',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        onPressed: () async {
+                          final success = await _updateTaskStatus(
+                            task.idPenugasan,
+                            chosenStatus,
+                            notesController.text.trim(),
                           );
+
+                          if (!mounted || !context.mounted) return;
+
+                          if (success) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.secondary,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle,
+                                        color: Color(0xFF4ADE80), size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Konfirmasi Penugasan #${task.idPenugasan} terkirim ke Admin!',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Gagal mengirim konfirmasi. Coba lagi sebentar.'),
+                                backgroundColor: AppColors.statusDangerText,
+                              ),
+                            );
+                          }
                         },
                       ),
                     ),
@@ -554,164 +588,167 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           ),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          // Header Summary Metrics
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Quick greeting banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                // Header Summary Metrics
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        // Quick greeting banner
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                AuthService.instance.nama ?? 'Teknisi SafeEdu',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      AuthService.instance.nama ?? 'Teknisi SafeEdu',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isOnDuty
+                                                ? const Color(0xFF4ADE80)
+                                                : const Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          isOnDuty
+                                              ? 'Status: On Duty (Siap Terima Tugas)'
+                                              : 'Status: Off Duty',
+                                          style: const TextStyle(
+                                              color: Color(0xFF94A3B8),
+                                              fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isOnDuty
-                                          ? const Color(0xFF4ADE80)
-                                          : const Color(0xFF94A3B8),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isOnDuty
-                                        ? 'Status: On Duty (Siap Terima Tugas)'
-                                        : 'Status: Off Duty',
-                                    style: const TextStyle(
-                                        color: Color(0xFF94A3B8), fontSize: 12),
-                                  ),
-                                ],
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.sync_rounded,
+                                    color: Colors.white, size: 20),
                               ),
                             ],
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.sync_rounded,
-                              color: Colors.white, size: 20),
+
+                        const SizedBox(height: 16),
+
+                        // Metrics Cards
+                        Row(
+                          children: [
+                            _buildMetricTile(
+                                'Tugas Baru',
+                                countNew,
+                                AppColors.statusPendingBg,
+                                AppColors.statusPendingText),
+                            const SizedBox(width: 8),
+                            _buildMetricTile(
+                                'Diproses',
+                                countProcess,
+                                AppColors.statusProcessBg,
+                                AppColors.statusProcessText),
+                            const SizedBox(width: 8),
+                            _buildMetricTile(
+                                'Selesai',
+                                countFinished,
+                                AppColors.statusSuccessBg,
+                                AppColors.statusSuccessText),
+                          ],
                         ),
+
+                        const SizedBox(height: 20),
+
+                        // Filter Chips
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildFilterChip('Semua'),
+                              const SizedBox(width: 8),
+                              _buildFilterChip('Tugas Baru'),
+                              const SizedBox(width: 8),
+                              _buildFilterChip('Dalam Pengerjaan'),
+                              const SizedBox(width: 8),
+                              _buildFilterChip('Selesai'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                       ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Metrics Cards
-                  Row(
-                    children: [
-                      _buildMetricTile(
-                          'Tugas Baru',
-                          countNew,
-                          AppColors.statusPendingBg,
-                          AppColors.statusPendingText),
-                      const SizedBox(width: 8),
-                      _buildMetricTile(
-                          'Diproses',
-                          countProcess,
-                          AppColors.statusProcessBg,
-                          AppColors.statusProcessText),
-                      const SizedBox(width: 8),
-                      _buildMetricTile(
-                          'Selesai',
-                          countFinished,
-                          AppColors.statusSuccessBg,
-                          AppColors.statusSuccessText),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Filter Chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildFilterChip('Semua'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Tugas Baru'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Dalam Pengerjaan'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Selesai'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ),
-
-          // Task List
-          filteredTasks.isEmpty
-              ? const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.assignment_turned_in_outlined,
-                            size: 50, color: AppColors.textLight),
-                        SizedBox(height: 10),
-                        Text('Tidak ada tiket pada kategori ini',
-                            style: TextStyle(color: AppColors.textMuted)),
-                      ],
-                    ),
-                  ),
-                )
-              : SliverPadding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final task = filteredTasks[index];
-                        return _buildTaskCard(task);
-                      },
-                      childCount: filteredTasks.length,
                     ),
                   ),
                 ),
-        ],
-      ),
+
+                // Task List
+                filteredTasks.isEmpty
+                    ? const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.assignment_turned_in_outlined,
+                                  size: 50, color: AppColors.textLight),
+                              SizedBox(height: 10),
+                              Text('Tidak ada tiket pada kategori ini',
+                                  style: TextStyle(color: AppColors.textMuted)),
+                            ],
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final task = filteredTasks[index];
+                              return _buildTaskCard(task);
+                            },
+                            childCount: filteredTasks.length,
+                          ),
+                        ),
+                      ),
+              ],
+            ),
     );
   }
 
@@ -987,16 +1024,28 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       label: const Text('Terima & Konfirmasi Tugas'),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary),
-                      onPressed: () {
-                        _updateTaskStatus(task.idPenugasan, 'diterima',
-                            'Teknisi telah menerima dan mengkonfirmasi tugas.');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Tugas dikonfirmasi! Status dikirim ke Admin.'),
-                            backgroundColor: Color(0xFF10B981),
-                          ),
+                      onPressed: () async {
+                        final success = await _updateTaskStatus(
+                          task.idPenugasan,
+                          'diterima',
+                          'Teknisi telah menerima dan mengkonfirmasi tugas.',
                         );
+
+                        if (!mounted) return;
+
+                        final snackBar = success
+                            ? const SnackBar(
+                                content: Text(
+                                    'Tugas dikonfirmasi! Status dikirim ke Admin.'),
+                                backgroundColor: Color(0xFF10B981),
+                              )
+                            : const SnackBar(
+                                content: Text(
+                                    'Gagal mengirim konfirmasi tugas. Coba lagi.'),
+                                backgroundColor: AppColors.statusDangerText,
+                              );
+
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       },
                     )
                   : isInProgress
