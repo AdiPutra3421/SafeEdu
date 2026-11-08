@@ -12,6 +12,7 @@ class LogPengerjaan extends Model
         'penugasan_id',
         'catatan_teknisi',
         'foto_hasil',
+        'photo_proof',
     ];
 
     public function penugasan()

@@ -1,15 +1,15 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\PengaduanController;
-use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\AuthApiController;
-use App\Http\Controllers\Api\NotifikasiController;
 use App\Http\Controllers\Api\FasilitasController;
 use App\Http\Controllers\Api\KontenSekolahController;
+use App\Http\Controllers\Api\NotifikasiController;
+use App\Http\Controllers\Api\PengaduanController;
+use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\UserSiswaController;
 use App\Http\Controllers\Api\UserTeknisiController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,7 +42,9 @@ Route::prefix('penugasan')->group(function () {
     Route::get('/', [PenugasanController::class, 'index']);
     Route::post('/', [PenugasanController::class, 'store']);
     Route::post('/{id}/status', [PenugasanController::class, 'updateStatus']);
+    Route::post('/{id}/reject', [PenugasanController::class, 'reject']);
 });
+Route::post('/tasks/{id}/reject', [PenugasanController::class, 'reject']);
 
 // API routes for Web Admin
 Route::apiResource('fasilitas', FasilitasController::class);

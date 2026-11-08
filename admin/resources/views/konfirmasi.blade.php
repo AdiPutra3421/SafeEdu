@@ -42,6 +42,7 @@
       <button class="filter-btn active" onclick="setConfFilter('all', this)">Semua Pesan</button>
       <button class="filter-btn" onclick="setConfFilter('in_progress', this)">Sedang Dikerjakan</button>
       <button class="filter-btn" onclick="setConfFilter('completed', this)">Pekerjaan Selesai</button>
+      <button class="filter-btn" onclick="setConfFilter('rejected', this)">Ditolak</button>
       <button class="filter-btn" onclick="setConfFilter('unverified', this)">Perlu Approval Admin</button>
       <button class="filter-btn" onclick="setConfFilter('unconfirmed', this)">Belum Dikonfirmasi</button>
     </div>
@@ -120,7 +121,7 @@
   function renderConfirmations() {
     const container = document.getElementById('confirmationList');
 
-    const inProgress = confData.filter(c => c.status !== 'selesai');
+    const inProgress = confData.filter(c => !['selesai', 'ditolak'].includes(c.status));
     const finished = confData.filter(c => c.status === 'selesai');
     const pendingCount = inProgress.length;
 
@@ -130,8 +131,11 @@
     document.getElementById('count-finished').textContent = finished.length;
 
     const filtered = confData.filter(item => {
-      if (currentConfFilter === 'in_progress') return item.status !== 'selesai';
+      if (currentConfFilter === 'in_progress') {
+        return !['selesai', 'ditolak'].includes(item.status);
+      }
       if (currentConfFilter === 'completed') return item.status === 'selesai';
+      if (currentConfFilter === 'rejected') return item.status === 'ditolak';
       if (currentConfFilter === 'unverified') return !item.verified;
       return true;
     });
@@ -157,24 +161,40 @@
       let statusBadge = '';
       if (isFinished) {
         statusBadge = `<span class="badge badge-resolved"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Selesai</span>`;
+      } else if (item.status === 'ditolak') {
+        statusBadge = `<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;">Ditolak</span>`;
       } else if (item.status === 'ditugaskan') {
         statusBadge = `<span class="badge" style="background: #fef2f2; color: #ef4444; border: 1px solid #fca5a5;">Belum Dikonfirmasi</span>`;
       } else {
         statusBadge = `<span class="badge badge-dispatched">Dalam Pengerjaan</span>`;
       }
 
-      const approvalButton = item.verified
-        ? `<span style="font-size: 0.78rem; color: var(--status-success-text); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+      const approvalButton = item.status === 'ditolak'
+        ? `<span style="font-size: 0.78rem; color: var(--status-danger-text); font-weight: 600;">Penugasan ditolak</span>`
+        : item.verified
+          ? `<span style="font-size: 0.78rem; color: var(--status-success-text); font-weight: 600; display: flex; align-items: center; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             Divalidasi Admin
           </span>`
-        : `<button class="btn btn-primary btn-sm" onclick="handleApprove('${item.id}')">
+          : `<button class="btn btn-primary btn-sm" onclick="handleApprove('${item.id}')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Validasi & Tutup
           </button>`;
 
       const logs = item.log_pengerjaans || [];
       const latestLog = logs.length > 0 ? logs[logs.length - 1].catatan_teknisi : (item.catatan_admin || 'Belum ada catatan');
+      const urgency = item.urgency || item.pengaduan?.urgency || 'medium';
+      const urgencyLabels = { urgent: 'Mendesak', medium: 'Sedang', low: 'Rendah' };
+      const urgencyColors = {
+        urgent: 'background:#fef2f2;color:#b91c1c;',
+        medium: 'background:#fffbeb;color:#b45309;',
+        low: 'background:#ecfdf5;color:#047857;'
+      };
+      const urgencyBadge = `<span style="display:inline-block;padding:3px 8px;border-radius:999px;font-size:.7rem;font-weight:700;${urgencyColors[urgency] || urgencyColors.medium}">${urgencyLabels[urgency] || urgencyLabels.medium}</span>`;
+      const proofPath = logs.length > 0 ? logs[logs.length - 1].photo_proof : null;
+      const proofLink = proofPath
+        ? `<a href="/storage/${proofPath.split('/').map(encodeURIComponent).join('/')}" target="_blank" rel="noopener">Lihat foto bukti penyelesaian</a>`
+        : '';
 
       return `
         <div class="confirmation-card">
@@ -195,11 +215,13 @@
               <span style="font-size: 0.72rem; color: var(--text-light);">${new Date(item.created_at).toLocaleDateString()}</span>
             </div>
             <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${item.pengaduan?.judul || '-'}</h4>
+            <div style="margin-bottom:10px;">Urgensi: ${urgencyBadge}</div>
             
             <div class="timeline-note-box">
               <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-teal); margin-bottom: 2px;">Catatan Terakhir:</div>
               ${latestLog}
             </div>
+            ${proofLink ? `<div style="margin-top:8px;font-size:.8rem;">${proofLink}</div>` : ''}
 
           </div>
 

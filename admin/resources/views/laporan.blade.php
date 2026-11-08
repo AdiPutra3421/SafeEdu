@@ -93,7 +93,10 @@
       <div style="background: var(--bg-subtle); padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span id="modal-report-id" style="font-size: 0.78rem; font-weight: 700; color: var(--primary);"></span>
-          <span id="modal-report-badge"></span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="modal-report-urgency"></span>
+            <span id="modal-report-badge"></span>
+          </div>
         </div>
         <h4 id="modal-report-title" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;"></h4>
         <div id="modal-report-location" style="font-size: 0.8rem; color: var(--text-muted);"></div>
@@ -255,18 +258,26 @@
     }).join('');
   }
 
-  function showToast(message) {
+  function showToast(message, isError = false) {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      <span>${message}</span>
-    `;
+    toast.style.borderLeft = `4px solid ${isError ? '#ef4444' : '#4ade80'}`;
+    const text = document.createElement('span');
+    text.textContent = message;
+    toast.appendChild(text);
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3500);
+  }
+
+  function urgencyBadge(urgency) {
+    const badges = {
+      urgent: ['Mendesak', '#fef2f2', '#b91c1c'],
+      medium: ['Sedang', '#fffbeb', '#b45309'],
+      low: ['Rendah', '#ecfdf5', '#047857']
+    };
+    const [label, background, color] = badges[urgency] || badges.medium;
+    return `<span style="display:inline-block;padding:3px 8px;border-radius:999px;background:${background};color:${color};font-size:.7rem;font-weight:700;">${label}</span>`;
   }
 
   let selectedId = null;
@@ -277,6 +288,7 @@
 
     document.getElementById('modal-report-id').innerText = `RPT-${item.id} - ${item.is_anonim ? 'Anonim' : 'User'} (Dikirim: ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
     document.getElementById('modal-report-title').innerText = item.judul;
+    document.getElementById('modal-report-urgency').innerHTML = urgencyBadge(item.urgency);
     document.getElementById('modal-report-location').innerText = `Lokasi: ${item.lokasi_kejadian}`;
     document.getElementById('modal-report-desc').innerText = item.deskripsi;
     const canDispatch = item.status === 'menunggu';
@@ -329,12 +341,11 @@
         const validationErrors = json.errors
           ? Object.values(json.errors).flat().join(' ')
           : '';
-        alert(json.message || validationErrors || 'Gagal disposisi');
-        fetchLaporan();
+        showToast(json.message || validationErrors || 'Gagal disposisi', true);
       }
     } catch (err) {
       console.error(err);
-      alert('Terjadi kesalahan');
+      showToast('Terjadi kesalahan saat mengirim disposisi.', true);
     }
   }
 

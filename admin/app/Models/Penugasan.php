@@ -14,6 +14,7 @@ class Penugasan extends Model
         'admin_id',
         'catatan_admin',
         'status',
+        'rejection_reason',
     ];
 
     public function pengaduan()

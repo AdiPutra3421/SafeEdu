@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -283,6 +284,11 @@ class _ReportScreenState extends State<ReportScreen> {
       request.fields['judul'] = _titleController.text.trim();
       request.fields['deskripsi'] = _descController.text.trim();
       request.fields['lokasi_kejadian'] = _locationController.text.trim();
+      request.fields['urgency'] = switch (_selectedUrgency) {
+        'Mendesak' => 'urgent',
+        'Rendah' => 'low',
+        _ => 'medium',
+      };
       request.fields['is_anonim'] = _isAnonymous ? '1' : '0';
 
       if (_selectedFile != null) {
@@ -828,8 +834,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             Text('Kirim sebagai Anonim',
                                 style: TextStyle(
                                     fontSize: 13, fontWeight: FontWeight.w600)),
-                            Text(
-                                'Identitas nama disembunyikan dari publik',
+                            Text('Identitas nama disembunyikan dari publik',
                                 style: TextStyle(
                                     fontSize: 11, color: AppColors.textMuted)),
                           ],

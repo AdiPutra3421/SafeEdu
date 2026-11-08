@@ -74,6 +74,7 @@ class PengaduanController extends Controller
                     $fail('Lokasi insiden harus berupa keterangan lokasi yang jelas.');
                 }
             }],
+            'urgency' => 'nullable|in:urgent,medium,low',
             'is_anonim' => 'boolean',
             'file_bukti' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // max 5MB (Masalah #3)
         ], [
@@ -141,6 +142,7 @@ class PengaduanController extends Controller
             'judul' => trim($request->judul),
             'deskripsi' => trim($request->deskripsi),
             'lokasi_kejadian' => trim($request->lokasi_kejadian),
+            'urgency' => $request->input('urgency', 'medium'),
             'status' => 'menunggu',
             'is_anonim' => $request->is_anonim == 'true' || $request->is_anonim == '1' || $request->is_anonim === true,
             'file_bukti_url' => $fileUrl,
