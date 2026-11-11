@@ -55,7 +55,7 @@ class PengaduanController extends Controller
         // Validasi Konten (Masalah #2)
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer',
-            'kategori_id' => 'required|integer',
+            'kategori_id' => 'required|integer|exists:kategori,id',
             'fasilitas_id' => 'nullable|integer',
             // Judul minimal 10 karakter, harus berupa kata yang jelas (bukan angka/simbol acak), hanya boleh huruf dan angka
             'judul' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[a-zA-Z0-9\s]+$/u', function ($attribute, $value, $fail) {

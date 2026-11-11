@@ -34,6 +34,9 @@ class _ReportScreenState extends State<ReportScreen> {
   List<dynamic> _apiFasilitas = [];
   bool _isLoadingFasilitas = false;
   int? _selectedFasilitasId;
+  List<Map<String, dynamic>> _apiKategori = [];
+  bool _isLoadingKategori = true;
+  String? _kategoriLoadError;
   String _selectedCategory = 'Pendingin Ruangan (AC)';
 
   String _selectedUrgency = 'Sedang';
@@ -67,6 +70,58 @@ class _ReportScreenState extends State<ReportScreen> {
   void initState() {
     super.initState();
     _fetchFasilitas();
+    _fetchKategori();
+  }
+
+  int? get _selectedKategoriId {
+    final jenis = _reportType == 'fasilitas' ? 'fasilitas' : 'etik';
+    for (final kategori in _apiKategori) {
+      if (kategori['jenis'] == jenis) {
+        return int.tryParse('${kategori['id']}');
+      }
+    }
+    return null;
+  }
+
+  String? get _selectedKategoriName {
+    final jenis = _reportType == 'fasilitas' ? 'fasilitas' : 'etik';
+    for (final kategori in _apiKategori) {
+      if (kategori['jenis'] == jenis) {
+        return kategori['nama']?.toString();
+      }
+    }
+    return null;
+  }
+
+  Future<void> _fetchKategori() async {
+    try {
+      final response =
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/api/kategori'));
+      if (response.statusCode != 200) {
+        throw Exception('Server mengembalikan status ${response.statusCode}.');
+      }
+
+      final body = json.decode(response.body);
+      if (body is! Map || body['success'] != true || body['data'] is! List) {
+        throw const FormatException('Format data kategori tidak valid.');
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _apiKategori =
+            (body['data'] as List).whereType<Map<String, dynamic>>().toList();
+        _kategoriLoadError = null;
+      });
+    } catch (e) {
+      debugPrint('Error fetching kategori: $e');
+      if (!mounted) return;
+      setState(() {
+        _kategoriLoadError =
+            'Gagal memuat kategori laporan. Periksa koneksi lalu coba lagi.';
+      });
+    } finally {
+      if (mounted) setState(() => _isLoadingKategori = false);
+    }
   }
 
   Future<void> _fetchFasilitas() async {
@@ -262,7 +317,12 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      int kategoriId = _reportType == 'fasilitas' ? 1 : 2;
+      final kategoriId = _selectedKategoriId;
+      if (kategoriId == null) {
+        _showError(_kategoriLoadError ??
+            'Kategori laporan untuk jenis ini tidak tersedia.');
+        return;
+      }
       final userId = AuthService.instance.userId;
 
       if (userId == null) {
@@ -325,10 +385,8 @@ class _ReportScreenState extends State<ReportScreen> {
               data['is_anonim'] == '1' ||
               data['is_anonim'] == true,
           createdAt: data['created_at'],
-          namaKategori: _reportType == 'fasilitas'
-              ? _apiFasilitas.firstWhere((f) => f['id'] == _selectedFasilitasId,
-                  orElse: () => {'nama': '-'})['nama']
-              : _selectedCategory,
+          namaKategori: (data['kategori'] as Map?)?['nama']?.toString() ??
+              _selectedKategoriName,
         );
 
         widget.onReportSubmitted(newReport);
@@ -358,20 +416,23 @@ class _ReportScreenState extends State<ReportScreen> {
     String message = 'Gagal mengirim laporan. Silakan coba lagi.';
     try {
       final data = json.decode(response.body);
-      if (data['message'] != null) {
+      final errors = data['errors'];
+      if (errors is Map && errors.containsKey('kategori_id')) {
+        message =
+            'Kategori laporan sudah berubah atau tidak tersedia. Muat ulang halaman lalu coba lagi.';
+      } else if (errors is Map && errors.isNotEmpty) {
+        final firstError = errors.values.first;
+        message = firstError is List && firstError.isNotEmpty
+            ? firstError.first.toString()
+            : firstError.toString();
+      } else if (errors is List && errors.isNotEmpty) {
+        message = errors.first.toString();
+      } else if (data['message'] != null) {
         message = data['message'].toString();
-      } else if (data['errors'] != null) {
-        final errors = data['errors'];
-        if (errors is Map && errors.isNotEmpty) {
-          final firstError = errors.values.first;
-          message = firstError is List && firstError.isNotEmpty
-              ? firstError.first.toString()
-              : firstError.toString();
-        } else if (errors is List && errors.isNotEmpty) {
-          message = errors.first.toString();
-        }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error parsing report API response: $e');
+    }
     _showError(message);
   }
 
@@ -674,6 +735,25 @@ class _ReportScreenState extends State<ReportScreen> {
                       },
                       decoration: const InputDecoration(),
                     ),
+              if (_isLoadingKategori) ...[
+                const SizedBox(height: 6),
+                const Text(
+                  'Memuat kategori laporan...',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                ),
+              ] else if (_kategoriLoadError != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _kategoriLoadError!,
+                  style: const TextStyle(fontSize: 12, color: Colors.red),
+                ),
+              ] else if (_selectedKategoriId == null) ...[
+                const SizedBox(height: 6),
+                const Text(
+                  'Kategori untuk jenis laporan ini belum tersedia.',
+                  style: TextStyle(fontSize: 12, color: Colors.red),
+                ),
+              ],
 
               const SizedBox(height: 16),
 

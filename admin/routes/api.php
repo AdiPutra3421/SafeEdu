@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\FasilitasController;
+use App\Http\Controllers\Api\KategoriController;
 use App\Http\Controllers\Api\KontenSekolahController;
 use App\Http\Controllers\Api\NotifikasiController;
 use App\Http\Controllers\Api\PengaduanController;
@@ -23,6 +24,8 @@ Route::match(['post', 'put'], '/auth/profile', [AuthApiController::class, 'updat
 Route::post('/auth/logout', [AuthApiController::class, 'logout']);
 
 // API routes for User (User App)
+Route::get('/kategori', [KategoriController::class, 'index']);
+
 Route::prefix('pengaduan')->group(function () {
     Route::get('/', [PengaduanController::class, 'index']);
     Route::post('/', [PengaduanController::class, 'store']);

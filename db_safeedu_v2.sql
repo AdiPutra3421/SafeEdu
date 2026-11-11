@@ -128,4 +128,16 @@ INSERT INTO `fasilitas` (`nama`, `lokasi`, `kondisi`, `deskripsi`) VALUES
 ('Proyektor Ruang 104', 'Gedung C, Lantai 1', 'Bisa Digunakan', 'Resolusi 1080p'),
 ('Wastafel Toilet Pria', 'Gedung A, Lantai 1', 'Dalam Perbaikan', 'Kran patah menunggu suku cadang');
 
+INSERT INTO kategori (jenis, nama, created_at, updated_at)
+SELECT 'fasilitas', 'Kerusakan Fasilitas', NOW(), NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM kategori WHERE jenis = 'fasilitas'
+);
+
+INSERT INTO kategori (jenis, nama, created_at, updated_at)
+SELECT 'etik', 'Pelanggaran Kode Etik', NOW(), NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM kategori WHERE jenis = 'etik'
+);
+
 COMMIT;
