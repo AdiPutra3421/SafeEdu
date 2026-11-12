@@ -85,8 +85,8 @@ CREATE TABLE `log_pengerjaan` (
   `penugasan_id` bigint UNSIGNED NOT NULL,
   `catatan_teknisi` text NOT NULL,
   `foto_hasil` varchar(255) NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMES"TAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMES"TAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`penugasan_id`) REFERENCES `penugasan`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
