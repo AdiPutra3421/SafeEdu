@@ -27,6 +27,8 @@
           <tr>
             <th>ID Fasilitas</th>
             <th>Nama Fasilitas / Sarana</th>
+            <th>Lokasi</th>
+            <th>Status Kondisi</th>
             <th>Deskripsi</th>
             <th>Aksi</th>
           </tr>
@@ -55,6 +57,20 @@
         <div class="form-group">
           <label class="form-label" for="namaInput">Nama Fasilitas / Sarana *</label>
           <input type="text" id="namaInput" class="form-control" required placeholder="Contoh: AC Split 1.5 PK Lab Komputer 2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="lokasiInput">Lokasi *</label>
+          <input type="text" id="lokasiInput" class="form-control" required maxlength="150" placeholder="Contoh: Gedung A, Lantai 2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="statusKondisiInput">Status Kondisi *</label>
+          <select id="statusKondisiInput" class="form-control" required>
+            <option value="Bisa Digunakan">Bisa Digunakan</option>
+            <option value="Dalam Perbaikan">Dalam Perbaikan</option>
+            <option value="Tidak Bisa Digunakan">Tidak Bisa Digunakan</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -110,7 +126,7 @@
   function renderTable() {
     const tbody = document.getElementById('fasilitas-table-body');
     if (fasilitasData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
       return;
     }
 
@@ -119,6 +135,8 @@
         <tr>
           <td><strong>FAS-${f.id}</strong></td>
           <td style="font-weight:600; color:var(--text-main);">${f.nama}</td>
+          <td>${f.lokasi || '-'}</td>
+          <td>${f.status_kondisi || '-'}</td>
           <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
           <td>
             <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${f.id})">Edit</button>
@@ -135,6 +153,8 @@
       document.getElementById('modal-title').innerText = 'Edit Fasilitas';
       document.getElementById('fasilitas-id').value = f.id;
       document.getElementById('namaInput').value = f.nama;
+      document.getElementById('lokasiInput').value = f.lokasi || '';
+      document.getElementById('statusKondisiInput').value = f.status_kondisi || 'Bisa Digunakan';
       document.getElementById('deskripsiInput').value = f.deskripsi || '';
     } else {
       document.getElementById('modal-title').innerText = 'Tambah Fasilitas Baru';
@@ -153,6 +173,8 @@
     const id = document.getElementById('fasilitas-id').value;
     const newData = {
       nama: document.getElementById('namaInput').value,
+      lokasi: document.getElementById('lokasiInput').value,
+      status_kondisi: document.getElementById('statusKondisiInput').value,
       deskripsi: document.getElementById('deskripsiInput').value,
     };
 
@@ -175,7 +197,10 @@
         closeFasilitasModal();
         fetchFasilitas(); // Refresh table
       } else {
-        alert("Gagal menyimpan: " + JSON.stringify(json.errors));
+        const validationErrors = json.errors
+          ? Object.values(json.errors).flat().join(' ')
+          : '';
+        alert('Gagal menyimpan: ' + (json.message || validationErrors || 'Silakan coba kembali.'));
       }
     } catch (err) {
       console.error(err);

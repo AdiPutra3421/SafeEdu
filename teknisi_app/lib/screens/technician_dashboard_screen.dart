@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -82,6 +82,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     String status,
     String keterangan, {
     XFile? photo,
+    Uint8List? photoBytes,
   }) async {
     try {
       final request = http.MultipartRequest(
@@ -92,8 +93,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         ..fields['status'] = status
         ..fields['catatan_teknisi'] = keterangan;
       if (photo != null) {
-        request.files
-            .add(await http.MultipartFile.fromPath('photo', photo.path));
+        request.files.add(http.MultipartFile.fromBytes(
+          'photo',
+          photoBytes ?? await photo.readAsBytes(),
+          filename: photo.name,
+        ));
       }
 
       final streamed = await request.send();
@@ -185,6 +189,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     final notesController =
         TextEditingController(text: task.keteranganTeknisi ?? '');
     XFile? proofPhoto;
+    Uint8List? proofPhotoBytes;
     String chosenStatus = task.statusPenugasan == 'ditugaskan'
         ? 'diterima'
         : task.statusPenugasan;
@@ -373,7 +378,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                               imageQuality: 85,
                             );
                             if (photo != null) {
-                              setModalState(() => proofPhoto = photo);
+                              final photoBytes = await photo.readAsBytes();
+                              if (!ctx.mounted) return;
+                              setModalState(() {
+                                proofPhoto = photo;
+                                proofPhotoBytes = photoBytes;
+                              });
                             }
                           } catch (error) {
                             debugPrint('Error selecting proof photo: $error');
@@ -391,12 +401,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             ? 'Pilih Foto'
                             : proofPhoto!.name),
                       ),
-                      if (proofPhoto != null) ...[
+                      if (proofPhoto != null && proofPhotoBytes != null) ...[
                         const SizedBox(height: 8),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            File(proofPhoto!.path),
+                          child: Image.memory(
+                            proofPhotoBytes!,
                             height: 160,
                             width: double.infinity,
                             fit: BoxFit.cover,
@@ -443,6 +453,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             chosenStatus,
                             notesController.text.trim(),
                             photo: proofPhoto,
+                            photoBytes: proofPhotoBytes,
                           );
 
                           if (!mounted || !context.mounted) return;

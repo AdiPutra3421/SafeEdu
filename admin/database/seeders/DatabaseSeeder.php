@@ -38,8 +38,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Seed some master data
-        \App\Models\Kategori::create(['jenis' => 'fasilitas', 'nama' => 'Kerusakan Fasilitas']);
-        \App\Models\Kategori::create(['jenis' => 'etik', 'nama' => 'Pelanggaran Kode Etik']);
+        $this->call(KategoriSeeder::class);
 
         \App\Models\Fasilitas::create(['nama' => 'Ruang Kelas 1A', 'lokasi' => 'Gedung A', 'status_kondisi' => 'Bisa Digunakan', 'deskripsi' => 'AC baru diganti bulan lalu.']);
         \App\Models\Fasilitas::create(['nama' => 'Laboratorium Komputer', 'lokasi' => 'Gedung B', 'status_kondisi' => 'Dalam Perbaikan', 'deskripsi' => '2 PC rusak pada motherboard.']);
