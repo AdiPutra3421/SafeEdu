@@ -137,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Handle Bar Atas
               Center(
                 child: Container(
                   width: 44,
@@ -148,16 +149,64 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Judul Fasilitas & Tombol Close (X)
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.end, // Ubah posisi ke kanan
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.textMuted),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+
+              // Placeholder / Kotak Gambar Fasilitas
+              Container(
+                height: 160,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.facilityBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Icon(Icons.business_rounded,
+                      size: 50, color: AppColors.facilityText),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Judul Bagian Deskripsi
+              const Text(
+                "Deskripsi",
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: AppColors.textMain),
+              ),
+              const SizedBox(height: 8),
+
+              // Isi Deskripsi
+              Text(
+                item.description.isNotEmpty
+                    ? item.description
+                    : 'Tidak ada deskripsi tambahan.',
+                style: const TextStyle(
+                    fontSize: 14, height: 1.5, color: AppColors.textMain),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         );
@@ -558,29 +607,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Stack(
                         children: [
                           // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
+                          // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                          ),
-
-                          // 2. Lapisan Gradient Gelap di Bawah agar teks terbaca
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.7),
-                                  ],
-                                  stops: const [
-                                    0.5,
-                                    1.0
-                                  ], // Gradient mulai di tengah
-                                ),
-                              ),
-                            ),
+                            child: (item.description.contains('http') ||
+                                    item.iconType == 'image')
+                                // CATATAN: Ini hanya contoh. Anda harus menambahkan field 'imageUrl' di CatalogModel Anda
+                                // dan memetakannya di get filteredFacilities agar ini berfungsi sempurna.
+                                ? Image.network(
+                                    'GANTI_DENGAN_URL_GAMBAR',
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    color: Colors.grey[
+                                        300]), // Background abu-abu default
                           ),
 
                           // 4. Nama Fasilitas di Kiri Bawah

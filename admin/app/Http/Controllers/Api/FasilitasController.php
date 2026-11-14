@@ -5,32 +5,37 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Fasilitas;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class FasilitasController extends Controller
 {
     public function index()
     {
+        $fasilitas = Fasilitas::all();
         return response()->json([
             'success' => true,
-            'data' => Fasilitas::orderBy('id', 'desc')->get()
+            'data' => $fasilitas
         ]);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required|string|max:150',
-            'lokasi' => 'nullable|string|max:150',
-            'status_kondisi' => 'nullable|string',
+        $request->validate([
+            'nama' => 'required|string|max:100',
             'deskripsi' => 'nullable|string',
+            'foto_fasilitas' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        $fasilitas = new Fasilitas();
+        $fasilitas->nama = $request->nama;
+        $fasilitas->deskripsi = $request->deskripsi;
+
+        if ($request->hasFile('foto_fasilitas')) {
+            $path = $request->file('foto_fasilitas')->store('fasilitas', 'public');
+            $fasilitas->foto_fasilitas = $path;
         }
 
-        $fasilitas = Fasilitas::create($request->all());
+        $fasilitas->save();
 
         return response()->json([
             'success' => true,
@@ -41,33 +46,50 @@ class FasilitasController extends Controller
 
     public function update(Request $request, $id)
     {
-        $fasilitas = Fasilitas::find($id);
-        if (!$fasilitas) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        $fasilitas = Fasilitas::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'nama' => 'sometimes|required|string|max:150',
-            'lokasi' => 'nullable|required|string|max:150',
-            'status_kondisi' => 'nullable|required|string',
+        $request->validate([
+            'nama' => 'required|string|max:100',
             'deskripsi' => 'nullable|string',
+            'foto_fasilitas' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        $fasilitas->nama = $request->nama;
+        $fasilitas->deskripsi = $request->deskripsi;
+
+        // Jika tombol Hapus Gambar diklik di admin
+        if ($request->has('remove_foto') && $request->remove_foto == '1') {
+            if ($fasilitas->foto_fasilitas && Storage::disk('public')->exists($fasilitas->foto_fasilitas)) {
+                Storage::disk('public')->delete($fasilitas->foto_fasilitas);
+            }
+            $fasilitas->foto_fasilitas = null;
         }
 
-        $fasilitas->update($request->only(['nama', 'lokasi', 'status_kondisi', 'deskripsi']));
+        // Jika mengunggah foto baru
+        if ($request->hasFile('foto_fasilitas')) {
+            if ($fasilitas->foto_fasilitas && Storage::disk('public')->exists($fasilitas->foto_fasilitas)) {
+                Storage::disk('public')->delete($fasilitas->foto_fasilitas);
+            }
+            $path = $request->file('foto_fasilitas')->store('fasilitas', 'public');
+            $fasilitas->foto_fasilitas = $path;
+        }
+
+        $fasilitas->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Fasilitas berhasil diupdate',
+            'message' => 'Fasilitas berhasil diperbarui',
             'data' => $fasilitas
         ]);
     }
 
     public function destroy($id)
     {
-        $fasilitas = Fasilitas::find($id);
-        if (!$fasilitas) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        $fasilitas = Fasilitas::findOrFail($id);
+
+        if ($fasilitas->foto_fasilitas && Storage::disk('public')->exists($fasilitas->foto_fasilitas)) {
+            Storage::disk('public')->delete($fasilitas->foto_fasilitas);
+        }
 
         $fasilitas->delete();
 

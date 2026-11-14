@@ -6,7 +6,7 @@
 <header class="topbar">
   <div class="page-title">
     <h2>Manajemen Fasilitas & Katalog Sarana</h2>
-    <p>Tambah, edit, atau hapus fasilitas yang tersedia di sekolah/sekolah untuk dapat dilaporkan oleh pengguna.</p>
+    <p>Tambah, edit, atau hapus fasilitas yang tersedia di sekolah untuk dapat dilaporkan oleh pengguna.</p>
   </div>
   <div class="topbar-actions">
     <button class="btn btn-primary" onclick="openFasilitasModal()">
@@ -26,6 +26,7 @@
         <thead>
           <tr>
             <th>ID Fasilitas</th>
+            <th>Foto</th>
             <th>Nama Fasilitas / Sarana</th>
             <th>Deskripsi</th>
             <th>Aksi</th>
@@ -49,7 +50,7 @@
       <button class="close-btn" onclick="closeFasilitasModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <form id="fasilitasForm" onsubmit="handleFasilitasSubmit(event)">
+      <form id="fasilitasForm" onsubmit="handleFasilitasSubmit(event)" enctype="multipart/form-data">
         <input type="hidden" id="fasilitas-id">
         
         <div class="form-group">
@@ -60,6 +61,21 @@
         <div class="form-group">
           <label class="form-label" for="deskripsiInput">Deskripsi Tambahan</label>
           <textarea id="deskripsiInput" class="form-control" rows="2" placeholder="Contoh: Terakhir diservis bulan lalu..."></textarea>
+        </div>
+
+        <!-- INPUT FOTO & PREVIEW REAL-TIME (DISAMAKAN DENGAN BERITA / KONTEN SEKOLAH) -->
+        <div class="form-group" style="margin-top: 15px;">
+          <label class="form-label" for="fotoInput">Foto Fasilitas (Opsional)</label>
+          <input type="file" id="fotoInput" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp" onchange="previewImage(event)">
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">JPG, JPEG, PNG, atau WEBP; maksimal 2 MB.</div>
+          
+          <!-- CONTAINER PREVIEW GAMBAR LAMA & BARU -->
+          <div id="fotoPreviewContainer" style="display: none; margin-top: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+              <img id="fotoPreviewImage" src="" alt="Preview Foto" style="width: 80px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <button type="button" class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2;" onclick="removePhoto()">Hapus Gambar</button>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer" style="margin-top: 20px; padding: 12px 0 0 0;">
@@ -79,6 +95,7 @@
 
 <script>
   let fasilitasData = [];
+  let removePhotoFlag = false;
 
   async function fetchFasilitas() {
     try {
@@ -110,14 +127,19 @@
   function renderTable() {
     const tbody = document.getElementById('fasilitas-table-body');
     if (fasilitasData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
       return;
     }
 
     tbody.innerHTML = fasilitasData.map(f => {
+      const imgHtml = f.foto_fasilitas 
+        ? `<img src="/storage/${f.foto_fasilitas}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" alt="Foto">`
+        : `<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Tidak ada</span>`;
+
       return `
         <tr>
           <td><strong>FAS-${f.id}</strong></td>
+          <td>${imgHtml}</td>
           <td style="font-weight:600; color:var(--text-main);">${f.nama}</td>
           <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
           <td>
@@ -130,16 +152,34 @@
   }
 
   function openFasilitasModal(id = null) {
+    document.getElementById('fotoInput').value = ''; 
+    removePhotoFlag = false;
+    const previewContainer = document.getElementById('fotoPreviewContainer');
+    const previewImage = document.getElementById('fotoPreviewImage');
+
     if (id) {
       const f = fasilitasData.find(x => x.id === id);
       document.getElementById('modal-title').innerText = 'Edit Fasilitas';
       document.getElementById('fasilitas-id').value = f.id;
       document.getElementById('namaInput').value = f.nama;
       document.getElementById('deskripsiInput').value = f.deskripsi || '';
+      
+      // LOGIKA MENAMPILKAN GAMBAR LAMA DI ADMIN (DISAMAKAN DENGAN KONTEN SEKOLAH)
+      if (f.foto_fasilitas) {
+        previewImage.src = '/storage/' + f.foto_fasilitas;
+        previewContainer.style.display = 'block';
+      } else {
+        previewImage.src = '';
+        previewContainer.style.display = 'none';
+      }
+
     } else {
       document.getElementById('modal-title').innerText = 'Tambah Fasilitas Baru';
       document.getElementById('fasilitasForm').reset();
       document.getElementById('fasilitas-id').value = '';
+      
+      previewImage.src = '';
+      previewContainer.style.display = 'none';
     }
     document.getElementById('fasilitasModal').classList.add('active');
   }
@@ -148,34 +188,68 @@
     document.getElementById('fasilitasModal').classList.remove('active');
   }
 
-  async function handleFasilitasSubmit(e) {
+  function removePhoto() {
+    document.getElementById('fotoInput').value = '';
+    document.getElementById('fotoPreviewContainer').style.display = 'none';
+    document.getElementById('fotoPreviewImage').src = '';
+    removePhotoFlag = true;
+  }
+
+  // PREVIEW DARI PILIHAN LAPTOP (REAL-TIME)
+  function previewImage(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('fotoPreviewContainer');
+    const previewImage = document.getElementById('fotoPreviewImage');
+    
+    if (file) {
+      removePhotoFlag = false;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImage.src = e.target.result;
+        previewContainer.style.display = 'block';
+      }
+      reader.readAsDataURL(file);
+    }
+  }
+
+ async function handleFasilitasSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('fasilitas-id').value;
-    const newData = {
-      nama: document.getElementById('namaInput').value,
-      deskripsi: document.getElementById('deskripsiInput').value,
-    };
+    
+    const formData = new FormData();
+    formData.append('nama', document.getElementById('namaInput').value);
+    formData.append('deskripsi', document.getElementById('deskripsiInput').value);
+
+    const fotoFile = document.getElementById('fotoInput').files[0];
+    if (fotoFile) {
+      formData.append('foto_fasilitas', fotoFile);
+    } else if (removePhotoFlag) {
+      formData.append('remove_foto', '1');
+    }
 
     try {
-      const method = id ? 'PUT' : 'POST';
+      if (id) {
+        formData.append('_method', 'PUT');
+      }
+
+      const method = 'POST'; 
       const url = id ? `/api/fasilitas/${id}` : '/api/fasilitas';
       
       const response = await fetch(url, {
         method: method,
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(newData)
+        body: formData 
       });
       
       const json = await response.json();
       if (json.success) {
         showToast(id ? 'Fasilitas berhasil diperbarui!' : 'Fasilitas baru berhasil ditambahkan!');
         closeFasilitasModal();
-        fetchFasilitas(); // Refresh table
+        fetchFasilitas(); 
       } else {
-        alert("Gagal menyimpan: " + JSON.stringify(json.errors));
+        alert("Gagal menyimpan: " + JSON.stringify(json.errors || json.message));
       }
     } catch (err) {
       console.error(err);
@@ -188,7 +262,7 @@
       try {
         const response = await fetch(`/api/fasilitas/${id}`, {
           method: 'DELETE',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' } // PERBAIKAN DI SINI (menggunakan tanda petik biasa)
         });
         const json = await response.json();
         if (json.success) {
@@ -201,7 +275,6 @@
     }
   }
 
-  // Initial load
   document.addEventListener('DOMContentLoaded', () => {
     fetchFasilitas();
   });
