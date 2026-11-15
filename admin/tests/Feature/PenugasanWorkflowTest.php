@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Kategori;
+use App\Models\Notifikasi;
 use App\Models\Pengaduan;
 use App\Models\Penugasan;
 use App\Models\User;
@@ -95,6 +96,25 @@ class PenugasanWorkflowTest extends TestCase
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('photo');
+    }
+
+    public function test_notification_creation_uses_only_supported_schema_columns(): void
+    {
+        $reporter = User::factory()->create(['role' => 'siswa']);
+
+        $notification = Notifikasi::create([
+            'user_id' => $reporter->id,
+            'judul' => 'Laporan Diproses',
+            'pesan' => 'Laporan Anda sedang diproses.',
+            'is_read' => false,
+        ]);
+
+        $this->assertDatabaseHas('notifikasi', [
+            'id' => $notification->id,
+            'user_id' => $reporter->id,
+            'judul' => 'Laporan Diproses',
+        ]);
+        $this->assertFalse($notification->is_read);
     }
 
     private function createTask(

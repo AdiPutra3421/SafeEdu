@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Models\Pengaduan;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return view('welcome');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -13,15 +15,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/laporan', function () {
-        $teknisi = \App\Models\User::where('role', 'teknisi')->get();
+        $teknisi = User::where('role', 'teknisi')->get();
+
         return view('laporan', compact('teknisi'));
     })->name('laporan');
 
     Route::get('/laporan/{id}', function ($id) {
-        $teknisi = \App\Models\User::where('role', 'teknisi')->get();
-        $pengaduan = \App\Models\Pengaduan::find($id);
+        $teknisi = User::where('role', 'teknisi')->get();
+        $pengaduan = Pengaduan::find($id);
+
         return view('laporan-detail', compact('teknisi', 'pengaduan'));
-    })->name('laporan');
+    })->name('laporan.detail');
 
     Route::get('/konfirmasi', function () {
         return view('konfirmasi');
@@ -55,11 +59,17 @@ Route::options('/storage/{path}', function () {
 })->where('path', '.*');
 
 Route::get('/storage/{path}', function ($path) {
-    $filePath = storage_path('app/public/' . $path);
-    if (!file_exists($filePath)) {
+    if (str_contains($path, '..') || str_contains($path, '\\')) {
         abort(404);
     }
+
+    $filePath = storage_path('app/public/'.ltrim($path, '/'));
+    if (! is_file($filePath) || ! str_starts_with(realpath($filePath) ?: '', realpath(storage_path('app/public')) ?: '')) {
+        abort(404);
+    }
+
     $mimeType = @mime_content_type($filePath) ?: 'application/octet-stream';
+
     return response()->file($filePath, [
         'Access-Control-Allow-Origin' => '*',
         'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',

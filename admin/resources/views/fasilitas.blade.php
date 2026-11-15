@@ -123,6 +123,15 @@
     setTimeout(() => toast.remove(), 3500);
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function renderTable() {
     const tbody = document.getElementById('fasilitas-table-body');
     if (fasilitasData.length === 0) {
@@ -131,13 +140,16 @@
     }
 
     tbody.innerHTML = fasilitasData.map(f => {
+      const nama = escapeHtml(f.nama || '-');
+      const lokasi = escapeHtml(f.lokasi || '-');
+      const deskripsi = escapeHtml(f.deskripsi || '-');
       return `
         <tr>
           <td><strong>FAS-${f.id}</strong></td>
-          <td style="font-weight:600; color:var(--text-main);">${f.nama}</td>
-          <td>${f.lokasi || '-'}</td>
-          <td>${f.status_kondisi || '-'}</td>
-          <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
+          <td style="font-weight:600; color:var(--text-main);">${nama}</td>
+          <td>${lokasi}</td>
+          <td>${escapeHtml(f.status_kondisi || '-')}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">${deskripsi}</td>
           <td>
             <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${f.id})">Edit</button>
             <button class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2; margin-left:4px;" onclick="deleteFasilitas(${f.id})">Hapus</button>

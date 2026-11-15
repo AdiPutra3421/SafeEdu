@@ -236,7 +236,8 @@
         statusLabel = 'Diproses Teknisi';
       }
       
-      const judul = item.judul || '-';
+      const judul = escapeHtml(item.judul || '-');
+      const lokasi = escapeHtml(item.lokasi_kejadian || '-');
       const type = item.kategori?.jenis === 'fasilitas' ? 'Fasilitas Sekolah' : 'Kode Etik';
 
       return `
@@ -244,7 +245,7 @@
           <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()} - ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
           <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${type}</span></td>
           <td style="font-weight:600; color:var(--text-main);">${judul}</td>
-          <td style="font-size:0.85rem;">${item.lokasi_kejadian || '-'}</td>
+          <td style="font-size:0.85rem;">${lokasi}</td>
           <td>${item.is_anonim ? '<i>Anonim</i>' : 'User'}</td>
           <td><span class="badge" style="background:#fef3c7; color:#d97706;">Sedang</span></td>
           <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
@@ -256,6 +257,15 @@
         </tr>
       `;
     }).join('');
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   function showToast(message, isError = false) {

@@ -118,6 +118,15 @@
     }
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function renderConfirmations() {
     const container = document.getElementById('confirmationList');
 
@@ -183,6 +192,7 @@
 
       const logs = item.log_pengerjaans || [];
       const latestLog = logs.length > 0 ? logs[logs.length - 1].catatan_teknisi : (item.catatan_admin || 'Belum ada catatan');
+      const safeLatestLog = escapeHtml(latestLog ?? 'Belum ada catatan');
       const urgency = item.urgency || item.pengaduan?.urgency || 'medium';
       const urgencyLabels = { urgent: 'Mendesak', medium: 'Sedang', low: 'Rendah' };
       const urgencyColors = {
@@ -202,7 +212,7 @@
             <div class="tech-info-chip">
               <div class="tech-avatar">${initials}</div>
               <div class="tech-details">
-                <div class="name">${techName}</div>
+                <div class="name">${escapeHtml(techName)}</div>
                 <div class="division">Divisi Sarpras</div>
               </div>
             </div>
@@ -214,12 +224,12 @@
               <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">TUGAS-${item.id} (RPT-${item.pengaduan_id})</span>
               <span style="font-size: 0.72rem; color: var(--text-light);">${new Date(item.created_at).toLocaleDateString()}</span>
             </div>
-            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${item.pengaduan?.judul || '-'}</h4>
+            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${escapeHtml(item.pengaduan?.judul || '-')}</h4>
             <div style="margin-bottom:10px;">Urgensi: ${urgencyBadge}</div>
             
             <div class="timeline-note-box">
               <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-teal); margin-bottom: 2px;">Catatan Terakhir:</div>
-              ${latestLog}
+              ${safeLatestLog}
             </div>
             ${proofLink ? `<div style="margin-top:8px;font-size:.8rem;">${proofLink}</div>` : ''}
 

@@ -10,7 +10,8 @@
         "cupertino_icons",
         "file_picker",
         "flutter",
-        "http"
+        "http",
+        "material"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -40,6 +41,13 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "material",
+      "version": "1.0.1",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
@@ -77,6 +85,7 @@
       "dependencies": [
         "characters",
         "collection",
+        "listen",
         "material_color_utilities",
         "meta",
         "sky_engine",
@@ -97,7 +106,7 @@
     },
     {
       "name": "meta",
-      "version": "1.18.3",
+      "version": "1.19.0",
       "dependencies": []
     },
     {
@@ -118,7 +127,7 @@
     },
     {
       "name": "vector_math",
-      "version": "2.4.0",
+      "version": "2.4.4",
       "dependencies": []
     },
     {
@@ -159,7 +168,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.12",
+      "version": "0.7.15",
       "dependencies": [
         "async",
         "boolean_selector",
@@ -280,6 +289,13 @@
       "version": "0.13.0",
       "dependencies": [
         "collection"
+      ]
+    },
+    {
+      "name": "listen",
+      "version": "1.0.1",
+      "dependencies": [
+        "meta"
       ]
     },
     {

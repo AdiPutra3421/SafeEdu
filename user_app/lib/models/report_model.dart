@@ -18,6 +18,7 @@ class PengaduanModel {
   final String? workedAt;
   final String? completedAt;
   final String? namaKategori;
+  final String? jenisKategori;
   final String? namaFasilitas;
   final String? penugasanStatus;
 
@@ -41,6 +42,7 @@ class PengaduanModel {
     this.workedAt,
     this.completedAt,
     this.namaKategori,
+    this.jenisKategori,
     this.namaFasilitas,
     this.penugasanStatus,
   });
@@ -63,6 +65,8 @@ class PengaduanModel {
   }
 
   factory PengaduanModel.fromMap(Map<String, dynamic> map) {
+    final kategori = map['kategori'];
+
     return PengaduanModel(
       id: _asInt(map['id']),
       userId: _asInt(map['user_id']),
@@ -85,7 +89,8 @@ class PengaduanModel {
       assignedAt: map['assigned_at'],
       workedAt: map['worked_at'],
       completedAt: map['completed_at'],
-      namaKategori: (map['kategori'] as Map?)?['nama']?.toString(),
+      namaKategori: kategori is Map ? kategori['nama']?.toString() : null,
+      jenisKategori: kategori is Map ? kategori['jenis']?.toString() : null,
       namaFasilitas: (map['fasilitas'] as Map?)?['nama']?.toString(),
       penugasanStatus:
           map['penugasans'] is List && (map['penugasans'] as List).isNotEmpty

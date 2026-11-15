@@ -172,15 +172,26 @@ class AuthApiController extends Controller
         }
 
         if ($request->filled('password')) {
-            if ($request->filled('current_password')) {
-                if (!Hash::check($request->current_password, $user->password)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Kata sandi saat ini tidak sesuai.',
-                        'errors'  => ['current_password' => ['Kata sandi saat ini tidak sesuai.']],
-                    ], 422);
-                }
+            $validator = Validator::make($request->all(), [
+                'current_password' => ['required', 'string'],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kata sandi saat ini wajib diisi.',
+                    'errors'  => $validator->errors(),
+                ], 422);
             }
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kata sandi saat ini tidak sesuai.',
+                    'errors'  => ['current_password' => ['Kata sandi saat ini tidak sesuai.']],
+                ], 422);
+            }
+
             $user->password = Hash::make($request->password);
         }
 

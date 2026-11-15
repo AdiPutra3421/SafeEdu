@@ -237,7 +237,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       size: 12,
                       color: isDone
                           ? const Color(0xFF047857)
-                          : (isCurrent ? AppColors.primary : AppColors.textLight),
+                          : (isCurrent
+                              ? AppColors.primary
+                              : AppColors.textLight),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -271,7 +273,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profil & Riwayat'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textMain),
+            icon:
+                const Icon(Icons.settings_outlined, color: AppColors.textMain),
             tooltip: 'Pengaturan Profil',
             onPressed: _openProfileSettings,
           ),
@@ -460,6 +463,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   itemCount: widget.userReports.length,
                   itemBuilder: (context, index) {
                     final rep = widget.userReports[index];
+                    final isFacilityCategory = rep.jenisKategori == 'fasilitas';
 
                     Color statusBg = AppColors.statusPendingBg;
                     Color statusText = AppColors.statusPendingText;
@@ -481,16 +485,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: rep.kategoriId == 1
+                                color: isFacilityCategory
                                     ? AppColors.facilityBg
                                     : AppColors.ethicsBg,
                               ),
                               child: Text(
-                                rep.kategoriId == 1 ? 'Fasilitas' : 'Kode Etik',
+                                isFacilityCategory ? 'Fasilitas' : 'Kode Etik',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: rep.kategoriId == 1
+                                  color: isFacilityCategory
                                       ? AppColors.facilityText
                                       : AppColors.ethicsText,
                                 ),

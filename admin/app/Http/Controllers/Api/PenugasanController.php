@@ -164,10 +164,9 @@ class PenugasanController extends Controller
             // Masalah #6: Buat Notifikasi & Broadcast
             $notif = Notifikasi::create([
                 'user_id' => $pengaduan->user_id,
-                'pengaduan_id' => $pengaduan->id,
-                'type' => 'info',
                 'judul' => 'Laporan Diproses',
                 'pesan' => "Laporan Anda mengenai '{$pengaduan->judul}' telah diverifikasi dan diteruskan ke teknisi.",
+                'is_read' => false,
             ]);
             try {
                 broadcast(new NotifikasiDikirim($notif));
@@ -243,10 +242,9 @@ class PenugasanController extends Controller
                 // Masalah #6: Notifikasi teknisi bekerja
                 $notif = Notifikasi::create([
                     'user_id' => $pengaduan->user_id,
-                    'pengaduan_id' => $pengaduan->id,
-                    'type' => 'warning',
                     'judul' => 'Teknisi Sedang Bekerja',
                     'pesan' => "Teknisi sedang menangani laporan Anda mengenai '{$pengaduan->judul}'.",
+                    'is_read' => false,
                 ]);
                 try {
                     broadcast(new NotifikasiDikirim($notif));
@@ -260,10 +258,9 @@ class PenugasanController extends Controller
                 // Masalah #6: Notifikasi selesai
                 $notif = Notifikasi::create([
                     'user_id' => $pengaduan->user_id,
-                    'pengaduan_id' => $pengaduan->id,
-                    'type' => 'success',
                     'judul' => 'Laporan Selesai',
                     'pesan' => "Laporan Anda mengenai '{$pengaduan->judul}' telah diselesaikan. Terima kasih atas partisipasi Anda.",
+                    'is_read' => false,
                 ]);
                 try {
                     broadcast(new NotifikasiDikirim($notif));

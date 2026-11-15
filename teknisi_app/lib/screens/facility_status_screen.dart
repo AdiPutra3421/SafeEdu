@@ -14,6 +14,12 @@ class FacilityStatusScreen extends StatefulWidget {
 }
 
 class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
+  static const _conditionOptions = [
+    'Bisa Digunakan',
+    'Dalam Perbaikan',
+    'Tidak Bisa Digunakan',
+  ];
+
   List<dynamic> _facilities = [];
   bool _isLoading = false;
   String searchQuery = '';
@@ -224,8 +230,12 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                     itemCount: _isLoading ? 0 : filteredFacilities.length,
                     itemBuilder: (context, index) {
                       final facility = filteredFacilities[index];
-                      final isOk =
-                          facility['status_kondisi'] == 'Bisa Digunakan';
+                      final currentCondition = facility['status_kondisi'];
+                      final selectedCondition =
+                          _conditionOptions.contains(currentCondition)
+                              ? currentCondition as String
+                              : _conditionOptions.first;
+                      final isOk = selectedCondition == 'Bisa Digunakan';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -298,16 +308,13 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   DropdownButton<String>(
-                                    value: facility['status_kondisi'] ?? '-',
+                                    value: selectedCondition,
                                     style: const TextStyle(
                                         fontSize: 13,
                                         color: AppColors.textMain),
                                     underline: const SizedBox(),
-                                    items: <String>[
-                                      'Bisa Digunakan',
-                                      'Dalam Perbaikan',
-                                      'Tidak Bisa Digunakan'
-                                    ].map((String value) {
+                                    items:
+                                        _conditionOptions.map((String value) {
                                       return DropdownMenuItem<String>(
                                         value: value,
                                         child: Text(value),
@@ -315,9 +322,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                     }).toList(),
                                     onChanged: (String? newValue) {
                                       if (newValue != null &&
-                                          newValue !=
-                                              (facility['status_kondisi'] ??
-                                                  '-')) {
+                                          newValue != currentCondition) {
                                         _updateKondisi(facility, newValue);
                                       }
                                     },

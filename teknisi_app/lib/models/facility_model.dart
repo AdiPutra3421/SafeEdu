@@ -14,12 +14,20 @@ class FacilityModel {
   });
 
   factory FacilityModel.fromJson(Map<String, dynamic> json) {
+    final id = json['id_fasilitas'] ?? json['id'];
+    final name = json['nama_fasilitas'] ?? json['nama'];
+    if (id == null || name == null) {
+      throw const FormatException(
+          'Data fasilitas tidak memiliki ID atau nama.');
+    }
+
     return FacilityModel(
-      idFasilitas: json['id_fasilitas'],
-      namaFasilitas: json['nama_fasilitas'],
-      lokasi: json['lokasi'] ?? '',
-      kondisi: json['kondisi'] ?? 'Bisa Digunakan',
-      deskripsi: json['deskripsi'],
+      idFasilitas: id is int ? id : int.parse(id.toString()),
+      namaFasilitas: name.toString(),
+      lokasi: (json['lokasi'] ?? '').toString(),
+      kondisi: (json['kondisi'] ?? json['status_kondisi'] ?? 'Bisa Digunakan')
+          .toString(),
+      deskripsi: json['deskripsi']?.toString(),
     );
   }
 
