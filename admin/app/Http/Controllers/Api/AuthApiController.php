@@ -17,15 +17,15 @@ class AuthApiController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email'    => 'required|string',
+            'email' => 'required|string',
             'password' => 'required|string',
-            'role'     => 'nullable|string|in:siswa,teknisi,admin,user',
+            'role' => 'nullable|string|in:siswa,teknisi,admin,user',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -41,17 +41,18 @@ class AuthApiController extends Controller
         }
         $user = $query->first();
 
-        if (!$user) {
+        if (! $user) {
             $notFoundMsg = ($request->role === 'teknisi')
                 ? 'Akun teknisi tidak ditemukan.'
                 : 'Email belum terdaftar. Silakan daftar terlebih dahulu.';
+
             return response()->json([
                 'success' => false,
                 'message' => $notFoundMsg,
             ], 404);
         }
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kata sandi salah. Silakan coba lagi.',
@@ -61,11 +62,11 @@ class AuthApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
-            'data'    => [
-                'id'    => $user->id,
-                'nama'  => $user->nama,
+            'data' => [
+                'id' => $user->id,
+                'nama' => $user->nama,
                 'email' => $user->display_email,
-                'role'  => $user->role,
+                'role' => $user->role,
             ],
         ]);
     }
@@ -76,42 +77,42 @@ class AuthApiController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama'     => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'nama' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
         ], [
-            'nama.required'     => 'Nama lengkap wajib diisi.',
-            'nama.regex'        => 'Nama hanya boleh berisi huruf.',
-            'email.required'    => 'Email wajib diisi.',
-            'email.email'       => 'Format email tidak valid.',
-            'email.unique'      => 'Email ini sudah terdaftar. Silakan gunakan email lain atau langsung login.',
+            'nama.required' => 'Nama lengkap wajib diisi.',
+            'nama.regex' => 'Nama hanya boleh berisi huruf.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email ini sudah terdaftar. Silakan gunakan email lain atau langsung login.',
             'password.required' => 'Password wajib diisi.',
-            'password.min'      => 'Password minimal 6 karakter.',
+            'password.min' => 'Password minimal 6 karakter.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => $validator->errors()->first(),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $user = User::create([
-            'nama'     => trim($request->nama),
-            'email'    => trim($request->email),
+            'nama' => trim($request->nama),
+            'email' => trim($request->email),
             'password' => Hash::make($request->password),
-            'role'     => 'siswa',
+            'role' => 'siswa',
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Pendaftaran berhasil.',
-            'data'    => [
-                'id'    => $user->id,
-                'nama'  => $user->nama,
+            'data' => [
+                'id' => $user->id,
+                'nama' => $user->nama,
                 'email' => $user->display_email,
-                'role'  => $user->role,
+                'role' => $user->role,
             ],
         ], 201);
     }
@@ -124,17 +125,17 @@ class AuthApiController extends Controller
         $userId = $request->query('user_id');
         $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user'])->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['success' => false, 'message' => 'Data user tidak ditemukan.'], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data'    => [
-                'id'    => $user->id,
-                'nama'  => $user->nama,
+            'data' => [
+                'id' => $user->id,
+                'nama' => $user->nama,
                 'email' => $user->display_email,
-                'role'  => $user->role,
+                'role' => $user->role,
             ],
         ]);
     }
@@ -147,7 +148,7 @@ class AuthApiController extends Controller
         $userId = $request->input('user_id', $request->query('user_id'));
         $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user'])->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data user tidak ditemukan.',
@@ -155,31 +156,30 @@ class AuthApiController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nama'             => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
-            'current_password' => 'nullable|string',
-            'password'         => 'nullable|string|min:6',
+            'nama' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z\s]+$/'],
+            'current_password' => 'required_with:password|string',
+            'password' => 'nullable|string|min:6',
         ], [
-            'nama.required'    => 'Nama lengkap wajib diisi.',
-            'nama.regex'       => 'Nama hanya boleh berisi huruf.',
-            'password.min'     => 'Password baru minimal 6 karakter.',
+            'nama.required' => 'Nama lengkap wajib diisi.',
+            'nama.regex' => 'Nama hanya boleh berisi huruf.',
+            'current_password.required_with' => 'Kata sandi saat ini wajib diisi untuk mengganti kata sandi.',
+            'password.min' => 'Password baru minimal 6 karakter.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         if ($request->filled('password')) {
-            if ($request->filled('current_password')) {
-                if (!Hash::check($request->current_password, $user->password)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Kata sandi saat ini tidak sesuai.',
-                        'errors'  => ['current_password' => ['Kata sandi saat ini tidak sesuai.']],
-                    ], 422);
-                }
+            if (! Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kata sandi saat ini tidak sesuai.',
+                    'errors' => ['current_password' => ['Kata sandi saat ini tidak sesuai.']],
+                ], 422);
             }
             $user->password = Hash::make($request->password);
         }
@@ -190,11 +190,11 @@ class AuthApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profil berhasil diperbarui.',
-            'data'    => [
-                'id'    => $user->id,
-                'nama'  => $user->nama,
+            'data' => [
+                'id' => $user->id,
+                'nama' => $user->nama,
                 'email' => $user->display_email,
-                'role'  => $user->role,
+                'role' => $user->role,
             ],
         ]);
     }

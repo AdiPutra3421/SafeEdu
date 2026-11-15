@@ -18,6 +18,7 @@ class PengaduanModel {
   final String? workedAt;
   final String? completedAt;
   final String? namaKategori;
+  final String? kategoriJenis;
   final String? namaFasilitas;
   final String? penugasanStatus;
 
@@ -41,6 +42,7 @@ class PengaduanModel {
     this.workedAt,
     this.completedAt,
     this.namaKategori,
+    this.kategoriJenis,
     this.namaFasilitas,
     this.penugasanStatus,
   });
@@ -86,6 +88,7 @@ class PengaduanModel {
       workedAt: map['worked_at'],
       completedAt: map['completed_at'],
       namaKategori: (map['kategori'] as Map?)?['nama']?.toString(),
+      kategoriJenis: (map['kategori'] as Map?)?['jenis']?.toString(),
       namaFasilitas: (map['fasilitas'] as Map?)?['nama']?.toString(),
       penugasanStatus:
           map['penugasans'] is List && (map['penugasans'] as List).isNotEmpty

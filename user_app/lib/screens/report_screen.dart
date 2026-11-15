@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/report_model.dart';
@@ -32,7 +31,6 @@ class _ReportScreenState extends State<ReportScreen> {
   final _descController = TextEditingController();
 
   List<dynamic> _apiFasilitas = [];
-  bool _isLoadingFasilitas = false;
   int? _selectedFasilitasId;
   List<Map<String, dynamic>> _apiKategori = [];
   bool _isLoadingKategori = true;
@@ -125,13 +123,12 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _fetchFasilitas() async {
-    setState(() => _isLoadingFasilitas = true);
     try {
       final res =
           await http.get(Uri.parse('${ApiConfig.baseUrl}/api/fasilitas'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        if (data['success'] == true) {
+        if (data['success'] == true && mounted) {
           setState(() {
             _apiFasilitas = data['data'] is List ? data['data'] : [];
             if (_apiFasilitas.isNotEmpty) {
@@ -143,8 +140,6 @@ class _ReportScreenState extends State<ReportScreen> {
       }
     } catch (e) {
       print('Error fetching fasilitas: $e');
-    } finally {
-      setState(() => _isLoadingFasilitas = false);
     }
   }
 
@@ -208,9 +203,6 @@ class _ReportScreenState extends State<ReportScreen> {
   String? _validateLocation(String? value) {
     final text = value?.trim() ?? '';
     if (text.isEmpty) return 'Lokasi insiden wajib dicantumkan';
-    if (!RegExp(r'^[a-zA-Z0-9\s]+$').hasMatch(text)) {
-      return 'Lokasi insiden hanya boleh berisi huruf dan angka';
-    }
     final letters = RegExp(r'[a-zA-Z]').allMatches(text).length;
     final compactLength = text.replaceAll(RegExp(r'\s+'), '').length;
     if (letters < 3 || compactLength == 0 || letters / compactLength < 0.25) {
@@ -387,6 +379,7 @@ class _ReportScreenState extends State<ReportScreen> {
           createdAt: data['created_at'],
           namaKategori: (data['kategori'] as Map?)?['nama']?.toString() ??
               _selectedKategoriName,
+          kategoriJenis: _reportType == 'fasilitas' ? 'fasilitas' : 'etik',
         );
 
         widget.onReportSubmitted(newReport);
@@ -667,9 +660,6 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _titleController,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
-                ],
                 decoration: InputDecoration(
                   hintText: isFacility
                       ? 'Contoh: AC Meneteskan Air di Lab 302'
@@ -681,9 +671,6 @@ class _ReportScreenState extends State<ReportScreen> {
                   final v = val == null ? '' : val.trim();
                   if (v.isEmpty) return 'Judul laporan wajib diisi';
                   if (v.length < 10) return 'Judul laporan minimal 10 karakter';
-                  if (!RegExp(r'^[a-zA-Z0-9\s]+$').hasMatch(v)) {
-                    return 'Judul laporan hanya boleh berisi huruf dan angka';
-                  }
                   if (!_isMeaningfulText(v)) {
                     return 'Judul harus berupa kata yang jelas, tidak boleh hanya huruf dan angka acak';
                   }
@@ -763,9 +750,6 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _locationController,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
-                ],
                 decoration: const InputDecoration(
                   hintText: 'Contoh: Gedung B Lantai 2 Ruang Kelas 204',
                   hintStyle:
@@ -801,9 +785,6 @@ class _ReportScreenState extends State<ReportScreen> {
               TextFormField(
                 controller: _descController,
                 maxLines: 4,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
-                ],
                 decoration: const InputDecoration(
                   hintText:
                       'Jelaskan kronologi kejadian secara runtut tanda kerusakan atau pihak yang terlibat...',
@@ -814,9 +795,6 @@ class _ReportScreenState extends State<ReportScreen> {
                   final v = val == null ? '' : val.trim();
                   if (v.length < 30) {
                     return 'Mohon jelaskan kronologi kejadian secara detail (minimal 30 karakter)';
-                  }
-                  if (!RegExp(r'^[a-zA-Z0-9\s]+$').hasMatch(v)) {
-                    return 'Rincian kronologi hanya boleh berisi huruf dan angka';
                   }
                   if (!_isMeaningfulText(v, minLetterRatio: 0.3)) {
                     return 'Deskripsi harus berupa kalimat yang jelas, tidak boleh hanya huruf dan angka acak';

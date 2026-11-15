@@ -298,7 +298,13 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   DropdownButton<String>(
-                                    value: facility['status_kondisi'] ?? '-',
+                                    value: <String>[
+                                      'Bisa Digunakan',
+                                      'Dalam Perbaikan',
+                                      'Tidak Bisa Digunakan',
+                                    ].contains(facility['status_kondisi'])
+                                        ? facility['status_kondisi']
+                                        : 'Bisa Digunakan',
                                     style: const TextStyle(
                                         fontSize: 13,
                                         color: AppColors.textMain),
@@ -316,8 +322,7 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
                                     onChanged: (String? newValue) {
                                       if (newValue != null &&
                                           newValue !=
-                                              (facility['status_kondisi'] ??
-                                                  '-')) {
+                                              facility['status_kondisi']) {
                                         _updateKondisi(facility, newValue);
                                       }
                                     },

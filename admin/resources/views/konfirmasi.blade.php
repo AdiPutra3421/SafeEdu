@@ -67,6 +67,27 @@
   let currentConfFilter = 'all';
   let confData = [];
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
+  function storageUrl(path) {
+    if (typeof path !== 'string') return null;
+    const segments = path.split('/');
+    if (segments.length === 0 || segments.some(segment =>
+      !segment || segment === '.' || segment === '..' || segment.includes('\\')
+    )) {
+      return null;
+    }
+    return `/storage/${segments.map(encodeURIComponent).join('/')}`;
+  }
+
   function showToast(message) {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -75,8 +96,9 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      <span>${message}</span>
+      <span></span>
     `;
+    toast.querySelector('span').textContent = message;
     container.appendChild(toast);
     setTimeout(() => {
       toast.remove();
@@ -157,6 +179,7 @@
       const isFinished = item.status === 'selesai';
       const techName = item.teknisi_id == 2 ? 'Bambang Teknisi' : 'Teknisi';
       const initials = techName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+      const taskId = Number(item.id);
 
       let statusBadge = '';
       if (isFinished) {
@@ -176,7 +199,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             Divalidasi Admin
           </span>`
-          : `<button class="btn btn-primary btn-sm" onclick="handleApprove('${item.id}')">
+          : `          <button class="btn btn-primary btn-sm" onclick="handleApprove(${taskId})">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Validasi & Tutup
           </button>`;
@@ -190,10 +213,12 @@
         medium: 'background:#fffbeb;color:#b45309;',
         low: 'background:#ecfdf5;color:#047857;'
       };
-      const urgencyBadge = `<span style="display:inline-block;padding:3px 8px;border-radius:999px;font-size:.7rem;font-weight:700;${urgencyColors[urgency] || urgencyColors.medium}">${urgencyLabels[urgency] || urgencyLabels.medium}</span>`;
+      const urgencyKey = Object.hasOwn(urgencyLabels, urgency) ? urgency : 'medium';
+      const urgencyBadge = `<span style="display:inline-block;padding:3px 8px;border-radius:999px;font-size:.7rem;font-weight:700;${urgencyColors[urgencyKey]}">${urgencyLabels[urgencyKey]}</span>`;
       const proofPath = logs.length > 0 ? logs[logs.length - 1].photo_proof : null;
-      const proofLink = proofPath
-        ? `<a href="/storage/${proofPath.split('/').map(encodeURIComponent).join('/')}" target="_blank" rel="noopener">Lihat foto bukti penyelesaian</a>`
+      const proofUrl = storageUrl(proofPath);
+      const proofLink = proofUrl
+        ? `<a href="${escapeHtml(proofUrl)}" target="_blank" rel="noopener">Lihat foto bukti penyelesaian</a>`
         : '';
 
       return `
@@ -211,22 +236,22 @@
 
           <div style="border-top: 1px solid var(--border-color); padding-top: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">TUGAS-${item.id} (RPT-${item.pengaduan_id})</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">TUGAS-${escapeHtml(item.id)} (RPT-${escapeHtml(item.pengaduan_id)})</span>
               <span style="font-size: 0.72rem; color: var(--text-light);">${new Date(item.created_at).toLocaleDateString()}</span>
             </div>
-            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${item.pengaduan?.judul || '-'}</h4>
+            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${escapeHtml(item.pengaduan?.judul || '-')}</h4>
             <div style="margin-bottom:10px;">Urgensi: ${urgencyBadge}</div>
             
             <div class="timeline-note-box">
               <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-teal); margin-bottom: 2px;">Catatan Terakhir:</div>
-              ${latestLog}
+              ${escapeHtml(latestLog)}
             </div>
             ${proofLink ? `<div style="margin-top:8px;font-size:.8rem;">${proofLink}</div>` : ''}
 
           </div>
 
           <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.72rem; color: var(--text-muted);">Tugas ID: ${item.id}</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Tugas ID: ${escapeHtml(item.id)}</span>
             <div>${approvalButton}</div>
           </div>
         </div>

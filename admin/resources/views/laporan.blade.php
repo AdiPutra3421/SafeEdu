@@ -157,6 +157,16 @@
   let currentTypeFilter = 'all';
   let currentStatusFilter = 'all';
   
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
   async function fetchLaporan() {
     try {
       const response = await fetch('/api/pengaduan');
@@ -241,15 +251,15 @@
 
       return `
         <tr>
-          <td><strong>RPT-${item.id}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()} - ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
-          <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${type}</span></td>
-          <td style="font-weight:600; color:var(--text-main);">${judul}</td>
-          <td style="font-size:0.85rem;">${item.lokasi_kejadian || '-'}</td>
+          <td><strong>RPT-${escapeHtml(item.id)}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${new Date(item.created_at).toLocaleDateString()} - ${new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
+          <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${escapeHtml(type)}</span></td>
+          <td style="font-weight:600; color:var(--text-main);">${escapeHtml(judul)}</td>
+          <td style="font-size:0.85rem;">${escapeHtml(item.lokasi_kejadian || '-')}</td>
           <td>${item.is_anonim ? '<i>Anonim</i>' : 'User'}</td>
           <td><span class="badge" style="background:#fef3c7; color:#d97706;">Sedang</span></td>
           <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
           <td>
-            <button class="btn btn-outline btn-sm" onclick="openDisposisiModal(${item.id})">
+            <button class="btn btn-outline btn-sm" onclick="openDisposisiModal(${Number(item.id)})">
               ${item.status === 'menunggu' ? 'Lihat / Disposisi' : 'Lihat Detail'}
             </button>
           </td>
@@ -298,12 +308,23 @@
     document.querySelector('#dispatchForm .modal-footer').style.display = canDispatch ? 'flex' : 'none';
     const attachment = document.getElementById('modal-report-attachment');
     if (item.file_bukti_url) {
-      const fileUrl = item.file_bukti_url.startsWith('http')
-        ? item.file_bukti_url
-        : `${window.location.origin}${item.file_bukti_url}`;
-      attachment.innerHTML = `<a href="${fileUrl}" target="_blank" rel="noopener">Lihat lampiran bukti</a>`;
+      try {
+        const fileUrl = new URL(item.file_bukti_url, window.location.origin);
+        if (fileUrl.origin === window.location.origin && fileUrl.pathname.startsWith('/storage/')) {
+          const link = document.createElement('a');
+          link.href = fileUrl.href;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = 'Lihat lampiran bukti';
+          attachment.replaceChildren(link);
+        } else {
+          attachment.textContent = 'Lampiran tidak tersedia.';
+        }
+      } catch {
+        attachment.textContent = 'Lampiran tidak tersedia.';
+      }
     } else {
-      attachment.innerText = 'Tidak ada lampiran bukti.';
+      attachment.textContent = 'Tidak ada lampiran bukti.';
     }
     
     document.getElementById('dispatchModal').classList.add('active');

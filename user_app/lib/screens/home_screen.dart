@@ -19,12 +19,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String selectedCatalogFilter = 'Semua';
-
   final List<CampusNews> _newsList = [];
 
   List<dynamic> _facilities = [];
-  bool _isLoading = false;
 
   int _unreadCount = 0;
   Timer? _notifTimer;
@@ -65,13 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchFacilities() async {
-    setState(() => _isLoading = true);
     try {
       final res =
           await http.get(Uri.parse('${ApiConfig.baseUrl}/api/fasilitas'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        if (data['success'] == true) {
+        if (data['success'] == true && mounted) {
           setState(() {
             _facilities = data['data'];
           });
@@ -79,8 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       print('Error: $e');
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -117,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
         description: f['deskripsi'] ?? '-',
       );
     }).toList();
-    if (selectedCatalogFilter == 'Semua') return mapped;
     return mapped;
   }
 
@@ -725,30 +718,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 24),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCatalogFilterChip(String label) {
-    final isSelected = selectedCatalogFilter == label;
-    return GestureDetector(
-      onTap: () => setState(() => selectedCatalogFilter = label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.secondary : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: isSelected ? AppColors.secondary : AppColors.border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textMain,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

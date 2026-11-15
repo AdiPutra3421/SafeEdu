@@ -134,39 +134,58 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      <span>${message}</span>
+      <span></span>
     `;
+    toast.querySelector('span').textContent = message;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3500);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
+  function storageUrl(path) {
+    if (typeof path !== 'string') return null;
+    const segments = path.split('/');
+    if (segments.length === 0 || segments.some(segment =>
+      !segment || segment === '.' || segment === '..' || segment.includes('\\')
+    )) {
+      return null;
+    }
+    return `/storage/${segments.map(encodeURIComponent).join('/')}`;
   }
 
   function renderTable() {
     const tbody = document.getElementById('fasilitas-table-body');
     if (fasilitasData.length === 0) {
-<<<<<<< HEAD
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
-=======
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
->>>>>>> 43a3e223 (Selesai fitur manajemen fasilitas dan perbaikan UI mobile)
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
       return;
     }
 
     tbody.innerHTML = fasilitasData.map(f => {
-      const imgHtml = f.foto_fasilitas 
-        ? `<img src="/storage/${f.foto_fasilitas}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" alt="Foto">`
+      const photoUrl = storageUrl(f.foto_fasilitas);
+      const imgHtml = photoUrl
+        ? `<img src="${escapeHtml(photoUrl)}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" alt="Foto">`
         : `<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Tidak ada</span>`;
 
       return `
         <tr>
-          <td><strong>FAS-${f.id}</strong></td>
+          <td><strong>FAS-${escapeHtml(f.id)}</strong></td>
           <td>${imgHtml}</td>
-          <td style="font-weight:600; color:var(--text-main);">${f.nama}</td>
-          <td>${f.lokasi || '-'}</td>
-          <td>${f.status_kondisi || '-'}</td>
-          <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
+          <td style="font-weight:600; color:var(--text-main);">${escapeHtml(f.nama)}</td>
+          <td>${escapeHtml(f.lokasi || '-')}</td>
+          <td>${escapeHtml(f.status_kondisi || '-')}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(f.deskripsi || '-')}</td>
           <td>
-            <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${f.id})">Edit</button>
-            <button class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2; margin-left:4px;" onclick="deleteFasilitas(${f.id})">Hapus</button>
+            <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${Number(f.id)})">Edit</button>
+            <button class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2; margin-left:4px;" onclick="deleteFasilitas(${Number(f.id)})">Hapus</button>
           </td>
         </tr>
       `;
@@ -189,8 +208,9 @@
       document.getElementById('deskripsiInput').value = f.deskripsi || '';
       
       // LOGIKA MENAMPILKAN GAMBAR LAMA DI ADMIN (DISAMAKAN DENGAN KONTEN SEKOLAH)
-      if (f.foto_fasilitas) {
-        previewImage.src = '/storage/' + f.foto_fasilitas;
+      const photoUrl = storageUrl(f.foto_fasilitas);
+      if (photoUrl) {
+        previewImage.src = photoUrl;
         previewContainer.style.display = 'block';
       } else {
         previewImage.src = '';
@@ -239,17 +259,10 @@
  async function handleFasilitasSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('fasilitas-id').value;
-<<<<<<< HEAD
-    const newData = {
-      nama: document.getElementById('namaInput').value,
-      lokasi: document.getElementById('lokasiInput').value,
-      status_kondisi: document.getElementById('statusKondisiInput').value,
-      deskripsi: document.getElementById('deskripsiInput').value,
-    };
-=======
-    
     const formData = new FormData();
     formData.append('nama', document.getElementById('namaInput').value);
+    formData.append('lokasi', document.getElementById('lokasiInput').value);
+    formData.append('status_kondisi', document.getElementById('statusKondisiInput').value);
     formData.append('deskripsi', document.getElementById('deskripsiInput').value);
 
     const fotoFile = document.getElementById('fotoInput').files[0];
@@ -258,7 +271,6 @@
     } else if (removePhotoFlag) {
       formData.append('remove_foto', '1');
     }
->>>>>>> 43a3e223 (Selesai fitur manajemen fasilitas dan perbaikan UI mobile)
 
     try {
       if (id) {
@@ -282,14 +294,10 @@
         closeFasilitasModal();
         fetchFasilitas(); 
       } else {
-<<<<<<< HEAD
         const validationErrors = json.errors
           ? Object.values(json.errors).flat().join(' ')
           : '';
         alert('Gagal menyimpan: ' + (json.message || validationErrors || 'Silakan coba kembali.'));
-=======
-        alert("Gagal menyimpan: " + JSON.stringify(json.errors || json.message));
->>>>>>> 43a3e223 (Selesai fitur manajemen fasilitas dan perbaikan UI mobile)
       }
     } catch (err) {
       console.error(err);
