@@ -13,6 +13,7 @@ class Fasilitas extends Model
         'lokasi',
         'status_kondisi',
         'deskripsi',
+        'foto_fasilitas',
     ];
 
     public function pengaduans()

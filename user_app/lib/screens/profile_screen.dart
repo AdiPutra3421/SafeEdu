@@ -237,7 +237,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       size: 12,
                       color: isDone
                           ? const Color(0xFF047857)
-                          : (isCurrent ? AppColors.primary : AppColors.textLight),
+                          : (isCurrent
+                              ? AppColors.primary
+                              : AppColors.textLight),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -271,7 +273,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profil & Riwayat'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textMain),
+            icon:
+                const Icon(Icons.settings_outlined, color: AppColors.textMain),
             tooltip: 'Pengaturan Profil',
             onPressed: _openProfileSettings,
           ),
@@ -463,7 +466,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     Color statusBg = AppColors.statusPendingBg;
                     Color statusText = AppColors.statusPendingText;
-                    if (rep.status == 'dalam pengerjaan') {
+                    if (rep.status == 'diproses') {
                       statusBg = AppColors.statusProcessBg;
                       statusText = AppColors.statusProcessText;
                     } else if (rep.status == 'selesai') {
@@ -481,16 +484,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: rep.kategoriId == 1
+                                color: rep.kategoriJenis == 'fasilitas'
                                     ? AppColors.facilityBg
                                     : AppColors.ethicsBg,
                               ),
                               child: Text(
-                                rep.kategoriId == 1 ? 'Fasilitas' : 'Kode Etik',
+                                rep.kategoriJenis == 'fasilitas'
+                                    ? 'Fasilitas'
+                                    : 'Kode Etik',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: rep.kategoriId == 1
+                                  color: rep.kategoriJenis == 'fasilitas'
                                       ? AppColors.facilityText
                                       : AppColors.ethicsText,
                                 ),

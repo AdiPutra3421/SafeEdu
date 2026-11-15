@@ -3,8 +3,8 @@
 namespace App\Events;
 
 use App\Models\Notifikasi;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -26,7 +26,7 @@ class NotifikasiDikirim implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('notifikasi.' . $this->notifikasi->user_id),
+            new PrivateChannel('notifikasi.'.$this->notifikasi->user_id),
         ];
     }
 
@@ -38,13 +38,13 @@ class NotifikasiDikirim implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'id'           => $this->notifikasi->id,
-            'judul'        => $this->notifikasi->judul,
-            'pesan'        => $this->notifikasi->pesan,
-            'type'         => $this->notifikasi->type,
+            'id' => $this->notifikasi->id,
+            'judul' => $this->notifikasi->judul,
+            'pesan' => $this->notifikasi->pesan,
+            'type' => $this->notifikasi->type,
             'pengaduan_id' => $this->notifikasi->pengaduan_id,
-            'is_read'      => false,
-            'created_at'   => $this->notifikasi->created_at?->toIso8601String(),
+            'is_read' => false,
+            'created_at' => $this->notifikasi->created_at?->toIso8601String(),
         ];
     }
 }

@@ -501,7 +501,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           },
         );
       },
-    );
+    ).whenComplete(notesController.dispose);
   }
 
   void _showRejectDialog(PenugasanModel task) {
