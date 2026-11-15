@@ -137,7 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle Bar Atas
               Center(
                 child: Container(
                   width: 44,
@@ -149,43 +148,49 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Judul Fasilitas & Tombol Close (X)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-<<<<<<< HEAD
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: item.status == 'Bisa Digunakan'
-                          ? AppColors.statusSuccessBg
-                          : (item.status == 'Tidak Bisa Digunakan'
-                              ? AppColors.statusDangerBg
-                              : AppColors.statusPendingBg),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      item.status,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: item.status == 'Bisa Digunakan'
-                            ? AppColors.statusSuccessText
-                            : (item.status == 'Tidak Bisa Digunakan'
-                                ? AppColors.statusDangerText
-                                : AppColors.statusPendingText),
-=======
                   Expanded(
-                    child: Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textMain,
->>>>>>> 43a3e223 (Selesai fitur manajemen fasilitas dan perbaikan UI mobile)
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textMain,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: item.status == 'Bisa Digunakan'
+                                ? AppColors.statusSuccessBg
+                                : (item.status == 'Tidak Bisa Digunakan'
+                                    ? AppColors.statusDangerBg
+                                    : AppColors.statusPendingBg),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            item.status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: item.status == 'Bisa Digunakan'
+                                  ? AppColors.statusSuccessText
+                                  : (item.status == 'Tidak Bisa Digunakan'
+                                      ? AppColors.statusDangerText
+                                      : AppColors.statusPendingText),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
@@ -194,44 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-<<<<<<< HEAD
-              Text(
-                item.name,
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMain),
-              ),
-
-              // REVISI: Bagian lokasi dan jam operasional dihapus dari pop-up detail fasilitas
-
               const SizedBox(height: 16),
-              Text(
-                item.description,
-                style: const TextStyle(
-                    fontSize: 13.5,
-                    color: AppColors.secondaryMuted,
-                    height: 1.5),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.report_problem_outlined, size: 18),
-                  label: const Text('Laporkan Kerusakan pada Fasilitas Ini'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateToTab(1); // switch to Tab 1 (Pelaporan)
-                  },
-                ),
-              ),
-=======
-
-              // Placeholder / Kotak Gambar Fasilitas
               Container(
                 height: 160,
                 width: double.infinity,
@@ -244,29 +212,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       size: 50, color: AppColors.facilityText),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Judul Bagian Deskripsi
               const Text(
-                "Deskripsi",
+                'Deskripsi',
                 style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: AppColors.textMain),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: AppColors.textMain,
+                ),
               ),
               const SizedBox(height: 8),
-
-              // Isi Deskripsi
               Text(
                 item.description.isNotEmpty
                     ? item.description
                     : 'Tidak ada deskripsi tambahan.',
                 style: const TextStyle(
-                    fontSize: 14, height: 1.5, color: AppColors.textMain),
+                  fontSize: 14,
+                  height: 1.5,
+                  color: AppColors.textMain,
+                ),
               ),
               const SizedBox(height: 24),
->>>>>>> 43a3e223 (Selesai fitur manajemen fasilitas dan perbaikan UI mobile)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.report_problem_outlined, size: 18),
+                  label: const Text('Laporkan Kerusakan pada Fasilitas Ini'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    widget.onNavigateToTab(1);
+                  },
+                ),
+              ),
             ],
           ),
         );
