@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\NotifikasiDikirim;
 use App\Http\Controllers\Controller;
+use App\Models\Notifikasi;
 use App\Models\Pengaduan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -185,6 +187,76 @@ class PengaduanController extends Controller
             'success' => true,
             'message' => 'Rating berhasil dikirim.',
             'data' => $pengaduan,
+        ]);
+    }
+
+    /**
+     * Reject a report by Admin.
+     */
+    public function reject(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'alasan_penolakan' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $pengaduan = Pengaduan::find($id);
+
+        if (! $pengaduan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan tidak ditemukan.',
+            ], 404);
+        }
+
+        if ($pengaduan->status === 'selesai') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan yang sudah selesai tidak dapat ditolak.',
+            ], 409);
+        }
+
+        if ($pengaduan->status === 'ditolak') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan ini sudah ditolak sebelumnya.',
+            ], 409);
+        }
+
+        $reason = trim($request->input('alasan_penolakan') ?? $request->input('catatan_admin') ?? '');
+
+        $pengaduan->status = 'ditolak';
+        $pengaduan->alasan_penolakan = $reason ?: null;
+        if (! $pengaduan->completed_at) {
+            $pengaduan->completed_at = Carbon::now();
+        }
+        $pengaduan->save();
+
+        // Buat notifikasi penolakan ke pelapor
+        $notif = Notifikasi::create([
+            'user_id' => $pengaduan->user_id,
+            'pengaduan_id' => $pengaduan->id,
+            'type' => 'danger',
+            'judul' => 'Laporan Ditolak',
+            'pesan' => "Laporan Anda mengenai '{$pengaduan->judul}' telah ditolak oleh Admin." . ($reason ? " Alasan: {$reason}" : ''),
+        ]);
+
+        try {
+            broadcast(new NotifikasiDikirim($notif));
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Laporan berhasil ditolak.',
+            'data' => $pengaduan->load(['kategori', 'fasilitas', 'pelapor']),
         ]);
     }
 

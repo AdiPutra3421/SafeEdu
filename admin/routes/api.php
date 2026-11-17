@@ -30,6 +30,7 @@ Route::prefix('pengaduan')->group(function () {
     Route::get('/', [PengaduanController::class, 'index']);
     Route::post('/', [PengaduanController::class, 'store']);
     Route::get('/{id}', [PengaduanController::class, 'show']);
+    Route::post('/{id}/reject', [PengaduanController::class, 'reject']);
     Route::post('/{id}/rating', [PengaduanController::class, 'submitRating']);
 });
 

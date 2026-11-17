@@ -17,6 +17,7 @@ class Pengaduan extends Model
         'lokasi_kejadian',
         'urgency',
         'status',
+        'alasan_penolakan',
         'is_anonim',
         'foto_bukti',
         'file_bukti_url',

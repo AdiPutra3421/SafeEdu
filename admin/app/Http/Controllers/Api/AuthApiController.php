@@ -35,9 +35,13 @@ class AuthApiController extends Controller
 
         if ($request->filled('role')) {
             $role = $request->role === 'user' ? 'siswa' : $request->role;
-            $query->where('role', $role);
+            if ($role === 'teknisi') {
+                $query->whereIn('role', ['teknisi', 'guru_bk']);
+            } else {
+                $query->where('role', $role);
+            }
         } else {
-            $query->whereIn('role', ['siswa', 'user', 'teknisi']);
+            $query->whereIn('role', ['siswa', 'user', 'teknisi', 'guru_bk']);
         }
         $user = $query->first();
 

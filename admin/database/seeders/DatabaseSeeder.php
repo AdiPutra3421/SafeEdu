@@ -27,7 +27,16 @@ class DatabaseSeeder extends Seeder
             'nama' => 'Teknisi User',
             'email' => 'teknisi',
             'password' => bcrypt('teknisi'),
-            'role' => 'teknisi'
+            'role' => 'teknisi',
+            'bidang' => 'fasilitas'
+        ]);
+
+        User::create([
+            'nama' => 'Guru BK (Konseling)',
+            'email' => 'gurubk',
+            'password' => bcrypt('gurubk'),
+            'role' => 'teknisi',
+            'bidang' => 'etik'
         ]);
 
         User::create([

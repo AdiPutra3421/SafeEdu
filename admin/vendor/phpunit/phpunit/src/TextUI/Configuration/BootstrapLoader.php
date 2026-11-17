@@ -53,7 +53,7 @@ final class BootstrapLoader
      */
     private function load(string $filename): void
     {
-        if (!is_readable($filename)) {
+        if (!file_exists($filename)) {
             throw new BootstrapScriptDoesNotExistException($filename);
         }
 

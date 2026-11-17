@@ -76,7 +76,8 @@ class PenugasanController extends Controller
         $validator = Validator::make($request->all(), [
             'pengaduan_id' => 'required|integer',
             'teknisi_id' => 'required|integer',
-            'catatan_admin' => 'nullable|string'
+            'catatan_admin' => 'nullable|string',
+            'urgency' => 'nullable|in:urgent,medium,low',
         ]);
 
         if ($validator->fails()) {
@@ -84,21 +85,38 @@ class PenugasanController extends Controller
         }
 
         $teknisi = User::where('id', $request->teknisi_id)
-            ->where('role', 'teknisi')
+            ->whereIn('role', ['teknisi', 'guru_bk'])
             ->first();
         if (! $teknisi) {
             return response()->json([
                 'success' => false,
-                'message' => 'Teknisi yang dipilih tidak ditemukan atau bukan akun teknisi.',
+                'message' => 'Petugas / Teknisi yang dipilih tidak ditemukan.',
             ], 422);
         }
 
-        $pengaduan = Pengaduan::find($request->pengaduan_id);
+        $pengaduan = Pengaduan::with('kategori')->find($request->pengaduan_id);
         if (! $pengaduan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Laporan tidak ditemukan.',
             ], 404);
+        }
+
+        $isFacilityReport = $pengaduan->kategori?->jenis === 'fasilitas';
+        $isGuruBk = ($teknisi->bidang === 'etik' || $teknisi->role === 'guru_bk' || stripos($teknisi->nama, 'bk') !== false);
+
+        if ($isFacilityReport && $isGuruBk) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan fasilitas harus ditugaskan ke Teknisi Lapangan, bukan Guru BK.',
+            ], 422);
+        }
+
+        if (! $isFacilityReport && ! $isGuruBk && $teknisi->bidang === 'fasilitas') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan pelanggaran kode etik harus ditugaskan ke Guru BK, bukan Teknisi Lapangan.',
+            ], 422);
         }
 
         if ($pengaduan->status !== 'menunggu') {
@@ -154,21 +172,25 @@ class PenugasanController extends Controller
         }
         
         $pengaduan->status = 'diproses';
-            // Masalah #5: Timestamp verifikasi & assign
-            if (!$pengaduan->verified_at) {
-                $pengaduan->verified_at = Carbon::now();
-            }
-            $pengaduan->assigned_at = Carbon::now();
+        if ($request->filled('urgency')) {
+            $pengaduan->urgency = $request->input('urgency');
+        }
+        // Masalah #5: Timestamp verifikasi & assign
+        if (! $pengaduan->verified_at) {
+            $pengaduan->verified_at = Carbon::now();
+        }
+        $pengaduan->assigned_at = Carbon::now();
         $pengaduan->save();
 
             // Masalah #6: Buat Notifikasi & Broadcast
-            $notif = Notifikasi::create([
-                'user_id' => $pengaduan->user_id,
-                'pengaduan_id' => $pengaduan->id,
-                'type' => 'info',
-                'judul' => 'Laporan Diproses',
-                'pesan' => "Laporan Anda mengenai '{$pengaduan->judul}' telah diverifikasi dan diteruskan ke teknisi.",
-            ]);
+        $recipientRoleName = $isGuruBk ? 'Guru BK' : 'teknisi lapangan';
+        $notif = Notifikasi::create([
+            'user_id' => $pengaduan->user_id,
+            'pengaduan_id' => $pengaduan->id,
+            'type' => 'info',
+            'judul' => 'Laporan Diproses',
+            'pesan' => "Laporan Anda mengenai '{$pengaduan->judul}' telah diverifikasi dan diteruskan ke {$recipientRoleName}.",
+        ]);
             try {
                 broadcast(new NotifikasiDikirim($notif));
             } catch (\Throwable $exception) {

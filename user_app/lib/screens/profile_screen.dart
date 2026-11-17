@@ -94,53 +94,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Text('Tahapan Pelacakan Status',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               const SizedBox(height: 12),
-              _buildTimelineStep(
-                title: 'Laporan Masuk',
-                subtitle:
-                    'Laporan Anda telah berhasil dicatat ke sistem SafeEdu',
-                timestamp: report.createdAt,
-                isDone: true,
-                isCurrent: report.status == 'menunggu',
-              ),
-              _buildTimelineStep(
-                title: 'Verifikasi Tim Admin (Disposisi)',
-                subtitle:
-                    'Admin telah memverifikasi dan menugaskan teknisi untuk insiden ini',
-                timestamp: report.assignedAt,
-                isDone:
-                    report.status == 'diproses' || report.status == 'selesai',
-                isCurrent: report.status == 'diproses' &&
-                    report.penugasanStatus == 'ditugaskan',
-              ),
-              _buildTimelineStep(
-                title: 'Penanganan oleh Teknisi / Satgas',
-                subtitle:
-                    'Petugas lapangan menerima tugas dan sedang melakukan perbaikan',
-                timestamp: report.workedAt,
-                isDone: report.status == 'selesai',
-                isCurrent: report.status == 'diproses' &&
-                    report.penugasanStatus == 'diterima',
-              ),
-              _buildTimelineStep(
-                title: 'Selesai & Dikonfirmasi',
-                subtitle:
-                    'Tiket ditutup setelah teknisi menyelesaikan penanganan',
-                timestamp: report.completedAt,
-                isDone: report.status == 'selesai',
-                isCurrent: report.status == 'selesai',
-                isLast: true,
-              ),
-              const SizedBox(height: 16),
-              if (report.ulasanPelapor != null &&
-                  report.ulasanPelapor!.isNotEmpty) ...[
+              if (report.status == 'ditolak') ...[
+                _buildTimelineStep(
+                  title: 'Laporan Masuk',
+                  subtitle:
+                      'Laporan Anda telah berhasil dicatat ke sistem SafeEdu',
+                  timestamp: report.createdAt,
+                  isDone: true,
+                  isCurrent: false,
+                ),
+                _buildTimelineStep(
+                  title: 'Laporan Ditolak',
+                  subtitle:
+                      (report.alasanPenolakan != null && report.alasanPenolakan!.isNotEmpty)
+                          ? 'Alasan: ${report.alasanPenolakan}'
+                          : (report.ulasanPelapor != null && report.ulasanPelapor!.isNotEmpty)
+                              ? 'Alasan: ${report.ulasanPelapor}'
+                              : 'Laporan tidak dapat diproses lebih lanjut oleh admin.',
+                  timestamp: report.completedAt ?? report.assignedAt ?? report.verifiedAt ?? report.createdAt,
+                  isDone: true,
+                  isCurrent: true,
+                  isLast: true,
+                ),
+                const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.subtle,
+                    color: const Color(0xFFFEE2E2),
                     borderRadius: BorderRadius.circular(10),
                     border: const Border(
-                        left: BorderSide(color: AppColors.primary, width: 3)),
+                        left: BorderSide(color: Color(0xFFDC2626), width: 3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,13 +133,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary)),
+                              color: Color(0xFFDC2626))),
                       const SizedBox(height: 2),
-                      Text(report.ulasanPelapor!,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textMain)),
+                      Text(
+                        (report.alasanPenolakan != null && report.alasanPenolakan!.isNotEmpty)
+                            ? report.alasanPenolakan!
+                            : (report.ulasanPelapor != null && report.ulasanPelapor!.isNotEmpty)
+                                ? report.ulasanPelapor!
+                                : 'Laporan tidak memenuhi kriteria verifikasi.',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textMain),
+                      ),
                     ],
                   ),
+                ),
+              ] else ...[
+                _buildTimelineStep(
+                  title: 'Laporan Masuk',
+                  subtitle:
+                      'Laporan Anda telah berhasil dicatat ke sistem SafeEdu',
+                  timestamp: report.createdAt,
+                  isDone: true,
+                  isCurrent: report.status == 'menunggu',
+                ),
+                _buildTimelineStep(
+                  title: 'Verifikasi Tim Admin (Disposisi)',
+                  subtitle:
+                      'Admin telah memverifikasi dan menugaskan teknisi untuk insiden ini',
+                  timestamp: report.assignedAt,
+                  isDone:
+                      report.status == 'diproses' || report.status == 'selesai',
+                  isCurrent: report.status == 'diproses' &&
+                      report.penugasanStatus == 'ditugaskan',
+                ),
+                _buildTimelineStep(
+                  title: 'Penanganan oleh Teknisi / Satgas',
+                  subtitle:
+                      'Petugas lapangan menerima tugas dan sedang melakukan perbaikan',
+                  timestamp: report.workedAt,
+                  isDone: report.status == 'selesai',
+                  isCurrent: report.status == 'diproses' &&
+                      report.penugasanStatus == 'diterima',
+                ),
+                _buildTimelineStep(
+                  title: 'Selesai & Dikonfirmasi',
+                  subtitle:
+                      'Tiket ditutup setelah teknisi menyelesaikan penanganan',
+                  timestamp: report.completedAt,
+                  isDone: report.status == 'selesai',
+                  isCurrent: report.status == 'selesai',
+                  isLast: true,
                 ),
               ],
             ],
@@ -472,6 +499,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     } else if (rep.status == 'selesai') {
                       statusBg = AppColors.statusSuccessBg;
                       statusText = AppColors.statusSuccessText;
+                    } else if (rep.status == 'ditolak') {
+                      statusBg = AppColors.statusDangerBg;
+                      statusText = AppColors.statusDangerText;
                     }
 
                     return Card(

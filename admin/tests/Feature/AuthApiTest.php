@@ -16,7 +16,7 @@ class AuthApiTest extends TestCase
         $user = User::factory()->create(['role' => 'siswa']);
         $payload = [
             'user_id' => $user->id,
-            'nama' => $user->nama,
+            'nama' => 'Budi Santoso',
             'password' => 'new-password',
         ];
 

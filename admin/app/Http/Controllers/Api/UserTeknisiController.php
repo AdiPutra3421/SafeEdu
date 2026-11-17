@@ -15,17 +15,21 @@ class UserTeknisiController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'teknisi')
+        $query = User::whereIn('role', ['teknisi', 'guru_bk'])
             ->withCount([
                 'penugasansSebagaiTeknisi as penugasans_count',
                 'penugasansSebagaiTeknisi as tugas_selesai_count' => function ($q) {
                     $q->where('status', 'selesai');
                 },
                 'penugasansSebagaiTeknisi as tugas_aktif_count' => function ($q) {
-                    $q->where('status', '!=', 'selesai');
+                    $q->whereIn('status', ['ditugaskan', 'diterima']);
                 },
             ])
             ->orderBy('id', 'desc');
+
+        if ($request->filled('bidang')) {
+            $query->where('bidang', $request->bidang);
+        }
 
         if ($request->filled('q')) {
             $search = '%' . trim($request->q) . '%';
@@ -50,6 +54,7 @@ class UserTeknisiController extends Controller
             'nama'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'string', 'max:100', 'unique:users,email'],
             'password' => 'required|string|min:6',
+            'bidang'   => 'nullable|string|in:fasilitas,etik',
         ], [
             'nama.required'     => 'Nama teknisi wajib diisi.',
             'email.required'    => 'Email / Username teknisi wajib diisi.',
@@ -65,11 +70,13 @@ class UserTeknisiController extends Controller
             ], 422);
         }
 
+        $bidang = $request->input('bidang', 'fasilitas');
         $user = User::create([
             'nama'     => trim($request->nama),
             'email'    => trim($request->email),
             'password' => Hash::make($request->password),
-            'role'     => 'teknisi',
+            'role'     => $bidang === 'etik' ? 'guru_bk' : 'teknisi',
+            'bidang'   => $bidang,
         ]);
 
         return response()->json([
@@ -84,7 +91,7 @@ class UserTeknisiController extends Controller
      */
     public function show($id)
     {
-        $user = User::where('role', 'teknisi')
+        $user = User::whereIn('role', ['teknisi', 'guru_bk'])
             ->withCount([
                 'penugasansSebagaiTeknisi as penugasans_count',
                 'penugasansSebagaiTeknisi as tugas_selesai_count' => function ($q) {
@@ -111,7 +118,7 @@ class UserTeknisiController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::where('role', 'teknisi')->find($id);
+        $user = User::whereIn('role', ['teknisi', 'guru_bk'])->find($id);
 
         if (!$user) {
             return response()->json([
@@ -124,6 +131,7 @@ class UserTeknisiController extends Controller
             'nama'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'string', 'max:100', 'unique:users,email,' . $id],
             'password' => 'nullable|string|min:6',
+            'bidang'   => 'nullable|string|in:fasilitas,etik',
         ], [
             'nama.required'  => 'Nama teknisi wajib diisi.',
             'email.required' => 'Email / Username teknisi wajib diisi.',
@@ -140,6 +148,11 @@ class UserTeknisiController extends Controller
 
         $user->nama  = trim($request->nama);
         $user->email = trim($request->email);
+
+        if ($request->filled('bidang')) {
+            $user->bidang = $request->bidang;
+            $user->role = $request->bidang === 'etik' ? 'guru_bk' : 'teknisi';
+        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -159,7 +172,7 @@ class UserTeknisiController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::where('role', 'teknisi')->find($id);
+        $user = User::whereIn('role', ['teknisi', 'guru_bk'])->find($id);
 
         if (!$user) {
             return response()->json([

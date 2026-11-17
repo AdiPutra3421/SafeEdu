@@ -21,6 +21,7 @@ class PengaduanModel {
   final String? kategoriJenis;
   final String? namaFasilitas;
   final String? penugasanStatus;
+  final String? alasanPenolakan;
 
   PengaduanModel({
     required this.id,
@@ -45,6 +46,7 @@ class PengaduanModel {
     this.kategoriJenis,
     this.namaFasilitas,
     this.penugasanStatus,
+    this.alasanPenolakan,
   });
 
   Map<String, dynamic> toMap() {
@@ -94,6 +96,7 @@ class PengaduanModel {
           map['penugasans'] is List && (map['penugasans'] as List).isNotEmpty
               ? ((map['penugasans'] as List).first as Map)['status']?.toString()
               : null,
+      alasanPenolakan: map['alasan_penolakan']?.toString(),
     );
   }
 

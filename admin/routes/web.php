@@ -15,13 +15,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/laporan', function () {
-        $teknisi = User::where('role', 'teknisi')->get();
+        $teknisi = User::whereIn('role', ['teknisi', 'guru_bk'])
+            ->withCount([
+                'penugasansSebagaiTeknisi as tugas_aktif_count' => function ($q) {
+                    $q->whereIn('status', ['ditugaskan', 'diterima']);
+                },
+            ])
+            ->get();
 
         return view('laporan', compact('teknisi'));
     })->name('laporan');
 
     Route::get('/laporan/{id}', function ($id) {
-        $teknisi = User::where('role', 'teknisi')->get();
+        $teknisi = User::whereIn('role', ['teknisi', 'guru_bk'])
+            ->withCount([
+                'penugasansSebagaiTeknisi as tugas_aktif_count' => function ($q) {
+                    $q->whereIn('status', ['ditugaskan', 'diterima']);
+                },
+            ])
+            ->get();
         $pengaduan = Pengaduan::find($id);
 
         return view('laporan-detail', compact('teknisi', 'pengaduan'));

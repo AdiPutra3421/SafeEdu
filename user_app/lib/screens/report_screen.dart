@@ -681,9 +681,23 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 16),
 
               // Facility / Category Field
-              Text(isFacility ? 'Pilih Fasilitas *' : 'Kategori Masalah *',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 13)),
+              isFacility
+                  ? Row(
+                      children: const [
+                        Text('Pilih Fasilitas atau Sarana *',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 13)),
+                        SizedBox(width: 6),
+                        Text('(Sarana & Prasarana)',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.normal)),
+                      ],
+                    )
+                  : const Text('Kategori Masalah *',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 6),
               isFacility
                   ? DropdownButtonFormField<int>(
@@ -701,7 +715,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         }
                       },
                       decoration: const InputDecoration(
-                        hintText: 'Pilih fasilitas yang rusak',
+                        hintText: 'Pilih fasilitas atau sarana yang rusak',
                         hintStyle:
                             TextStyle(fontSize: 13, color: AppColors.textLight),
                       ),
