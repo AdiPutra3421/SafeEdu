@@ -59,3 +59,14 @@ Route::get('/konten-sekolah', [KontenSekolahController::class, 'index']);
 Route::post('/konten-sekolah', [KontenSekolahController::class, 'store']);
 Route::match(['put', 'post'], '/konten-sekolah/{id}', [KontenSekolahController::class, 'update']);
 Route::delete('/konten-sekolah/{id}', [KontenSekolahController::class, 'destroy']);
+
+// Public route untuk gambar konten sekolah
+Route::get('/gambar/{path}', function ($path) {
+    $file = storage_path('app/public/' . $path);
+
+    if (!file_exists($file)) {
+        abort(404);
+    }
+
+    return response()->file($file);
+})->where('path', '.*');

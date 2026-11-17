@@ -97,8 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<CampusFacilityCatalog> get filteredFacilities {
-    final mapped = _facilities.map((f) {
+    return _facilities.map((f) {
       String statusKondisi = f['status_kondisi'] ?? 'Bisa Digunakan';
+
+      final foto = f['foto_fasilitas']?.toString();
 
       return CampusFacilityCatalog(
         id: f['id'].toString(),
@@ -107,11 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
         location: f['lokasi'] ?? '-',
         operatingHours: '07:30 - 15:30 WIB',
         status: statusKondisi,
-        iconType: 'book',
+        iconType: 'image',
         description: f['deskripsi'] ?? '-',
+        imageUrl: foto != null && foto.isNotEmpty
+            ? '${ApiConfig.baseUrl}/api/gambar/$foto'
+            : null,
       );
     }).toList();
-    return mapped;
   }
 
   void _showFacilityDetail(CampusFacilityCatalog item) {
@@ -193,17 +197,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Container(
-                height: 160,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.facilityBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Icon(Icons.business_rounded,
-                      size: 50, color: AppColors.facilityText),
-                ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl!,
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox(
+                          height: 220,
+                          width: double.infinity,
+                        ),
+                      )
+                    : const SizedBox(
+                        height: 220,
+                        width: double.infinity,
+                      ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -644,19 +654,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                            child: (item.description.contains('http') ||
-                                    item.iconType == 'image')
-                                // CATATAN: Ini hanya contoh. Anda harus menambahkan field 'imageUrl' di CatalogModel Anda
-                                // dan memetakannya di get filteredFacilities agar ini berfungsi sempurna.
+                            child: item.imageUrl != null
                                 ? Image.network(
-                                    'GANTI_DENGAN_URL_GAMBAR',
+                                    item.imageUrl!,
                                     width: double.infinity,
                                     height: double.infinity,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.image_not_supported,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   )
                                 : Container(
-                                    color: Colors.grey[
-                                        300]), // Background abu-abu default
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.business_rounded,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    ),
+                                  ), // Background abu-abu default
                           ),
 
                           // 3. Status Badge di Pojok Kanan Atas

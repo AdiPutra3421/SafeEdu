@@ -1,4 +1,6 @@
+
 import '../services/api_config.dart';
+
 
 class CampusFacilityCatalog {
   final String id;
@@ -6,9 +8,10 @@ class CampusFacilityCatalog {
   final String category;
   final String location;
   final String operatingHours;
-  final String status; // 'Tersedia', 'Perbaikan', 'Terbatas'
-  final String iconType; // 'computer', 'book', 'sports', 'counseling', 'health'
+  final String status;
+  final String iconType;
   final String description;
+  final String? imageUrl;
 
   const CampusFacilityCatalog({
     required this.id,
@@ -19,13 +22,15 @@ class CampusFacilityCatalog {
     required this.status,
     required this.iconType,
     required this.description,
+    this.imageUrl,
   });
 }
+
 
 class CampusNews {
   final String id;
   final String title;
-  final String category; // 'Kode Etik', 'Fasilitas', 'Keselamatan', 'Berita', 'Panduan'
+  final String category;
   final String date;
   final String readTime;
   final String summary;
@@ -47,25 +52,7 @@ class CampusNews {
 
   factory CampusNews.fromMap(Map<String, dynamic> map) {
     final tipe = map['tipe']?.toString() ?? 'berita';
-    final rawImage = map['gambar_url']?.toString() ?? map['gambar']?.toString();
-    String? resolvedImage;
-    if (rawImage != null && rawImage.isNotEmpty && rawImage != 'null') {
-      if (rawImage.startsWith('http://') || rawImage.startsWith('https://')) {
-        final uri = Uri.tryParse(rawImage);
-        if (uri != null && (uri.host == 'localhost' || uri.host == '127.0.0.1')) {
-          final baseUri = Uri.tryParse(ApiConfig.baseUrl);
-          if (baseUri != null) {
-            resolvedImage = uri.replace(scheme: baseUri.scheme, host: baseUri.host, port: baseUri.hasPort ? baseUri.port : null).toString();
-          } else {
-            resolvedImage = rawImage;
-          }
-        } else {
-          resolvedImage = rawImage;
-        }
-      } else {
-        resolvedImage = '${ApiConfig.baseUrl}/storage/$rawImage';
-      }
-    }
+    final gambar = map['gambar']?.toString();
 
     return CampusNews(
       id: '${map['id'] ?? ''}',
@@ -73,10 +60,13 @@ class CampusNews {
       category: tipe == 'panduan' ? 'Panduan' : 'Berita',
       date: map['created_at']?.toString().split('T').first ?? '',
       readTime: '',
-      summary: map['ringkasan']?.toString() ?? map['isi']?.toString() ?? '',
+      summary: map['ringkasan']?.toString() ??
+          map['isi']?.toString() ?? '',
       fullContent: map['isi']?.toString() ?? '',
       author: 'Sekolah',
-      imageUrl: resolvedImage,
+      imageUrl: gambar != null && gambar.isNotEmpty
+          ? '${ApiConfig.baseUrl}/api/gambar/$gambar'
+          : null,
     );
   }
 }

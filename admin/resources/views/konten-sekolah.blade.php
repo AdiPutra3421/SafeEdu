@@ -18,7 +18,7 @@
     <div class="table-responsive">
       <table class="data-table">
         <thead>
-          <tr>
+          <tr>=[]
             <th style="width:70px;">Gambar</th>
             <th>Jenis</th>
             <th>Judul</th>
