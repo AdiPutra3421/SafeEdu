@@ -586,43 +586,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: 24),
 
-          // Emergency & Campus Helpline
-          const Text(
-            'Layanan Bantuan Darurat Sekolah',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textMain),
-          ),
-          const SizedBox(height: 12),
-
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              children: [
-                _buildHelpItem(
-                  icon: Icons.shield_rounded,
-                  title: 'Satgas Anti-Kekerasan & BK',
-                  subtitle:
-                      'Layanan darurat penanganan perundungan / kekerasan',
-                  phone: '0812-SAFE-EDU (Bebas Pulsa)',
-                ),
-                const Divider(height: 20, color: AppColors.border),
-                _buildHelpItem(
-                  icon: Icons.handyman_rounded,
-                  title: 'Unit Teknisi & Sarpras Sekolah',
-                  subtitle: 'Penanganan cepat bahaya fasilitas fisik & listrik',
-                  phone: 'Ext. 104 (Sarpras Sentral)',
-                ),
-              ],
-            ),
-          ),
-
           const SizedBox(height: 32),
         ],
       ),

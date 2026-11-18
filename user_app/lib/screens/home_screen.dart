@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import 'notifikasi_screen.dart';
+import 'school_content_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -444,7 +445,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppColors.textMain),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SchoolContentScreen(
+                              news: List.unmodifiable(_newsList),
+                              onNewsTap: _showNewsDetail,
+                            ),
+                          ),
+                        );
+                      },
                       child: const Text('Lihat Semua',
                           style: TextStyle(
                               fontSize: 12,
