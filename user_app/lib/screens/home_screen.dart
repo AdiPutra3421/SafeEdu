@@ -102,6 +102,24 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  String? _getFacilityImageUrl(String facilityId) {
+    for (final f in _facilities) {
+      if (f['id'].toString() == facilityId) {
+        final foto = f['foto_fasilitas']?.toString();
+        if (foto != null && foto.isNotEmpty) {
+          if (foto.startsWith('http://') || foto.startsWith('https://')) {
+            return foto;
+          }
+          final cleanFoto = foto
+              .replaceFirst(RegExp(r'^/+'), '')
+              .replaceFirst(RegExp(r'^storage/'), '');
+          return '${ApiConfig.baseUrl}/api/gambar/$cleanFoto';
+        }
+      }
+    }
+    return null;
+  }
+
   List<CampusFacilityCatalog> get filteredFacilities {
     final mapped = _facilities.map((f) {
       String statusKondisi = f['status_kondisi'] ?? 'Bisa Digunakan';
@@ -122,92 +140,124 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showFacilityDetail(CampusFacilityCatalog item) {
+    final imageUrl = _getFacilityImageUrl(item.id);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle Bar Atas
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+        final screenSize = MediaQuery.sizeOf(ctx);
+        final imageHeight = (screenSize.height * 0.25).clamp(150.0, 260.0);
 
-              // Judul Fasilitas & Tombol Close (X)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textMain,
+        return Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 600,
+              maxHeight: screenSize.height * 0.85,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle Bar Atas
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-              // Placeholder / Kotak Gambar Fasilitas
-              Container(
-                height: 160,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.facilityBg,
-                  borderRadius: BorderRadius.circular(12),
+                    // Judul Fasilitas & Tombol Close (X)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textMain,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              color: AppColors.textMuted),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Gambar Fasilitas Responsif
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: imageUrl != null && imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              height: imageHeight,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: imageHeight,
+                                width: double.infinity,
+                                color: AppColors.facilityBg,
+                                child: const Center(
+                                  child: Icon(Icons.business_rounded,
+                                      size: 50, color: AppColors.facilityText),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: imageHeight,
+                              width: double.infinity,
+                              color: AppColors.facilityBg,
+                              child: const Center(
+                                child: Icon(Icons.business_rounded,
+                                    size: 50, color: AppColors.facilityText),
+                              ),
+                            ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Judul Bagian Deskripsi
+                    const Text(
+                      "Deskripsi",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.textMain),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Isi Deskripsi
+                    Text(
+                      item.description.isNotEmpty
+                          ? item.description
+                          : 'Tidak ada deskripsi tambahan.',
+                      style: const TextStyle(
+                          fontSize: 14, height: 1.5, color: AppColors.textMain),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
-                child: const Center(
-                  child: Icon(Icons.business_rounded,
-                      size: 50, color: AppColors.facilityText),
-                ),
               ),
-
-              const SizedBox(height: 20),
-
-              // Judul Bagian Deskripsi
-              const Text(
-                "Deskripsi",
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: AppColors.textMain),
-              ),
-              const SizedBox(height: 8),
-
-              // Isi Deskripsi
-              Text(
-                item.description.isNotEmpty
-                    ? item.description
-                    : 'Tidak ada deskripsi tambahan.',
-                style: const TextStyle(
-                    fontSize: 14, height: 1.5, color: AppColors.textMain),
-              ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         );
       },
@@ -587,6 +637,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: filteredFacilities.length,
                 itemBuilder: (context, index) {
                   final item = filteredFacilities[index];
+                  final imageUrl = _getFacilityImageUrl(item.id);
 
                   // Widget kotak fasilitas
                   return GestureDetector(
@@ -607,22 +658,52 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Stack(
                         children: [
                           // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
-                          // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                            child: (item.description.contains('http') ||
-                                    item.iconType == 'image')
-                                // CATATAN: Ini hanya contoh. Anda harus menambahkan field 'imageUrl' di CatalogModel Anda
-                                // dan memetakannya di get filteredFacilities agar ini berfungsi sempurna.
+                            child: imageUrl != null && imageUrl.isNotEmpty
                                 ? Image.network(
-                                    'GANTI_DENGAN_URL_GAMBAR',
+                                    imageUrl,
                                     width: double.infinity,
                                     height: double.infinity,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.business_rounded,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   )
                                 : Container(
-                                    color: Colors.grey[
-                                        300]), // Background abu-abu default
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.business_rounded,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                          ),
+
+                          // 2. Gradasi Gelap Bawah agar Teks Nama Fasilitas Terbaca
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.6),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
 
                           // 4. Nama Fasilitas di Kiri Bawah

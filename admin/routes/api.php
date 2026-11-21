@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Api\PengaduanController;
 use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\AuthApiController;
@@ -53,3 +54,20 @@ Route::get('/konten-sekolah', [KontenSekolahController::class, 'index']);
 Route::post('/konten-sekolah', [KontenSekolahController::class, 'store']);
 Route::match(['put', 'post'], '/konten-sekolah/{id}', [KontenSekolahController::class, 'update']);
 Route::delete('/konten-sekolah/{id}', [KontenSekolahController::class, 'destroy']);
+
+// Serve Gambar Publik (mendukung subfolder & header CORS untuk Flutter Web)
+Route::get('/gambar/{path}', function ($path) {
+    $cleanPath = ltrim($path, '/');
+
+    if (Storage::disk('public')->exists($cleanPath)) {
+        $fullPath = Storage::disk('public')->path($cleanPath);
+    } elseif (Storage::disk('public')->exists('fasilitas/' . $cleanPath)) {
+        $fullPath = Storage::disk('public')->path('fasilitas/' . $cleanPath);
+    } else {
+        abort(404);
+    }
+
+    return response()->file($fullPath, [
+        'Access-Control-Allow-Origin' => '*',
+    ]);
+})->where('path', '.*');
