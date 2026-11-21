@@ -60,13 +60,30 @@ Route::post('/konten-sekolah', [KontenSekolahController::class, 'store']);
 Route::match(['put', 'post'], '/konten-sekolah/{id}', [KontenSekolahController::class, 'update']);
 Route::delete('/konten-sekolah/{id}', [KontenSekolahController::class, 'destroy']);
 
-// Public route untuk gambar konten sekolah
+// Public route untuk gambar konten sekolah & fasilitas
 Route::get('/gambar/{path}', function ($path) {
-    $file = storage_path('app/public/' . $path);
+    $cleanPath = ltrim($path, '/');
+    $candidates = [
+        storage_path('app/public/' . $cleanPath),
+        storage_path('app/public/fasilitas/' . $cleanPath),
+    ];
 
-    if (!file_exists($file)) {
+    $file = null;
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate)) {
+            $file = $candidate;
+            break;
+        }
+    }
+
+    if (!$file) {
         abort(404);
     }
 
-    return response()->file($file);
+    $response = response()->file($file);
+    $response->headers->set('Access-Control-Allow-Origin', '*');
+    $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    $response->headers->set('Access-Control-Allow-Private-Network', 'true');
+
+    return $response;
 })->where('path', '.*');

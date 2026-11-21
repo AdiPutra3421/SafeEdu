@@ -28,8 +28,6 @@
             <th>ID Fasilitas</th>
             <th>Foto</th>
             <th>Nama Fasilitas / Sarana</th>
-            <th>Lokasi</th>
-            <th>Status Kondisi</th>
             <th>Deskripsi</th>
             <th>Aksi</th>
           </tr>
@@ -58,20 +56,6 @@
         <div class="form-group">
           <label class="form-label" for="namaInput">Nama Fasilitas / Sarana *</label>
           <input type="text" id="namaInput" class="form-control" required placeholder="Contoh: AC Split 1.5 PK Lab Komputer 2">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="lokasiInput">Lokasi *</label>
-          <input type="text" id="lokasiInput" class="form-control" required maxlength="150" placeholder="Contoh: Gedung A, Lantai 2">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="statusKondisiInput">Status Kondisi *</label>
-          <select id="statusKondisiInput" class="form-control" required>
-            <option value="Bisa Digunakan">Bisa Digunakan</option>
-            <option value="Dalam Perbaikan">Dalam Perbaikan</option>
-            <option value="Tidak Bisa Digunakan">Tidak Bisa Digunakan</option>
-          </select>
         </div>
 
         <div class="form-group">
@@ -134,58 +118,33 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      <span></span>
+      <span>${message}</span>
     `;
-    toast.querySelector('span').textContent = message;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3500);
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, character => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    })[character]);
-  }
-
-  function storageUrl(path) {
-    if (typeof path !== 'string') return null;
-    const segments = path.split('/');
-    if (segments.length === 0 || segments.some(segment =>
-      !segment || segment === '.' || segment === '..' || segment.includes('\\')
-    )) {
-      return null;
-    }
-    return `/storage/${segments.map(encodeURIComponent).join('/')}`;
   }
 
   function renderTable() {
     const tbody = document.getElementById('fasilitas-table-body');
     if (fasilitasData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding:30px; color: #94a3b8;">Tidak ada data fasilitas</td></tr>`;
       return;
     }
 
     tbody.innerHTML = fasilitasData.map(f => {
-      const photoUrl = storageUrl(f.foto_fasilitas);
-      const imgHtml = photoUrl
-        ? `<img src="${escapeHtml(photoUrl)}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" alt="Foto">`
+      const imgHtml = f.foto_fasilitas 
+        ? `<img src="/storage/${f.foto_fasilitas}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" alt="Foto">`
         : `<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Tidak ada</span>`;
 
       return `
         <tr>
-          <td><strong>FAS-${escapeHtml(f.id)}</strong></td>
+          <td><strong>FAS-${f.id}</strong></td>
           <td>${imgHtml}</td>
-          <td style="font-weight:600; color:var(--text-main);">${escapeHtml(f.nama)}</td>
-          <td>${escapeHtml(f.lokasi || '-')}</td>
-          <td>${escapeHtml(f.status_kondisi || '-')}</td>
-          <td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(f.deskripsi || '-')}</td>
+          <td style="font-weight:600; color:var(--text-main);">${f.nama}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">${f.deskripsi || '-'}</td>
           <td>
-            <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${Number(f.id)})">Edit</button>
-            <button class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2; margin-left:4px;" onclick="deleteFasilitas(${Number(f.id)})">Hapus</button>
+            <button class="btn btn-outline btn-sm" onclick="openFasilitasModal(${f.id})">Edit</button>
+            <button class="btn btn-sm" style="color:#e11d48; border-color:#fecdd3; background:#fff1f2; margin-left:4px;" onclick="deleteFasilitas(${f.id})">Hapus</button>
           </td>
         </tr>
       `;
@@ -203,14 +162,11 @@
       document.getElementById('modal-title').innerText = 'Edit Fasilitas';
       document.getElementById('fasilitas-id').value = f.id;
       document.getElementById('namaInput').value = f.nama;
-      document.getElementById('lokasiInput').value = f.lokasi || '';
-      document.getElementById('statusKondisiInput').value = f.status_kondisi || 'Bisa Digunakan';
       document.getElementById('deskripsiInput').value = f.deskripsi || '';
       
       // LOGIKA MENAMPILKAN GAMBAR LAMA DI ADMIN (DISAMAKAN DENGAN KONTEN SEKOLAH)
-      const photoUrl = storageUrl(f.foto_fasilitas);
-      if (photoUrl) {
-        previewImage.src = photoUrl;
+      if (f.foto_fasilitas) {
+        previewImage.src = '/storage/' + f.foto_fasilitas;
         previewContainer.style.display = 'block';
       } else {
         previewImage.src = '';
@@ -259,10 +215,9 @@
  async function handleFasilitasSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('fasilitas-id').value;
+    
     const formData = new FormData();
     formData.append('nama', document.getElementById('namaInput').value);
-    formData.append('lokasi', document.getElementById('lokasiInput').value);
-    formData.append('status_kondisi', document.getElementById('statusKondisiInput').value);
     formData.append('deskripsi', document.getElementById('deskripsiInput').value);
 
     const fotoFile = document.getElementById('fotoInput').files[0];
@@ -294,10 +249,7 @@
         closeFasilitasModal();
         fetchFasilitas(); 
       } else {
-        const validationErrors = json.errors
-          ? Object.values(json.errors).flat().join(' ')
-          : '';
-        alert('Gagal menyimpan: ' + (json.message || validationErrors || 'Silakan coba kembali.'));
+        alert("Gagal menyimpan: " + JSON.stringify(json.errors || json.message));
       }
     } catch (err) {
       console.error(err);

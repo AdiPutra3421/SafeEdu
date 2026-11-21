@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../models/catalog_model.dart';
 import '../services/api_config.dart';
 import '../services/auth_service.dart';
@@ -7,8 +9,6 @@ import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import 'notifikasi_screen.dart';
 import 'school_content_screen.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) onNavigateToTab;
@@ -75,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -93,14 +93,31 @@ class _HomeScreenState extends State<HomeScreen> {
               (data['data'] as List).map((item) => CampusNews.fromMap(item)));
       });
     } catch (e) {
-      print('Error fetching school content: $e');
+      debugPrint('Error fetching school content: $e');
     }
+  }
+
+  String? _getFacilityImageUrl(String facilityId) {
+    for (final f in _facilities) {
+      if (f['id'].toString() == facilityId) {
+        final foto = f['foto_fasilitas']?.toString();
+        if (foto != null && foto.isNotEmpty) {
+          if (foto.startsWith('http://') || foto.startsWith('https://')) {
+            return foto;
+          }
+          final cleanFoto = foto
+              .replaceFirst(RegExp(r'^/+'), '')
+              .replaceFirst(RegExp(r'^storage/'), '');
+          return '${ApiConfig.baseUrl}/api/gambar/$cleanFoto';
+        }
+      }
+    }
+    return null;
   }
 
   List<CampusFacilityCatalog> get filteredFacilities {
     return _facilities.map((f) {
       String statusKondisi = f['status_kondisi'] ?? 'Bisa Digunakan';
-
       final foto = f['foto_fasilitas']?.toString();
 
       return CampusFacilityCatalog(
@@ -120,138 +137,118 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showFacilityDetail(CampusFacilityCatalog item) {
+    final imageUrl = _getFacilityImageUrl(item.id);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+        final screenSize = MediaQuery.sizeOf(ctx);
+        final imageHeight = (screenSize.height * 0.25).clamp(150.0, 260.0);
+
+        return Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 600,
+              maxHeight: screenSize.height * 0.85,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textMain,
-                          ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: item.status == 'Bisa Digunakan'
-                                ? AppColors.statusSuccessBg
-                                : (item.status == 'Tidak Bisa Digunakan'
-                                    ? AppColors.statusDangerBg
-                                    : AppColors.statusPendingBg),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
                           child: Text(
-                            item.status,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: item.status == 'Bisa Digunakan'
-                                  ? AppColors.statusSuccessText
-                                  : (item.status == 'Tidak Bisa Digunakan'
-                                      ? AppColors.statusDangerText
-                                      : AppColors.statusPendingText),
+                            item.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textMain,
                             ),
                           ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              color: AppColors.textMuted),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                    ? Image.network(
-                        item.imageUrl!,
-                        height: 220,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox(
-                          height: 220,
-                          width: double.infinity,
-                        ),
-                      )
-                    : const SizedBox(
-                        height: 220,
-                        width: double.infinity,
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: imageUrl != null && imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              height: imageHeight,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: imageHeight,
+                                width: double.infinity,
+                                color: AppColors.facilityBg,
+                                child: const Center(
+                                  child: Icon(Icons.business_rounded,
+                                      size: 50, color: AppColors.facilityText),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: imageHeight,
+                              width: double.infinity,
+                              color: AppColors.facilityBg,
+                              child: const Center(
+                                child: Icon(Icons.business_rounded,
+                                    size: 50, color: AppColors.facilityText),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Deskripsi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppColors.textMain,
                       ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Deskripsi',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: AppColors.textMain,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.description.isNotEmpty
+                          ? item.description
+                          : 'Tidak ada deskripsi tambahan.',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                item.description.isNotEmpty
-                    ? item.description
-                    : 'Tidak ada deskripsi tambahan.',
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: AppColors.textMain,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.report_problem_outlined, size: 18),
-                  label: const Text('Laporkan Kerusakan pada Fasilitas Ini'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateToTab(1);
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -626,125 +623,135 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 16),
 
-              // REVISI: Filter kategori dihapus.
-              // Mengubah ListView menjadi GridView (2 kolom) untuk tampilan "kotak-kotak"
-              GridView.builder(
-                shrinkWrap:
-                    true, // Agar tidak error di dalam SingleChildScrollView
-                physics: const NeverScrollableScrollPhysics(),
+              // GridView Responsif menyesuaikan lebar layar perangkat
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 2 kotak berjejer ke samping
-                  crossAxisSpacing: 12, // Jarak antar kotak ke samping
-                  mainAxisSpacing: 12, // Jarak antar kotak ke bawah
-                  childAspectRatio: 1.1, // Rasio lebar dibanding tinggi kotak
-                ),
-                itemCount: filteredFacilities.length,
-                itemBuilder: (context, index) {
-                  final item = filteredFacilities[index];
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    final crossAxisCount = width >= 900
+                        ? 4
+                        : width >= 600
+                            ? 3
+                            : 2;
+                    final isCompact = width < 360;
 
-                  // Widget kotak fasilitas
-                  return GestureDetector(
-                    onTap: () => _showFacilityDetail(item),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                    if (filteredFacilities.isEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Belum ada data fasilitas & sarana',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textLight,
                           ),
-                        ],
+                        ),
+                      );
+                    }
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: width >= 600 ? 1.2 : 1.1,
                       ),
-                      child: Stack(
-                        children: [
-                          // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
-                          // 1. Latar Belakang Kotak (Gambar atau Warna Fallback)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: item.imageUrl != null
-                                ? Image.network(
-                                    item.imageUrl!,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      color: Colors.grey[300],
-                                      child: const Icon(
-                                        Icons.image_not_supported,
-                                        size: 40,
-                                        color: Colors.grey,
+                      itemCount: filteredFacilities.length,
+                      itemBuilder: (context, index) {
+                        final item = filteredFacilities[index];
+                        final imageUrl = _getFacilityImageUrl(item.id);
+
+                        return GestureDetector(
+                          onTap: () => _showFacilityDetail(item),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.border),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: imageUrl != null && imageUrl.isNotEmpty
+                                      ? Image.network(
+                                          imageUrl,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                            color: Colors.grey[300],
+                                            child: const Icon(
+                                              Icons.business_rounded,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        )
+                                      : Container(
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          color: Colors.grey[300],
+                                          child: const Icon(
+                                            Icons.business_rounded,
+                                            size: 40,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                ),
+                                Positioned.fill(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.6),
+                                        ],
                                       ),
                                     ),
-                                  )
-                                : Container(
-                                    color: Colors.grey[300],
-                                    child: const Icon(
-                                      Icons.business_rounded,
-                                      size: 40,
-                                      color: Colors.grey,
-                                    ),
-                                  ), // Background abu-abu default
-                          ),
-
-                          // 3. Status Badge di Pojok Kanan Atas
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: item.status == 'Bisa Digunakan'
-                                    ? AppColors.statusSuccessBg
-                                        .withValues(alpha: 0.9)
-                                    : (item.status == 'Tidak Bisa Digunakan'
-                                        ? AppColors.statusDangerBg
-                                            .withValues(alpha: 0.9)
-                                        : AppColors.statusPendingBg
-                                            .withValues(alpha: 0.9)),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.status,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: item.status == 'Bisa Digunakan'
-                                      ? AppColors.statusSuccessText
-                                      : (item.status == 'Tidak Bisa Digunakan'
-                                          ? AppColors.statusDangerText
-                                          : AppColors.statusPendingText),
+                                  ),
                                 ),
-                              ),
+                                Positioned(
+                                  left: 10,
+                                  right: 10,
+                                  bottom: 12,
+                                  child: Text(
+                                    item.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: isCompact ? 12 : 13,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-
-                          // 4. Nama Fasilitas di Kiri Bawah
-                          Positioned(
-                            left: 10,
-                            right: 10,
-                            bottom: 12,
-                            child: Text(
-                              item.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
 
               const SizedBox(height: 24),
