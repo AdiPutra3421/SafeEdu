@@ -504,15 +504,32 @@
     if (item.file_bukti_url) {
       try {
         const fileUrl = new URL(item.file_bukti_url, window.location.origin);
-        if (fileUrl.origin === window.location.origin && fileUrl.pathname.startsWith('/storage/')) {
+        if (fileUrl.origin === window.location.origin && fileUrl.pathname.startsWith('/storage/bukti/')) {
+          const storedPath = fileUrl.pathname.slice('/storage/'.length);
+          const apiPath = storedPath.split('/').map(encodeURIComponent).join('/');
+          const attachmentUrl = `/api/gambar/${apiPath}`;
           const link = document.createElement('a');
-          link.href = fileUrl.href;
+          link.href = attachmentUrl;
           link.target = '_blank';
           link.rel = 'noopener';
           link.textContent = '📎 Buka Lampiran / Bukti Foto';
           link.style.color = 'var(--primary)';
           link.style.fontWeight = '600';
-          attachment.replaceChildren(link);
+          const extension = storedPath.split('.').pop().toLowerCase();
+          if (['jpg', 'jpeg', 'png'].includes(extension)) {
+            const preview = document.createElement('img');
+            preview.src = attachmentUrl;
+            preview.alt = 'Foto lampiran laporan';
+            preview.style.display = 'block';
+            preview.style.maxWidth = '100%';
+            preview.style.maxHeight = '280px';
+            preview.style.objectFit = 'contain';
+            preview.style.marginBottom = '8px';
+            preview.onerror = () => preview.remove();
+            attachment.replaceChildren(preview, link);
+          } else {
+            attachment.replaceChildren(link);
+          }
         } else {
           attachment.textContent = 'Lampiran tidak tersedia.';
         }
@@ -620,13 +637,24 @@
         })
       });
 
-      const json = await response.json();
-      if (json.success) {
+      const responseText = await response.text();
+      let json;
+      try {
+        json = JSON.parse(responseText);
+      } catch {
+        showToast(`Server gagal memproses penolakan (HTTP ${response.status}).`, true);
+        return;
+      }
+
+      if (response.ok && json.success) {
         showToast('Laporan berhasil ditolak.');
         closeDispatchModal();
         fetchLaporan();
       } else {
-        showToast(json.message || 'Gagal menolak laporan.', true);
+        const validationErrors = json.errors
+          ? Object.values(json.errors).flat().join(' ')
+          : '';
+        showToast(json.message || validationErrors || `Gagal menolak laporan (HTTP ${response.status}).`, true);
       }
     } catch (err) {
       console.error(err);

@@ -336,11 +336,13 @@ class _ReportScreenState extends State<ReportScreen> {
       request.fields['judul'] = _titleController.text.trim();
       request.fields['deskripsi'] = _descController.text.trim();
       request.fields['lokasi_kejadian'] = _locationController.text.trim();
-      request.fields['urgency'] = switch (_selectedUrgency) {
-        'Mendesak' => 'urgent',
-        'Rendah' => 'low',
-        _ => 'medium',
-      };
+      if (_reportType != 'fasilitas') {
+        request.fields['urgency'] = switch (_selectedUrgency) {
+          'Mendesak' => 'urgent',
+          'Rendah' => 'low',
+          _ => 'medium',
+        };
+      }
       request.fields['is_anonim'] = _isAnonymous ? '1' : '0';
 
       if (_selectedFile != null) {
@@ -776,21 +778,22 @@ class _ReportScreenState extends State<ReportScreen> {
 
               const SizedBox(height: 16),
 
-              // Urgency Selection
-              const Text('Tingkat Urgensi *',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _buildUrgencyChip('Rendah', const Color(0xFF10B981)),
-                  const SizedBox(width: 8),
-                  _buildUrgencyChip('Sedang', const Color(0xFFF59E0B)),
-                  const SizedBox(width: 8),
-                  _buildUrgencyChip('Mendesak', const Color(0xFFEF4444)),
-                ],
-              ),
-
-              const SizedBox(height: 16),
+              if (!isFacility) ...[
+                const Text('Tingkat Urgensi *',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildUrgencyChip('Rendah', const Color(0xFF10B981)),
+                    const SizedBox(width: 8),
+                    _buildUrgencyChip('Sedang', const Color(0xFFF59E0B)),
+                    const SizedBox(width: 8),
+                    _buildUrgencyChip('Mendesak', const Color(0xFFEF4444)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Description Field
               const Text('Rincian Kronologi & Keterangan *',

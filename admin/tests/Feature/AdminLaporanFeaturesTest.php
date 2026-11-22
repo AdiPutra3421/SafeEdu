@@ -3,11 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Kategori;
-use App\Models\Notifikasi;
 use App\Models\Pengaduan;
 use App\Models\Penugasan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminLaporanFeaturesTest extends TestCase
@@ -15,10 +16,15 @@ class AdminLaporanFeaturesTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $reporter;
+
     private User $teknisiLapangan;
+
     private User $teknisiKonseling;
+
     private Kategori $kategoriFasilitas;
+
     private Kategori $kategoriEtik;
 
     protected function setUp(): void
@@ -84,6 +90,24 @@ class AdminLaporanFeaturesTest extends TestCase
             'type' => 'danger',
             'judul' => 'Laporan Ditolak',
         ]);
+    }
+
+    public function test_rejection_reason_column_is_available(): void
+    {
+        $this->assertTrue(Schema::hasColumn('pengaduan', 'alasan_penolakan'));
+    }
+
+    public function test_uploaded_report_attachment_can_be_opened_without_a_storage_symlink(): void
+    {
+        $path = 'bukti/test-admin-lampiran.png';
+        Storage::disk('public')->put($path, 'test attachment');
+
+        try {
+            $this->get('/api/gambar/'.$path)
+                ->assertOk();
+        } finally {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     public function test_cannot_reject_already_completed_or_rejected_report(): void
