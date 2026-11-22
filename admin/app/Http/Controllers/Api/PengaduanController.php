@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\NotifikasiDikirim;
 use App\Http\Controllers\Controller;
+use App\Models\Kategori;
 use App\Models\Notifikasi;
 use App\Models\Pengaduan;
 use Carbon\Carbon;
@@ -90,6 +91,8 @@ class PengaduanController extends Controller
             ], 422);
         }
 
+        $isFacilityReport = Kategori::whereKey($request->kategori_id)->value('jenis') === 'fasilitas';
+
         // Anti-Spam (Masalah #1)
         $judul = trim($request->judul);
         $lokasi = trim($request->lokasi_kejadian);
@@ -139,7 +142,7 @@ class PengaduanController extends Controller
             'judul' => trim($request->judul),
             'deskripsi' => trim($request->deskripsi),
             'lokasi_kejadian' => trim($request->lokasi_kejadian),
-            'urgency' => $request->input('urgency', 'medium'),
+            'urgency' => $isFacilityReport ? 'medium' : $request->input('urgency', 'medium'),
             'status' => 'menunggu',
             'is_anonim' => $request->is_anonim == 'true' || $request->is_anonim == '1' || $request->is_anonim === true,
             'file_bukti_url' => $fileUrl,

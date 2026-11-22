@@ -49,6 +49,20 @@ class PenugasanController extends Controller
 
         if ($teknisiId) {
             $query->where('teknisi_id', $teknisiId);
+
+            $teknisi = User::whereKey($teknisiId)
+                ->whereIn('role', ['teknisi', 'guru_bk'])
+                ->first();
+            $subRole = $teknisi ? self::technicianSubRole($teknisi) : null;
+
+            if ($subRole === null) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $categoryType = $subRole === 'lapangan' ? 'fasilitas' : 'etik';
+                $query->whereHas('pengaduan.kategori', function ($categoryQuery) use ($categoryType) {
+                    $categoryQuery->where('jenis', $categoryType);
+                });
+            }
         }
 
         if ($request->filled('urgency')) {
@@ -103,19 +117,17 @@ class PenugasanController extends Controller
         }
 
         $isFacilityReport = $pengaduan->kategori?->jenis === 'fasilitas';
-        $isGuruBk = ($teknisi->bidang === 'etik' || $teknisi->role === 'guru_bk' || stripos($teknisi->nama, 'bk') !== false);
+        $subRole = self::technicianSubRole($teknisi);
+        $isCompatible = $isFacilityReport
+            ? $subRole === 'lapangan'
+            : $subRole === 'konseling';
 
-        if ($isFacilityReport && $isGuruBk) {
+        if (! $isCompatible) {
             return response()->json([
                 'success' => false,
-                'message' => 'Laporan fasilitas harus ditugaskan ke Teknisi Lapangan, bukan Guru BK.',
-            ], 422);
-        }
-
-        if (! $isFacilityReport && ! $isGuruBk && $teknisi->bidang === 'fasilitas') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Laporan pelanggaran kode etik harus ditugaskan ke Guru BK, bukan Teknisi Lapangan.',
+                'message' => $isFacilityReport
+                    ? 'Laporan fasilitas hanya dapat ditugaskan ke teknisi sub-role Lapangan.'
+                    : 'Laporan kode etik hanya dapat ditugaskan ke teknisi sub-role Konseling.',
             ], 422);
         }
 
@@ -183,7 +195,7 @@ class PenugasanController extends Controller
         $pengaduan->save();
 
             // Masalah #6: Buat Notifikasi & Broadcast
-        $recipientRoleName = $isGuruBk ? 'Guru BK' : 'teknisi lapangan';
+        $recipientRoleName = $subRole === 'konseling' ? 'tim konseling' : 'teknisi lapangan';
         $notif = Notifikasi::create([
             'user_id' => $pengaduan->user_id,
             'pengaduan_id' => $pengaduan->id,
@@ -226,6 +238,15 @@ class PenugasanController extends Controller
                 'success' => false,
                 'message' => 'Penugasan tidak ditemukan.'
             ], 404);
+        }
+
+        $pengaduan = Pengaduan::with('kategori')->find($penugasan->pengaduan_id);
+        $teknisi = User::find($penugasan->teknisi_id);
+        if (! self::canHandleReport($teknisi, $pengaduan)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sub-role teknisi tidak sesuai dengan kategori laporan ini.',
+            ], 422);
         }
 
         $photoPath = null;
@@ -316,12 +337,20 @@ class PenugasanController extends Controller
             ], 422);
         }
 
-        $penugasan = Penugasan::with('pengaduan')->find($id);
+        $penugasan = Penugasan::with('pengaduan.kategori')->find($id);
         if (! $penugasan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Penugasan tidak ditemukan.',
             ], 404);
+        }
+
+        $teknisi = User::find($penugasan->teknisi_id);
+        if (! self::canHandleReport($teknisi, $penugasan->pengaduan)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sub-role teknisi tidak sesuai dengan kategori laporan ini.',
+            ], 422);
         }
 
         if ($penugasan->status !== 'ditugaskan') {
@@ -351,5 +380,32 @@ class PenugasanController extends Controller
             'message' => 'Penugasan berhasil ditolak.',
             'data' => $penugasan->load('logPengerjaans'),
         ]);
+    }
+
+    private static function technicianSubRole(User $teknisi): ?string
+    {
+        if ($teknisi->role === 'guru_bk' || in_array($teknisi->bidang, ['konseling', 'etik'], true)) {
+            return 'konseling';
+        }
+
+        if (in_array($teknisi->bidang, ['lapangan', 'fasilitas'], true)) {
+            return 'lapangan';
+        }
+
+        return null;
+    }
+
+    private static function canHandleReport(?User $teknisi, ?Pengaduan $pengaduan): bool
+    {
+        if (! $teknisi || ! $pengaduan || ! in_array($teknisi->role, ['teknisi', 'guru_bk'], true)) {
+            return false;
+        }
+
+        $subRole = self::technicianSubRole($teknisi);
+        $isFacilityReport = $pengaduan->kategori?->jenis === 'fasilitas';
+
+        return $isFacilityReport
+            ? $subRole === 'lapangan'
+            : $subRole === 'konseling';
     }
 }

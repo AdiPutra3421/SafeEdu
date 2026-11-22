@@ -17,7 +17,7 @@ class AdminLaporanFeaturesTest extends TestCase
     private User $admin;
     private User $reporter;
     private User $teknisiLapangan;
-    private User $guruBk;
+    private User $teknisiKonseling;
     private Kategori $kategoriFasilitas;
     private Kategori $kategoriEtik;
 
@@ -31,13 +31,13 @@ class AdminLaporanFeaturesTest extends TestCase
         $this->teknisiLapangan = User::factory()->create([
             'nama' => 'Teknisi Sarpras Budi',
             'role' => 'teknisi',
-            'bidang' => 'fasilitas',
+            'bidang' => 'lapangan',
         ]);
 
-        $this->guruBk = User::factory()->create([
-            'nama' => 'Ibu Siti Guru BK',
+        $this->teknisiKonseling = User::factory()->create([
+            'nama' => 'Ibu Siti Konseling',
             'role' => 'teknisi',
-            'bidang' => 'etik',
+            'bidang' => 'konseling',
         ]);
 
         $this->kategoriFasilitas = Kategori::create([
@@ -115,7 +115,7 @@ class AdminLaporanFeaturesTest extends TestCase
         ])->assertStatus(409);
     }
 
-    public function test_facility_report_must_be_assigned_to_field_technician_not_guru_bk(): void
+    public function test_facility_report_must_be_assigned_to_lapangan_subrole(): void
     {
         $report = Pengaduan::create([
             'user_id' => $this->reporter->id,
@@ -126,17 +126,15 @@ class AdminLaporanFeaturesTest extends TestCase
             'status' => 'menunggu',
         ]);
 
-        // Trying to assign facility report to Guru BK -> must fail
         $response = $this->postJson('/api/penugasan', [
             'pengaduan_id' => $report->id,
-            'teknisi_id' => $this->guruBk->id,
+            'teknisi_id' => $this->teknisiKonseling->id,
         ]);
 
         $response->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Laporan fasilitas harus ditugaskan ke Teknisi Lapangan, bukan Guru BK.');
+            ->assertJsonPath('message', 'Laporan fasilitas hanya dapat ditugaskan ke teknisi sub-role Lapangan.');
 
-        // Assigning to Teknisi Lapangan -> must succeed
         $validResponse = $this->postJson('/api/penugasan', [
             'pengaduan_id' => $report->id,
             'teknisi_id' => $this->teknisiLapangan->id,
@@ -153,7 +151,7 @@ class AdminLaporanFeaturesTest extends TestCase
         ]);
     }
 
-    public function test_ethics_report_must_be_assigned_to_guru_bk_not_teknisi_lapangan(): void
+    public function test_ethics_report_must_be_assigned_to_konseling_subrole(): void
     {
         $report = Pengaduan::create([
             'user_id' => $this->reporter->id,
@@ -164,7 +162,6 @@ class AdminLaporanFeaturesTest extends TestCase
             'status' => 'menunggu',
         ]);
 
-        // Trying to assign ethics report to Teknisi Lapangan -> must fail
         $response = $this->postJson('/api/penugasan', [
             'pengaduan_id' => $report->id,
             'teknisi_id' => $this->teknisiLapangan->id,
@@ -172,12 +169,11 @@ class AdminLaporanFeaturesTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Laporan pelanggaran kode etik harus ditugaskan ke Guru BK, bukan Teknisi Lapangan.');
+            ->assertJsonPath('message', 'Laporan kode etik hanya dapat ditugaskan ke teknisi sub-role Konseling.');
 
-        // Assigning to Guru BK -> must succeed
         $validResponse = $this->postJson('/api/penugasan', [
             'pengaduan_id' => $report->id,
-            'teknisi_id' => $this->guruBk->id,
+            'teknisi_id' => $this->teknisiKonseling->id,
         ]);
 
         $validResponse->assertOk()
@@ -193,5 +189,103 @@ class AdminLaporanFeaturesTest extends TestCase
             'pengaduan_id' => $report->id,
             'judul' => 'Laporan Diproses',
         ]);
+    }
+
+    public function test_facility_report_urgency_is_set_by_admin_instead_of_reporter(): void
+    {
+        $response = $this->postJson('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Kerusakan Fasilitas Ruang Belajar',
+            'deskripsi' => 'Kerusakan fasilitas perlu diperiksa karena meja belajar sudah tidak dapat digunakan.',
+            'lokasi_kejadian' => 'Ruang Belajar Gedung A',
+            'urgency' => 'urgent',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.urgency', 'medium');
+
+        $ethicsResponse = $this->postJson('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriEtik->id,
+            'judul' => 'Laporan Kode Etik Siswa',
+            'deskripsi' => 'Laporan kode etik dengan kronologi yang harus diteruskan ke tim konseling.',
+            'lokasi_kejadian' => 'Lorong Gedung B',
+            'urgency' => 'urgent',
+        ]);
+
+        $ethicsResponse->assertCreated()
+            ->assertJsonPath('data.urgency', 'urgent');
+    }
+
+    public function test_technician_api_creates_accounts_with_one_of_the_two_subroles(): void
+    {
+        $response = $this->postJson('/api/teknisi', [
+            'nama' => 'Petugas Konseling',
+            'email' => 'konseling@safeedu.sch.id',
+            'password' => 'password',
+            'bidang' => 'konseling',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.role', 'teknisi')
+            ->assertJsonPath('data.bidang', 'konseling');
+
+        $this->putJson('/api/teknisi/'.$this->teknisiLapangan->id, [
+            'nama' => $this->teknisiLapangan->nama,
+            'email' => $this->teknisiLapangan->email,
+            'bidang' => 'konseling',
+        ])->assertOk()
+            ->assertJsonPath('data.role', 'teknisi')
+            ->assertJsonPath('data.bidang', 'konseling');
+
+        $this->postJson('/api/teknisi', [
+            'nama' => 'Sub-role Tidak Valid',
+            'email' => 'invalid@safeedu.sch.id',
+            'password' => 'password',
+            'bidang' => 'etik',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('bidang');
+    }
+
+    public function test_technician_task_list_only_includes_the_technicians_subrole_category(): void
+    {
+        $facilityReport = Pengaduan::create([
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Laporan Fasilitas',
+            'deskripsi' => 'Kerusakan fasilitas yang perlu segera diperiksa oleh petugas.',
+            'lokasi_kejadian' => 'Ruang Belajar Gedung A',
+        ]);
+        $ethicsReport = Pengaduan::create([
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriEtik->id,
+            'judul' => 'Laporan Kode Etik',
+            'deskripsi' => 'Laporan kode etik yang perlu ditangani oleh petugas konseling.',
+            'lokasi_kejadian' => 'Ruang Belajar Gedung A',
+        ]);
+
+        Penugasan::create([
+            'pengaduan_id' => $facilityReport->id,
+            'teknisi_id' => $this->teknisiLapangan->id,
+            'admin_id' => $this->admin->id,
+            'status' => 'ditugaskan',
+        ]);
+        $mismatchedTask = Penugasan::create([
+            'pengaduan_id' => $ethicsReport->id,
+            'teknisi_id' => $this->teknisiLapangan->id,
+            'admin_id' => $this->admin->id,
+            'status' => 'ditugaskan',
+        ]);
+
+        $this->getJson('/api/penugasan?teknisi_id='.$this->teknisiLapangan->id)
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.pengaduan.kategori.jenis', 'fasilitas');
+
+        $this->postJson("/api/penugasan/{$mismatchedTask->id}/status", [
+            'status' => 'diterima',
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Sub-role teknisi tidak sesuai dengan kategori laporan ini.');
     }
 }

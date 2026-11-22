@@ -54,7 +54,7 @@ class UserTeknisiController extends Controller
             'nama'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'string', 'max:100', 'unique:users,email'],
             'password' => 'required|string|min:6',
-            'bidang'   => 'nullable|string|in:fasilitas,etik',
+            'bidang'   => 'required|string|in:lapangan,konseling',
         ], [
             'nama.required'     => 'Nama teknisi wajib diisi.',
             'email.required'    => 'Email / Username teknisi wajib diisi.',
@@ -70,13 +70,12 @@ class UserTeknisiController extends Controller
             ], 422);
         }
 
-        $bidang = $request->input('bidang', 'fasilitas');
         $user = User::create([
             'nama'     => trim($request->nama),
             'email'    => trim($request->email),
             'password' => Hash::make($request->password),
-            'role'     => $bidang === 'etik' ? 'guru_bk' : 'teknisi',
-            'bidang'   => $bidang,
+            'role'     => 'teknisi',
+            'bidang'   => $request->bidang,
         ]);
 
         return response()->json([
@@ -131,7 +130,7 @@ class UserTeknisiController extends Controller
             'nama'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'string', 'max:100', 'unique:users,email,' . $id],
             'password' => 'nullable|string|min:6',
-            'bidang'   => 'nullable|string|in:fasilitas,etik',
+            'bidang'   => 'required|string|in:lapangan,konseling',
         ], [
             'nama.required'  => 'Nama teknisi wajib diisi.',
             'email.required' => 'Email / Username teknisi wajib diisi.',
@@ -149,10 +148,8 @@ class UserTeknisiController extends Controller
         $user->nama  = trim($request->nama);
         $user->email = trim($request->email);
 
-        if ($request->filled('bidang')) {
-            $user->bidang = $request->bidang;
-            $user->role = $request->bidang === 'etik' ? 'guru_bk' : 'teknisi';
-        }
+        $user->bidang = $request->bidang;
+        $user->role = 'teknisi';
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);

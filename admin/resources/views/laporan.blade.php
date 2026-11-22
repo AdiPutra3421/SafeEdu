@@ -98,7 +98,7 @@
   </div>
 </main>
 
-<!-- Modal Disposisi & Verifikasi ke Teknisi / Guru BK -->
+<!-- Modal Disposisi & Verifikasi ke Teknisi -->
 <div class="modal-overlay" id="dispatchModal">
   <div class="modal-dialog" style="max-width: 620px;">
     <div class="modal-header">
@@ -523,7 +523,7 @@
       attachment.textContent = 'Tidak ada lampiran bukti.';
     }
 
-    // Dropdown Penanggung Jawab: Otomatis Filter Guru BK vs Teknisi Lapangan & Disable jika >= 5 tugas
+    // Dropdown penanggung jawab hanya menampilkan teknisi dengan sub-role yang sesuai.
     const isFacility = item.kategori?.jenis === 'fasilitas';
     const selectLabel = document.getElementById('technicianSelectLabel');
     const selectElem = document.getElementById('technicianSelect');
@@ -531,15 +531,15 @@
 
     selectLabel.innerText = isFacility
       ? 'Pilih Teknisi Lapangan (Fasilitas & Sarpras) *'
-      : 'Pilih Guru BK (Penanggung Jawab Kode Etik) *';
+      : 'Pilih Teknisi Konseling (Kode Etik) *';
 
     // Filter officers
     const eligibleOfficers = allOfficers.filter(o => {
-      const isBk = (o.bidang === 'etik' || o.role === 'guru_bk' || (o.nama && o.nama.toLowerCase().includes('bk')) || (o.nama && o.nama.toLowerCase().includes('guru')));
-      return isFacility ? !isBk : isBk;
+      const isCounseling = ['konseling', 'etik'].includes(o.bidang) || o.role === 'guru_bk';
+      return isFacility ? !isCounseling : isCounseling;
     });
 
-    selectElem.innerHTML = `<option value="">-- Pilih ${isFacility ? 'Teknisi Lapangan' : 'Guru BK'} --</option>`;
+    selectElem.innerHTML = `<option value="">-- Pilih ${isFacility ? 'Teknisi Lapangan' : 'Teknisi Konseling'} --</option>`;
     
     let selectableCount = 0;
     eligibleOfficers.forEach(o => {
@@ -559,11 +559,11 @@
     });
 
     if (eligibleOfficers.length === 0) {
-      noticeElem.innerHTML = `<span style="color: #dc2626;">⚠️ Belum ada akun ${isFacility ? 'Teknisi Lapangan' : 'Guru BK'} yang terdaftar di sistem.</span>`;
+      noticeElem.innerHTML = `<span style="color: #dc2626;">Belum ada akun ${isFacility ? 'Teknisi Lapangan' : 'Teknisi Konseling'} yang terdaftar di sistem.</span>`;
     } else if (selectableCount === 0) {
-      noticeElem.innerHTML = `<span style="color: #dc2626;">⚠️ Seluruh ${isFacility ? 'teknisi lapangan' : 'guru BK'} saat ini sedang menangani kuota maksimal 5 tugas aktif.</span>`;
+      noticeElem.innerHTML = `<span style="color: #dc2626;">Seluruh ${isFacility ? 'teknisi lapangan' : 'teknisi konseling'} saat ini sedang menangani kuota maksimal 5 tugas aktif.</span>`;
     } else {
-      noticeElem.innerText = `Menampilkan ${selectableCount} petugas tersedia (${isFacility ? 'Teknisi Lapangan' : 'Guru BK'}) dengan kuota tugas < 5.`;
+      noticeElem.innerText = `Menampilkan ${selectableCount} petugas tersedia (${isFacility ? 'Teknisi Lapangan' : 'Teknisi Konseling'}) dengan kuota tugas < 5.`;
     }
 
     // Urgency Select in Modal

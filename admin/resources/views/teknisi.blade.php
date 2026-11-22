@@ -6,7 +6,7 @@
 <header class="topbar">
   <div class="page-title">
     <h2>Manajemen Data Teknisi</h2>
-    <p>Kelola data akun petugas teknisi lapangan, pantau beban kerja serta riwayat penanganan tugas fasilitas sekolah.</p>
+    <p>Kelola akun teknisi sub-role Lapangan dan Konseling, serta pantau beban dan riwayat penugasan.</p>
   </div>
   <div class="topbar-actions">
     <button class="btn btn-primary" onclick="openTeknisiModal()">
@@ -58,6 +58,7 @@
           <tr>
             <th>ID</th>
             <th>Nama Teknisi</th>
+            <th>Sub-role</th>
             <th>Email / Username Login</th>
             <th>Beban Penugasan</th>
             <th>Terdaftar Pada</th>
@@ -93,12 +94,12 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="bidangInput">Divisi / Bidang Penugasan *</label>
+          <label class="form-label" for="bidangInput">Sub-role Teknisi *</label>
           <select id="bidangInput" class="form-control" required>
-            <option value="fasilitas">Teknisi Lapangan (Fasilitas & Sarpras)</option>
-            <option value="etik">Guru BK (Bimbingan Konseling & Kode Etik)</option>
+            <option value="lapangan">Lapangan (Fasilitas & Sarpras)</option>
+            <option value="konseling">Konseling (Laporan Kode Etik)</option>
           </select>
-          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Menentukan otomatisasi penugasan: Laporan fasilitas ke Teknisi Lapangan, Laporan kode etik ke Guru BK.</small>
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Lapangan hanya menerima laporan fasilitas; Konseling hanya menerima laporan kode etik.</small>
         </div>
 
         <div class="form-group">
@@ -176,7 +177,7 @@
     document.getElementById('count-filtered').innerText = filtered.length;
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 36px; color: var(--text-muted);">Tidak ada data teknisi yang cocok.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 36px; color: var(--text-muted);">Tidak ada data teknisi yang cocok.</td></tr>`;
       return;
     }
 
@@ -196,25 +197,26 @@
         taskBadge = `<span class="badge" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;">Bebas Tugas</span>`;
       }
 
-      const isBk = (t.bidang === 'etik' || t.role === 'guru_bk' || (t.nama && t.nama.toLowerCase().includes('bk')));
-      const divisionLabel = isBk
-        ? '<span class="badge" style="background: #fdf2f8; color: #db2777; border: 1px solid #fbcfe8; font-size: 0.7rem; padding: 2px 7px;">Guru BK</span>'
-        : '<span class="badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 0.7rem; padding: 2px 7px;">Teknisi Lapangan</span>';
+      const isCounseling = ['konseling', 'etik'].includes(t.bidang) || t.role === 'guru_bk';
+      const subRoleLabel = isCounseling ? 'Konseling' : 'Lapangan';
+      const subRoleStyle = isCounseling
+        ? 'background: #fdf2f8; color: #db2777; border: 1px solid #fbcfe8;'
+        : 'background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;';
 
       return `
         <tr>
           <td><strong style="color: var(--primary);">TEK-${t.id}</strong></td>
           <td>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isBk ? '#fce7f3' : '#ccfbf1'}; color: ${isBk ? '#be185d' : '#0f766e'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isCounseling ? '#fce7f3' : '#ccfbf1'}; color: ${isCounseling ? '#be185d' : '#0f766e'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
                 ${initials}
               </div>
               <div>
                 <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(t.nama)}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${divisionLabel}</div>
               </div>
             </div>
           </td>
+          <td><span class="badge" style="${subRoleStyle} font-size: 0.7rem; padding: 2px 7px;">${subRoleLabel}</span></td>
           <td>
             <span style="font-family: monospace; font-size: 0.85rem; color: #0f172a; background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">
               ${escapeHtml(t.email)}
@@ -247,7 +249,10 @@
       document.getElementById('teknisi-id').value = teknisi.id;
       document.getElementById('namaInput').value = teknisi.nama;
       document.getElementById('emailInput').value = teknisi.email;
-      document.getElementById('bidangInput').value = teknisi.bidang || (teknisi.role === 'guru_bk' ? 'etik' : 'fasilitas');
+      document.getElementById('bidangInput').value =
+        ['konseling', 'etik'].includes(teknisi.bidang) || teknisi.role === 'guru_bk'
+          ? 'konseling'
+          : 'lapangan';
       passwordInput.value = '';
       passwordInput.required = false;
       passwordLabel.innerText = 'Password Baru (Opsional)';
@@ -293,7 +298,7 @@
     const payload = {
       nama: nama,
       email: email,
-      bidang: document.getElementById('bidangInput').value || 'fasilitas',
+      bidang: document.getElementById('bidangInput').value,
     };
 
     const password = document.getElementById('passwordInput').value;
