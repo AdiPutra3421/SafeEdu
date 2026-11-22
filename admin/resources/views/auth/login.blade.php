@@ -30,17 +30,11 @@
         </div>
 
         <!-- Remember Me -->
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="form-group" style="display: flex; align-items: center;">
             <label for="remember_me" style="display: flex; align-items: center; cursor: pointer;">
                 <input id="remember_me" type="checkbox" name="remember" style="margin-right: 8px;">
                 <span style="font-size: 0.85rem; color: var(--text-muted);">Ingat Saya</span>
             </label>
-
-            @if (Route::has('password.request'))
-                <a style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: 600;" href="{{ route('password.request') }}">
-                    Lupa Password?
-                </a>
-            @endif
         </div>
 
         <div>

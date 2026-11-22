@@ -12,7 +12,7 @@
         
         <style>
             body {
-                background-color: var(--bg-main);
+                background-color: var(--bg-canvas);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -21,11 +21,12 @@
             }
             .auth-card {
                 background: white;
-                padding: 40px;
+                padding: clamp(24px, 5vw, 40px);
                 border-radius: var(--radius-lg);
                 box-shadow: var(--shadow-md);
                 width: 100%;
                 max-width: 450px;
+                margin: 16px;
                 border: 1px solid var(--border-color);
             }
             .auth-logo {
@@ -76,6 +77,12 @@
                 color: var(--primary);
                 text-decoration: none;
                 font-weight: 600;
+            }
+
+            @media (max-width: 480px) {
+                .auth-logo h1 {
+                    font-size: 1.5rem;
+                }
             }
         </style>
     </head>
