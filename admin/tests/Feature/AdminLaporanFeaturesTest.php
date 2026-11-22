@@ -242,6 +242,51 @@ class AdminLaporanFeaturesTest extends TestCase
             ->assertJsonPath('data.urgency', 'urgent');
     }
 
+    public function test_report_with_duplicate_title_and_description_is_rejected_across_users_and_statuses(): void
+    {
+        $otherReporter = User::factory()->create(['role' => 'siswa']);
+        Pengaduan::create([
+            'user_id' => $otherReporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Kerusakan jendela kelas',
+            'deskripsi' => 'Pintu kelas mengalami kerusakan yang perlu diperbaiki segera.',
+            'lokasi_kejadian' => 'Gedung A',
+            'status' => 'selesai',
+        ]);
+
+        $response = $this->postJson('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => '  KERUSAKAN   JENDELA KELAS ',
+            'deskripsi' => "PINTU KELAS mengalami\nkerusakan yang perlu diperbaiki segera.",
+            'lokasi_kejadian' => 'Gedung B',
+        ]);
+
+        $response->assertStatus(429)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Laporan dengan judul dan deskripsi yang sama sudah pernah dibuat.');
+    }
+
+    public function test_report_with_different_title_and_description_is_not_rejected_as_duplicate(): void
+    {
+        Pengaduan::create([
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Kerusakan jendela kelas',
+            'deskripsi' => 'Pintu kelas mengalami kerusakan yang perlu diperbaiki segera.',
+            'lokasi_kejadian' => 'Gedung A',
+            'status' => 'menunggu',
+        ]);
+
+        $this->postJson('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Kebocoran atap ruang belajar',
+            'deskripsi' => 'Air hujan masuk ke ruang belajar melalui bagian atap yang bocor.',
+            'lokasi_kejadian' => 'Gedung A',
+        ])->assertCreated();
+    }
+
     public function test_technician_api_creates_accounts_with_one_of_the_two_subroles(): void
     {
         $response = $this->postJson('/api/teknisi', [

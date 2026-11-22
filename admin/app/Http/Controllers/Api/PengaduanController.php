@@ -98,17 +98,25 @@ class PengaduanController extends Controller
         $lokasi = trim($request->lokasi_kejadian);
         $deskripsi = trim($request->deskripsi);
 
-        // Duplikat penuh: judul + lokasi + deskripsi identik, kapan pun & status apa pun
-        $exactDuplicate = Pengaduan::where('user_id', $request->user_id)
-            ->where('judul', $judul)
-            ->where('lokasi_kejadian', $lokasi)
-            ->where('deskripsi', $deskripsi)
-            ->exists();
+        $normalizedTitle = self::normalizeDuplicateText($judul);
+        $normalizedDescription = self::normalizeDuplicateText($deskripsi);
+        $compactTitle = self::compactDuplicateText($judul);
+        $possibleDuplicates = Pengaduan::query()
+            ->whereRaw(
+                "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(judul), ' ', ''), CHAR(9), ''), CHAR(10), ''), CHAR(13), '')) = ?",
+                [$compactTitle]
+            )
+            ->get(['judul', 'deskripsi']);
 
-        if ($exactDuplicate) {
+        $duplicateExists = $possibleDuplicates->contains(function (Pengaduan $existingReport) use ($normalizedTitle, $normalizedDescription) {
+            return self::normalizeDuplicateText($existingReport->judul) === $normalizedTitle
+                && self::normalizeDuplicateText($existingReport->deskripsi) === $normalizedDescription;
+        });
+
+        if ($duplicateExists) {
             return response()->json([
                 'success' => false,
-                'message' => 'Anda sudah melaporkan insiden ini sebelumnya. Laporan tidak dapat dikirim berulang kali.',
+                'message' => 'Laporan dengan judul dan deskripsi yang sama sudah pernah dibuat.',
             ], 429);
         }
 
@@ -309,5 +317,20 @@ class PengaduanController extends Controller
         }
 
         return (bool) preg_match('/\p{L}{3,}/u', $text);
+    }
+
+    private static function normalizeDuplicateText(string $value): string
+    {
+        $trimmed = trim($value);
+        $normalized = preg_replace('/\s+/u', ' ', $trimmed);
+
+        return mb_strtolower($normalized ?? $trimmed);
+    }
+
+    private static function compactDuplicateText(string $value): string
+    {
+        $compact = preg_replace('/\s+/u', '', $value);
+
+        return mb_strtolower($compact ?? $value);
     }
 }
