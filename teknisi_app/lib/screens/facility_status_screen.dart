@@ -183,158 +183,271 @@ class _FacilityStatusScreenState extends State<FacilityStatusScreen> {
       ),
       body: Column(
         children: [
-          // Search Bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Cari fasilitas atau lokasi...',
-                prefixIcon:
-                    const Icon(Icons.search, color: AppColors.textMuted),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Kondisi fasilitas',
+                  style: TextStyle(
+                    color: AppColors.textMain,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+                const SizedBox(height: 4),
+                Text(
+                  'Cari fasilitas dan perbarui status kondisinya.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textMuted,
+                      ),
                 ),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  searchQuery = val;
-                });
-              },
+              ],
             ),
           ),
-
-          // List of Facilities
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Cari fasilitas atau lokasi',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
+              onChanged: (value) => setState(() => searchQuery = value),
+            ),
+          ),
           Expanded(
-            child: filteredFacilities.isEmpty
+            child: _isLoading
                 ? const Center(
-                    child: Text(
-                      'Tidak ada fasilitas ditemukan.',
-                      style: TextStyle(color: AppColors.textMuted),
-                    ),
+                    child: CircularProgressIndicator(),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _isLoading ? 0 : filteredFacilities.length,
-                    itemBuilder: (context, index) {
-                      final facility = filteredFacilities[index];
-                      final isOk =
-                          facility['status_kondisi'] == 'Bisa Digunakan';
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
+                : filteredFacilities.isEmpty
+                    ? Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(24),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      facility['nama'] ?? '-',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textMain,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isOk
-                                          ? AppColors.statusSuccessBg
-                                          : AppColors.statusProcessBg,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      facility['status_kondisi'] ?? '-',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: isOk
-                                            ? AppColors.statusSuccessText
-                                            : AppColors.statusProcessText,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight,
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                child: const Icon(
+                                  Icons.search_off_rounded,
+                                  color: AppColors.primary,
+                                  size: 34,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Fasilitas tidak ditemukan',
+                                style: TextStyle(
+                                  color: AppColors.textMain,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on_outlined,
-                                      size: 14, color: AppColors.textMuted),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    facility['lokasi'] ?? '-',
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textMuted),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Action Row
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  const Text(
-                                    'Ubah Status:',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  DropdownButton<String>(
-                                    value: <String>[
-                                      'Bisa Digunakan',
-                                      'Dalam Perbaikan',
-                                      'Tidak Bisa Digunakan',
-                                    ].contains(facility['status_kondisi'])
-                                        ? facility['status_kondisi']
-                                        : 'Bisa Digunakan',
-                                    style: const TextStyle(
-                                        fontSize: 13,
-                                        color: AppColors.textMain),
-                                    underline: const SizedBox(),
-                                    items: <String>[
-                                      'Bisa Digunakan',
-                                      'Dalam Perbaikan',
-                                      'Tidak Bisa Digunakan'
-                                    ].map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      if (newValue != null &&
-                                          newValue !=
-                                              facility['status_kondisi']) {
-                                        _updateKondisi(facility, newValue);
-                                      }
-                                    },
-                                  ),
-                                ],
+                              const Text(
+                                'Coba kata kunci atau lokasi yang berbeda.',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filteredFacilities.length,
+                        itemBuilder: (context, index) {
+                          final facility = filteredFacilities[index];
+                          final isOk =
+                              facility['status_kondisi'] == 'Bisa Digunakan';
+                          final status = facility['status_kondisi'] ?? '-';
+                          final statusColor = isOk
+                              ? AppColors.statusSuccessText
+                              : status == 'Dalam Perbaikan'
+                                  ? AppColors.statusProcessText
+                                  : AppColors.statusDangerText;
+                          final statusBackground = isOk
+                              ? AppColors.statusSuccessBg
+                              : status == 'Dalam Perbaikan'
+                                  ? AppColors.statusProcessBg
+                                  : AppColors.statusDangerBg;
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 42,
+                                        height: 42,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryLight,
+                                          borderRadius:
+                                              BorderRadius.circular(13),
+                                        ),
+                                        child: const Icon(
+                                          Icons.apartment_rounded,
+                                          color: AppColors.primary,
+                                          size: 21,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              facility['nama'] ?? '-',
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.textMain,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.location_on_outlined,
+                                                  size: 15,
+                                                  color: AppColors.textMuted,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    facility['lokasi'] ?? '-',
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          AppColors.textMuted,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: statusBackground,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                              maxWidth: 140),
+                                          child: Text(
+                                            status,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: statusColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          'Ubah status',
+                                          style: TextStyle(
+                                            color: AppColors.textMuted,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: InputDecorator(
+                                          decoration: const InputDecoration(
+                                            isDense: true,
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 4,
+                                            ),
+                                          ),
+                                          child: DropdownButtonHideUnderline(
+                                            child: DropdownButton<String>(
+                                              value: <String>[
+                                                'Bisa Digunakan',
+                                                'Dalam Perbaikan',
+                                                'Tidak Bisa Digunakan',
+                                              ].contains(facility[
+                                                      'status_kondisi'])
+                                                  ? facility['status_kondisi']
+                                                  : 'Bisa Digunakan',
+                                              isExpanded: true,
+                                              items: const [
+                                                DropdownMenuItem(
+                                                  value: 'Bisa Digunakan',
+                                                  child: Text('Bisa Digunakan'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'Dalam Perbaikan',
+                                                  child:
+                                                      Text('Dalam Perbaikan'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'Tidak Bisa Digunakan',
+                                                  child: Text(
+                                                      'Tidak Bisa Digunakan'),
+                                                ),
+                                              ],
+                                              onChanged: (newValue) {
+                                                if (newValue != null &&
+                                                    newValue !=
+                                                        facility[
+                                                            'status_kondisi']) {
+                                                  _updateKondisi(
+                                                      facility, newValue);
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

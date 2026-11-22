@@ -111,27 +111,54 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
       appBar: AppBar(
         title: const Text('Notifikasi'),
         actions: [
-          TextButton(
+          IconButton(
+            tooltip: 'Tandai semua dibaca',
+            icon: const Icon(Icons.done_all_rounded),
             onPressed: _notifs.isEmpty ? null : _markAllRead,
-            child: const Text('Tandai Semua Dibaca',
-                style: TextStyle(fontSize: 12)),
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifs.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.notifications_off_outlined,
-                          size: 44, color: AppColors.textLight),
-                      SizedBox(height: 8),
-                      Text('Belum ada notifikasi',
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            size: 34,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Belum ada notifikasi',
                           style: TextStyle(
-                              fontSize: 13, color: AppColors.textMuted)),
-                    ],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textMain,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Pembaruan laporan akan muncul di sini.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textMuted,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : RefreshIndicator(
@@ -145,97 +172,119 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                     itemBuilder: (context, index) {
                       final notif = _notifs[index];
                       final (icon, color) = _iconFor(notif.type);
-                      return GestureDetector(
-                        onTap: () => _markRead(notif),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: notif.isRead
-                                ? AppColors.surface
-                                : AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
+                      return Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(18),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => _markRead(notif),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
                               color: notif.isRead
-                                  ? AppColors.border
-                                  : AppColors.primary.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.12),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(icon, color: color, size: 20),
+                                  ? AppColors.surface
+                                  : AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: notif.isRead
+                                    ? AppColors.border
+                                    : AppColors.primary.withValues(alpha: 0.3),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            notif.judul,
-                                            style: TextStyle(
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(icon, color: color, size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              notif.judul,
+                                              style: TextStyle(
                                                 fontSize: 13.5,
                                                 fontWeight: FontWeight.w700,
                                                 color: notif.isRead
                                                     ? AppColors.textMain
-                                                    : AppColors.primaryDark),
+                                                    : AppColors.primaryDark,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                        if (!notif.isRead)
-                                          Container(
-                                            width: 8,
-                                            height: 8,
-                                            decoration: const BoxDecoration(
+                                          if (!notif.isRead)
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: const BoxDecoration(
                                                 color: AppColors.primary,
-                                                shape: BoxShape.circle),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      notif.pesan,
-                                      style: const TextStyle(
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        notif.pesan,
+                                        style: const TextStyle(
                                           fontSize: 12,
                                           color: AppColors.textMuted,
-                                          height: 1.4),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.access_time_rounded,
-                                            size: 12,
-                                            color: AppColors.textLight),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          formatTimestamp(notif.createdAt),
-                                          style: const TextStyle(
-                                              fontSize: 11,
-                                              color: AppColors.textLight),
+                                          height: 1.4,
                                         ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          _keterangan(notif.type),
-                                          style: TextStyle(
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 4,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.access_time_rounded,
+                                                size: 12,
+                                                color: AppColors.textLight,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                formatTimestamp(
+                                                    notif.createdAt),
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors.textLight,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Text(
+                                            _keterangan(notif.type),
+                                            style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: color),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                              color: color,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

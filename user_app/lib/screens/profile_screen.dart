@@ -105,13 +105,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 _buildTimelineStep(
                   title: 'Laporan Ditolak',
-                  subtitle:
-                      (report.alasanPenolakan != null && report.alasanPenolakan!.isNotEmpty)
-                          ? 'Alasan: ${report.alasanPenolakan}'
-                          : (report.ulasanPelapor != null && report.ulasanPelapor!.isNotEmpty)
-                              ? 'Alasan: ${report.ulasanPelapor}'
-                              : 'Laporan tidak dapat diproses lebih lanjut oleh admin.',
-                  timestamp: report.completedAt ?? report.assignedAt ?? report.verifiedAt ?? report.createdAt,
+                  subtitle: (report.alasanPenolakan != null &&
+                          report.alasanPenolakan!.isNotEmpty)
+                      ? 'Alasan: ${report.alasanPenolakan}'
+                      : (report.ulasanPelapor != null &&
+                              report.ulasanPelapor!.isNotEmpty)
+                          ? 'Alasan: ${report.ulasanPelapor}'
+                          : 'Laporan tidak dapat diproses lebih lanjut oleh admin.',
+                  timestamp: report.completedAt ??
+                      report.assignedAt ??
+                      report.verifiedAt ??
+                      report.createdAt,
                   isDone: true,
                   isCurrent: true,
                   isLast: true,
@@ -136,9 +140,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFFDC2626))),
                       const SizedBox(height: 2),
                       Text(
-                        (report.alasanPenolakan != null && report.alasanPenolakan!.isNotEmpty)
+                        (report.alasanPenolakan != null &&
+                                report.alasanPenolakan!.isNotEmpty)
                             ? report.alasanPenolakan!
-                            : (report.ulasanPelapor != null && report.ulasanPelapor!.isNotEmpty)
+                            : (report.ulasanPelapor != null &&
+                                    report.ulasanPelapor!.isNotEmpty)
                                 ? report.ulasanPelapor!
                                 : 'Laporan tidak memenuhi kriteria verifikasi.',
                         style: const TextStyle(
@@ -348,7 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppColors.border),
               boxShadow: [
                 BoxShadow(
@@ -467,20 +473,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
           widget.userReports.isEmpty
               ? Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: const Column(
                     children: [
                       Icon(Icons.inbox_outlined,
-                          size: 40, color: AppColors.textLight),
-                      SizedBox(height: 8),
-                      Text('Belum ada laporan yang dikirimkan',
-                          style: TextStyle(
-                              fontSize: 13, color: AppColors.textMuted)),
+                          size: 36, color: AppColors.primary),
+                      SizedBox(height: 12),
+                      Text(
+                        'Belum ada laporan yang dikirimkan',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMain,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Laporan yang Anda buat akan muncul di sini.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 )

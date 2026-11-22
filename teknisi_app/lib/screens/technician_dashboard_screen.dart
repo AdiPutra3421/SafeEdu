@@ -327,9 +327,25 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       spacing: 8,
                       children: [
                         ChoiceChip(
+                          avatar: Icon(
+                            Icons.handyman_outlined,
+                            size: 16,
+                            color: chosenStatus == 'diterima'
+                                ? AppColors.statusProcessText
+                                : AppColors.textMuted,
+                          ),
                           label: const Text('Dalam Pengerjaan'),
                           selected: chosenStatus == 'diterima',
                           selectedColor: AppColors.statusProcessBg,
+                          showCheckmark: false,
+                          side: BorderSide(
+                            color: chosenStatus == 'diterima'
+                                ? AppColors.statusProcessText
+                                : AppColors.border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           labelStyle: TextStyle(
                             color: chosenStatus == 'diterima'
                                 ? AppColors.statusProcessText
@@ -344,9 +360,25 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           },
                         ),
                         ChoiceChip(
+                          avatar: Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 16,
+                            color: chosenStatus == 'selesai'
+                                ? AppColors.statusSuccessText
+                                : AppColors.textMuted,
+                          ),
                           label: const Text('Pekerjaan Selesai'),
                           selected: chosenStatus == 'selesai',
                           selectedColor: AppColors.statusSuccessBg,
+                          showCheckmark: false,
+                          side: BorderSide(
+                            color: chosenStatus == 'selesai'
+                                ? AppColors.statusSuccessText
+                                : AppColors.border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           labelStyle: TextStyle(
                             color: chosenStatus == 'selesai'
                                 ? AppColors.statusSuccessText
@@ -788,21 +820,21 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           ),
         ),
         actions: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Switch(
-                value: isOnDuty,
-                activeThumbColor: AppColors.accentTeal,
-                onChanged: (v) => setState(() => isOnDuty = v),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout_rounded,
-                    color: AppColors.statusDangerText),
-                tooltip: 'Keluar dari Akun Teknisi',
-                onPressed: () => _confirmLogout(context),
-              ),
-            ],
+          Tooltip(
+            message: isOnDuty
+                ? 'Nonaktifkan status bertugas'
+                : 'Aktifkan status bertugas',
+            child: Switch(
+              value: isOnDuty,
+              activeThumbColor: AppColors.accentTeal,
+              onChanged: (v) => setState(() => isOnDuty = v),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded,
+                color: AppColors.statusDangerText),
+            tooltip: 'Keluar dari Akun Teknisi',
+            onPressed: () => _confirmLogout(context),
           ),
         ],
       ),
@@ -822,13 +854,20 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
+                            gradient: const LinearGradient(
+                              colors: [
+                                AppColors.primaryDark,
+                                AppColors.primary,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: const [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color: Color(0x262563EB),
+                                blurRadius: 20,
+                                offset: Offset(0, 8),
                               ),
                             ],
                           ),
@@ -839,21 +878,32 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    const Text(
+                                      'Selamat datang,',
+                                      style: TextStyle(
+                                        color: Color(0xFFDCEBFF),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       AuthService.instance.nama ??
                                           'Teknisi SafeEdu',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 16,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w700,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 10),
                                     Row(
                                       children: [
                                         Container(
-                                          width: 8,
-                                          height: 8,
+                                          width: 7,
+                                          height: 7,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             color: isOnDuty
@@ -862,13 +912,18 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        Text(
-                                          isOnDuty
-                                              ? 'Status: On Duty (Siap Terima Tugas)'
-                                              : 'Status: Off Duty',
-                                          style: const TextStyle(
-                                              color: Color(0xFF94A3B8),
-                                              fontSize: 12),
+                                        Expanded(
+                                          child: Text(
+                                            isOnDuty
+                                                ? 'On Duty · Siap menerima tugas'
+                                                : 'Off Duty',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Color(0xFFDCEBFF),
+                                              fontSize: 12,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -876,13 +931,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: const Icon(Icons.sync_rounded,
-                                    color: Colors.white, size: 20),
+                                child: const Icon(Icons.engineering_rounded,
+                                    color: Colors.white, size: 26),
                               ),
                             ],
                           ),
@@ -915,7 +970,15 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Filter Chips
+                        const Text(
+                          'Status pengerjaan',
+                          style: TextStyle(
+                            color: AppColors.textMain,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
@@ -932,30 +995,63 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedUrgencyFilter,
-                          decoration: const InputDecoration(
-                            labelText: 'Filter urgensi',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                                value: 'Semua', child: Text('Semua urgensi')),
-                            DropdownMenuItem(
-                                value: 'urgent', child: Text('Mendesak')),
-                            DropdownMenuItem(
-                                value: 'medium', child: Text('Sedang')),
-                            DropdownMenuItem(
-                                value: 'low', child: Text('Rendah')),
+                        const SizedBox(height: 16),
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.filter_alt_outlined,
+                              color: AppColors.textMuted,
+                              size: 17,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Urgensi',
+                              style: TextStyle(
+                                color: AppColors.textMain,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => selectedUrgencyFilter = value);
-                              _fetchTasks();
-                            }
-                          },
+                        ),
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildUrgencyFilterChip(
+                                'Semua',
+                                'Semua',
+                                AppColors.primary,
+                                AppColors.primaryLight,
+                                Icons.tune_rounded,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildUrgencyFilterChip(
+                                'Mendesak',
+                                'urgent',
+                                AppColors.statusDangerText,
+                                AppColors.statusDangerBg,
+                                Icons.priority_high_rounded,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildUrgencyFilterChip(
+                                'Sedang',
+                                'medium',
+                                AppColors.statusPendingText,
+                                AppColors.statusPendingBg,
+                                Icons.remove_rounded,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildUrgencyFilterChip(
+                                'Rendah',
+                                'low',
+                                AppColors.statusSuccessText,
+                                AppColors.statusSuccessBg,
+                                Icons.south_rounded,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -967,15 +1063,48 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     ? const SliverFillRemaining(
                         hasScrollBody: false,
                         child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.assignment_turned_in_outlined,
-                                  size: 50, color: AppColors.textLight),
-                              SizedBox(height: 10),
-                              Text('Tidak ada tiket pada kategori ini',
-                                  style: TextStyle(color: AppColors.textMuted)),
-                            ],
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight,
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(22),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(18),
+                                    child: Icon(
+                                      Icons.assignment_outlined,
+                                      size: 34,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Belum ada tugas di sini',
+                                  style: TextStyle(
+                                    color: AppColors.textMain,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Coba pilih filter lain atau periksa kembali nanti.',
+                                  style: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 13,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       )
@@ -998,33 +1127,49 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   }
 
   Widget _buildMetricTile(String label, int value, Color bg, Color textColor) {
+    final icon = switch (label) {
+      'Tugas Baru' => Icons.fiber_new_rounded,
+      'Diproses' => Icons.handyman_outlined,
+      _ => Icons.task_alt_rounded,
+    };
+
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: textColor.withValues(alpha: 0.2)),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '$value',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: textColor,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$value',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                  ),
+                ),
+                Icon(icon, size: 18, color: textColor.withValues(alpha: 0.8)),
+              ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -1034,56 +1179,107 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
   Widget _buildFilterChip(String label) {
     final isSelected = selectedFilter == label;
-    return GestureDetector(
-      onTap: () => setState(() => selectedFilter = label),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textMain,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? AppColors.primaryDark : AppColors.textMain,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
+      selected: isSelected,
+      showCheckmark: false,
+      backgroundColor: AppColors.surface,
+      selectedColor: AppColors.primaryLight,
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : AppColors.border,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: (selected) {
+        if (selected) setState(() => selectedFilter = label);
+      },
+    );
+  }
+
+  Widget _buildUrgencyFilterChip(
+    String label,
+    String value,
+    Color color,
+    Color backgroundColor,
+    IconData icon,
+  ) {
+    final isSelected = selectedUrgencyFilter == value;
+
+    return ChoiceChip(
+      avatar: Icon(icon, size: 16, color: color),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? color : AppColors.textMuted,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      selected: isSelected,
+      showCheckmark: false,
+      backgroundColor: AppColors.surface,
+      selectedColor: backgroundColor,
+      side: BorderSide(
+        color: isSelected ? color.withValues(alpha: 0.45) : AppColors.border,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: (selected) {
+        if (!selected || isSelected) return;
+        setState(() => selectedUrgencyFilter = value);
+        _fetchTasks();
+      },
     );
   }
 
   Widget _urgencyChip(String urgency) {
-    final (label, color) = switch (urgency) {
-      'urgent' => ('Mendesak', const Color(0xFFDC2626)),
-      'low' => ('Rendah', const Color(0xFF059669)),
-      _ => ('Sedang', const Color(0xFFD97706)),
+    final (label, color, backgroundColor, icon) = switch (urgency) {
+      'urgent' => (
+          'Mendesak',
+          AppColors.statusDangerText,
+          AppColors.statusDangerBg,
+          Icons.priority_high_rounded,
+        ),
+      'low' => (
+          'Rendah',
+          AppColors.statusSuccessText,
+          AppColors.statusSuccessBg,
+          Icons.south_rounded,
+        ),
+      _ => (
+          'Sedang',
+          AppColors.statusPendingText,
+          AppColors.statusPendingBg,
+          Icons.remove_rounded,
+        ),
     };
-    return Chip(
-      label: Text(label),
-      labelStyle: TextStyle(
-        color: color,
-        fontWeight: FontWeight.w700,
-        fontSize: 11,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
-      backgroundColor: color.withValues(alpha: 0.12),
-      side: BorderSide.none,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1095,15 +1291,19 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
     Color statusBg = AppColors.statusPendingBg;
     Color statusText = AppColors.statusPendingText;
+    IconData statusIcon = Icons.fiber_new_rounded;
     if (isInProgress) {
       statusBg = AppColors.statusProcessBg;
       statusText = AppColors.statusProcessText;
+      statusIcon = Icons.handyman_outlined;
     } else if (isDone) {
       statusBg = AppColors.statusSuccessBg;
       statusText = AppColors.statusSuccessText;
+      statusIcon = Icons.check_circle_outline_rounded;
     } else if (isRejected) {
-      statusBg = const Color(0xFFFEF2F2);
+      statusBg = AppColors.statusDangerBg;
       statusText = AppColors.statusDangerText;
+      statusIcon = Icons.block_rounded;
     }
 
     String displayStatus = 'Baru';
@@ -1119,51 +1319,67 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           children: [
             // Top Row: Ticket ID & Status
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'ID: ${task.idPenugasan}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'ID: ${task.idPenugasan}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      task.tanggalPenugasan,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textLight),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        task.tanggalPenugasan,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.textLight),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                          horizontal: 9, vertical: 5),
                       decoration: BoxDecoration(
                         color: statusBg,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        displayStatus,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: statusText,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: statusText.withValues(alpha: 0.2),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, size: 13, color: statusText),
+                          const SizedBox(width: 4),
+                          Text(
+                            displayStatus,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: statusText,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     _urgencyChip(task.urgency),
@@ -1207,10 +1423,16 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 const Icon(Icons.person_outline,
                     size: 15, color: AppColors.textMuted),
                 const SizedBox(width: 4),
-                Text(
-                  'Pelapor: ${task.pelapor}',
-                  style:
-                      const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                Expanded(
+                  child: Text(
+                    'Pelapor: ${task.pelapor}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 ),
               ],
             ),

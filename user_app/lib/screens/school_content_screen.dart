@@ -21,10 +21,45 @@ class SchoolContentScreen extends StatelessWidget {
         title: const Text('Berita & Panduan'),
       ),
       body: news.isEmpty
-          ? const Center(
-              child: Text(
-                'Belum ada berita & panduan sekolah',
-                style: TextStyle(color: AppColors.textLight),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.menu_book_outlined,
+                        color: AppColors.primary,
+                        size: 34,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Belum ada berita atau panduan',
+                      style: TextStyle(
+                        color: AppColors.textMain,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Konten sekolah akan ditampilkan di halaman ini.',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             )
           : ListView.separated(
@@ -37,15 +72,15 @@ class SchoolContentScreen extends StatelessWidget {
 
                 return Material(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(18),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     onTap: () => onNewsTap(context, item),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(
                         children: [
@@ -82,6 +117,8 @@ class SchoolContentScreen extends StatelessWidget {
                                     const Spacer(),
                                     Text(
                                       item.date,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         fontSize: 10,
                                         color: AppColors.textLight,
@@ -141,7 +178,7 @@ class _NewsThumbnail extends StatelessWidget {
     );
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         width: 76,
         height: 76,

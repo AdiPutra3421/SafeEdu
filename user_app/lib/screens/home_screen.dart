@@ -272,18 +272,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('SafeEdu',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                Text('Portal Pelaporan & Keselamatan',
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'SafeEdu',
                     style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.normal)),
-              ],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'Portal Pelaporan & Keselamatan',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -343,12 +355,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
@@ -358,24 +370,34 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Halo, ${AuthService.instance.nama ?? 'User'}',
-                                style: const TextStyle(
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Halo, ${AuthService.instance.nama ?? 'User'}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
-                                    fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                AuthService.instance.email ?? '-',
-                                style: const TextStyle(
-                                    color: Color(0xFFBFDBFE), fontSize: 12),
-                              ),
-                            ],
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  AuthService.instance.email ?? '-',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFFBFDBFE),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
@@ -419,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 18, vertical: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(14)),
                         ),
                         onPressed: () => widget.onNavigateToTab(1),
                       ),
@@ -485,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 270,
                             decoration: BoxDecoration(
                               color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(18),
                               border: Border.all(color: AppColors.border),
                               boxShadow: [
                                 BoxShadow(
@@ -496,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(18),
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
@@ -694,22 +716,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Container(
                                             width: double.infinity,
                                             height: double.infinity,
-                                            color: Colors.grey[300],
+                                            color: AppColors.facilityBg,
                                             child: const Icon(
                                               Icons.business_rounded,
                                               size: 40,
-                                              color: Colors.grey,
+                                              color: AppColors.facilityText,
                                             ),
                                           ),
                                         )
                                       : Container(
                                           width: double.infinity,
                                           height: double.infinity,
-                                          color: Colors.grey[300],
+                                          color: AppColors.facilityBg,
                                           child: const Icon(
                                             Icons.business_rounded,
                                             size: 40,
-                                            color: Colors.grey,
+                                            color: AppColors.facilityText,
                                           ),
                                         ),
                                 ),

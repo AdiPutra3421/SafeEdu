@@ -542,7 +542,7 @@ class _ReportScreenState extends State<ReportScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                 ),
                 padding: const EdgeInsets.all(4),
@@ -558,7 +558,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             color: isFacility
                                 ? AppColors.primary
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             boxShadow: isFacility
                                 ? [
                                     BoxShadow(
@@ -578,14 +578,18 @@ class _ReportScreenState extends State<ReportScreen> {
                                       ? Colors.white
                                       : AppColors.textMuted),
                               const SizedBox(width: 6),
-                              Text(
-                                'Fasilitas Sekolah',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: isFacility
-                                      ? Colors.white
-                                      : AppColors.textMuted,
+                              Flexible(
+                                child: Text(
+                                  'Fasilitas Sekolah',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isFacility
+                                        ? Colors.white
+                                        : AppColors.textMuted,
+                                  ),
                                 ),
                               ),
                             ],
@@ -603,7 +607,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             color: !isFacility
                                 ? const Color(0xFFE11D48)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             boxShadow: !isFacility
                                 ? [
                                     BoxShadow(
@@ -623,14 +627,18 @@ class _ReportScreenState extends State<ReportScreen> {
                                       ? Colors.white
                                       : AppColors.textMuted),
                               const SizedBox(width: 6),
-                              Text(
-                                'Kode Etik & Tertib',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: !isFacility
-                                      ? Colors.white
-                                      : AppColors.textMuted,
+                              Flexible(
+                                child: Text(
+                                  'Kode Etik & Tertib',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: !isFacility
+                                        ? Colors.white
+                                        : AppColors.textMuted,
+                                  ),
                                 ),
                               ),
                             ],
@@ -649,7 +657,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isFacility ? AppColors.facilityBg : AppColors.ethicsBg,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                       color: isFacility
                           ? const Color(0xFFBFDBFE)
@@ -864,14 +872,14 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 6),
               InkWell(
                 onTap: _pickAttachment,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
                   width: double.infinity,
                   padding:
                       const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                         color: AppColors.border, style: BorderStyle.solid),
                   ),
@@ -935,33 +943,49 @@ class _ReportScreenState extends State<ReportScreen> {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.visibility_off_outlined,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.visibility_off_outlined,
                             size: 18,
                             color: _isAnonymous
                                 ? AppColors.primary
-                                : AppColors.textMuted),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Kirim sebagai Anonim',
-                                style: TextStyle(
-                                    fontSize: 13, fontWeight: FontWeight.w600)),
-                            Text('Identitas nama disembunyikan dari publik',
-                                style: TextStyle(
-                                    fontSize: 11, color: AppColors.textMuted)),
-                          ],
-                        ),
-                      ],
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Kirim sebagai Anonim',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'Identitas nama disembunyikan dari publik',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Switch(
                       value: _isAnonymous,
                       activeThumbColor: AppColors.primary,
@@ -1009,37 +1033,48 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildUrgencyChip(String label, Color color) {
     final isSelected = _selectedUrgency == label;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedUrgency = label),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color:
-                isSelected ? color.withValues(alpha: 0.12) : AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? color : AppColors.border,
-              width: isSelected ? 1.5 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => setState(() => _selectedUrgency = label),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+            decoration: BoxDecoration(
+              color:
+                  isSelected ? color.withValues(alpha: 0.1) : AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected
+                    ? color.withValues(alpha: 0.55)
+                    : AppColors.border,
+                width: isSelected ? 1.4 : 1,
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? color : AppColors.textMain,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isSelected ? Icons.check_circle_rounded : Icons.circle,
+                  size: 14,
+                  color: color,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? color : AppColors.textMain,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

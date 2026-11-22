@@ -24,22 +24,22 @@ class _TechnicianMainShellState extends State<TechnicianMainShell> {
         index: _currentIndex,
         children: _pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.assignment_outlined),
-            activeIcon: Icon(Icons.assignment_rounded),
+            selectedIcon: Icon(Icons.assignment_rounded),
             label: 'Tugas Masuk',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.build_circle_outlined),
-            activeIcon: Icon(Icons.build_circle_rounded),
+            selectedIcon: Icon(Icons.build_circle_rounded),
             label: 'Status Fasilitas',
           ),
         ],

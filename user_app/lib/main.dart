@@ -59,7 +59,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         if (data['success'] == true) {
           final List<dynamic> list = data['data'];
           setState(() {
-            _reports = list.map((item) => PengaduanModel.fromMap(item)).toList();
+            _reports =
+                list.map((item) => PengaduanModel.fromMap(item)).toList();
           });
         }
       }
@@ -97,23 +98,23 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _switchTab,
-        items: const [
-          BottomNavigationBarItem(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: _switchTab,
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Beranda',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.add_circle_outline_rounded),
-            activeIcon: Icon(Icons.add_circle_rounded),
+            selectedIcon: Icon(Icons.add_circle_rounded),
             label: 'Pelaporan',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Profil',
           ),
         ],
