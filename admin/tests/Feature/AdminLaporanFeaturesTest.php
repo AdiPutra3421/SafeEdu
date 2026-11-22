@@ -7,6 +7,7 @@ use App\Models\Pengaduan;
 use App\Models\Penugasan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -217,14 +218,15 @@ class AdminLaporanFeaturesTest extends TestCase
 
     public function test_facility_report_urgency_is_set_by_admin_instead_of_reporter(): void
     {
-        $response = $this->postJson('/api/pengaduan', [
+        $response = $this->post('/api/pengaduan', [
             'user_id' => $this->reporter->id,
             'kategori_id' => $this->kategoriFasilitas->id,
             'judul' => 'Kerusakan Fasilitas Ruang Belajar',
             'deskripsi' => 'Kerusakan fasilitas perlu diperiksa karena meja belajar sudah tidak dapat digunakan.',
             'lokasi_kejadian' => 'Ruang Belajar Gedung A',
             'urgency' => 'urgent',
-        ]);
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
 
         $response->assertCreated()
             ->assertJsonPath('data.urgency', 'medium');
@@ -242,6 +244,44 @@ class AdminLaporanFeaturesTest extends TestCase
             ->assertJsonPath('data.urgency', 'urgent');
     }
 
+    public function test_facility_reports_require_a_photo_but_ethics_reports_do_not_require_an_attachment(): void
+    {
+        Storage::fake('public');
+
+        $facilityReport = [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Kerusakan Fasilitas Kelas',
+            'deskripsi' => 'Meja kelas mengalami kerusakan dan perlu diperiksa oleh petugas.',
+            'lokasi_kejadian' => 'Ruang Kelas Gedung A',
+        ];
+
+        $this->postJson('/api/pengaduan', $facilityReport)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file_bukti');
+
+        $this->post('/api/pengaduan', $facilityReport + [
+            'file_bukti' => UploadedFile::fake()->create('dokumen.pdf', 10, 'application/pdf'),
+        ], ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file_bukti');
+
+        $this->post('/api/pengaduan', $facilityReport + [
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('data.kategori.jenis', 'fasilitas');
+
+        $this->postJson('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriEtik->id,
+            'judul' => 'Laporan Pelanggaran Kode Etik',
+            'deskripsi' => 'Perlu ditindaklanjuti terkait perilaku yang terjadi di lingkungan sekolah.',
+            'lokasi_kejadian' => 'Halaman Gedung B',
+        ])->assertCreated()
+            ->assertJsonPath('data.kategori.jenis', 'etik');
+    }
+
     public function test_report_with_duplicate_title_and_description_is_rejected_across_users_and_statuses(): void
     {
         $otherReporter = User::factory()->create(['role' => 'siswa']);
@@ -254,13 +294,14 @@ class AdminLaporanFeaturesTest extends TestCase
             'status' => 'selesai',
         ]);
 
-        $response = $this->postJson('/api/pengaduan', [
+        $response = $this->post('/api/pengaduan', [
             'user_id' => $this->reporter->id,
             'kategori_id' => $this->kategoriFasilitas->id,
             'judul' => '  KERUSAKAN   JENDELA KELAS ',
             'deskripsi' => "PINTU KELAS mengalami\nkerusakan yang perlu diperbaiki segera.",
             'lokasi_kejadian' => 'Gedung B',
-        ]);
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
 
         $response->assertStatus(429)
             ->assertJsonPath('success', false)
@@ -278,13 +319,14 @@ class AdminLaporanFeaturesTest extends TestCase
             'status' => 'menunggu',
         ]);
 
-        $this->postJson('/api/pengaduan', [
+        $this->post('/api/pengaduan', [
             'user_id' => $this->reporter->id,
             'kategori_id' => $this->kategoriFasilitas->id,
             'judul' => 'Kebocoran atap ruang belajar',
             'deskripsi' => 'Air hujan masuk ke ruang belajar melalui bagian atap yang bocor.',
             'lokasi_kejadian' => 'Gedung A',
-        ])->assertCreated();
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json'])->assertCreated();
     }
 
     public function test_technician_api_creates_accounts_with_one_of_the_two_subroles(): void

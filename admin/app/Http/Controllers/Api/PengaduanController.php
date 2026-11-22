@@ -55,6 +55,13 @@ class PengaduanController extends Controller
      */
     public function store(Request $request)
     {
+        $kategori = is_numeric($request->input('kategori_id'))
+            ? Kategori::find($request->input('kategori_id'))
+            : null;
+        $fileBuktiRules = $kategori?->jenis === 'fasilitas'
+            ? 'required|image|mimes:jpg,jpeg,png|max:5120'
+            : 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120';
+
         // Validasi Konten (Masalah #2)
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer',
@@ -77,7 +84,7 @@ class PengaduanController extends Controller
             }],
             'urgency' => 'nullable|in:urgent,medium,low',
             'is_anonim' => 'boolean',
-            'file_bukti' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // max 5MB (Masalah #3)
+            'file_bukti' => $fileBuktiRules,
         ], [
             'judul.min' => 'Judul laporan minimal 10 karakter.',
             'deskripsi.min' => 'Mohon jelaskan kronologi kejadian dengan detail (minimal 30 karakter).',
@@ -91,7 +98,7 @@ class PengaduanController extends Controller
             ], 422);
         }
 
-        $isFacilityReport = Kategori::whereKey($request->kategori_id)->value('jenis') === 'fasilitas';
+        $isFacilityReport = $kategori?->jenis === 'fasilitas';
 
         // Anti-Spam (Masalah #1)
         $judul = trim($request->judul);

@@ -152,25 +152,44 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   void _switchType(String type) {
+    final removedNonPhoto = type == 'fasilitas' &&
+        _selectedFile != null &&
+        !_isPhotoFile(_selectedFile!);
+
     setState(() {
       _reportType = type;
       _selectedCategory = type == 'fasilitas'
           ? _facilityCategories.first
           : _ethicsCategories.first;
+      if (removedNonPhoto) _selectedFile = null;
       if (type == 'kode_etik') {
         _isAnonymous = true; // Default to anonymous for safety
       }
     });
+
+    if (removedNonPhoto) {
+      _showError('Lampiran PDF dihapus. Laporan fasilitas memerlukan foto.');
+    }
   }
+
+  bool _isPhotoFile(PlatformFile file) =>
+      const {'jpg', 'jpeg', 'png'}.contains(file.extension?.toLowerCase());
 
   Future<void> _pickAttachment() async {
     try {
       final file = await FilePicker.pickFile(
         type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        allowedExtensions: _reportType == 'fasilitas'
+            ? ['jpg', 'jpeg', 'png']
+            : ['jpg', 'jpeg', 'png', 'pdf'],
       );
       if (file == null) return;
       if (!mounted) return;
+      if (_reportType == 'fasilitas' && !_isPhotoFile(file)) {
+        _showError(
+            'Pilih file foto JPG, JPEG, atau PNG untuk laporan fasilitas.');
+        return;
+      }
       setState(() => _selectedFile = file);
     } catch (e) {
       print('Error picking file: $e');
@@ -231,6 +250,12 @@ class _ReportScreenState extends State<ReportScreen> {
     }
 
     if (_formKey.currentState!.validate()) {
+      if (_reportType == 'fasilitas' &&
+          (_selectedFile == null || !_isPhotoFile(_selectedFile!))) {
+        _showError('Lampirkan foto fasilitas sebelum mengirim laporan.');
+        return;
+      }
+
       // Tampilkan dialog konfirmasi
       showDialog(
         context: context,
@@ -306,6 +331,12 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _sendReportToApi() async {
+    if (_reportType == 'fasilitas' &&
+        (_selectedFile == null || !_isPhotoFile(_selectedFile!))) {
+      _showError('Lampirkan foto fasilitas sebelum mengirim laporan.');
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -698,8 +729,8 @@ class _ReportScreenState extends State<ReportScreen> {
                       ],
                     )
                   : const Text('Kategori Masalah *',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 13)),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 6),
               isFacility
                   ? DropdownButtonFormField<int>(
@@ -823,8 +854,13 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 16),
 
               // Attachment Uploader
-              const Text('Lampiran Bukti Foto / Dokumen',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(
+                isFacility
+                    ? 'Foto Bukti Fasilitas *'
+                    : 'Lampiran Bukti Foto / Dokumen (Opsional)',
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
               const SizedBox(height: 6),
               InkWell(
                 onTap: _pickAttachment,
@@ -854,7 +890,9 @@ class _ReportScreenState extends State<ReportScreen> {
                       Expanded(
                         child: Text(
                           _selectedFile?.name ??
-                              'Unggah foto kerusakan atau bukti pendukung',
+                              (isFacility
+                                  ? 'Unggah foto fasilitas'
+                                  : 'Unggah foto atau dokumen pendukung'),
                           style: TextStyle(
                             fontSize: 13,
                             color: _selectedFile != null
@@ -879,6 +917,14 @@ class _ReportScreenState extends State<ReportScreen> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isFacility
+                    ? 'Wajib diisi. JPG, JPEG, atau PNG; maksimal 5 MB.'
+                    : 'Opsional. JPG, JPEG, PNG, atau PDF; maksimal 5 MB.',
+                style:
+                    const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
 
               const SizedBox(height: 18),
