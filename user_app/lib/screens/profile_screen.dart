@@ -174,17 +174,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 _buildTimelineStep(
                   title: 'Penanganan oleh Teknisi / Satgas',
-                  subtitle:
-                      'Petugas lapangan menerima tugas dan sedang melakukan perbaikan',
+                  subtitle: report.penugasanStatus == 'menunggu_konfirmasi'
+                      ? 'Teknisi telah mengirim bukti penyelesaian pekerjaan'
+                      : 'Petugas lapangan menerima tugas dan sedang melakukan perbaikan',
                   timestamp: report.workedAt,
-                  isDone: report.status == 'selesai',
+                  isDone: report.status == 'selesai' ||
+                      report.penugasanStatus == 'menunggu_konfirmasi',
                   isCurrent: report.status == 'diproses' &&
                       report.penugasanStatus == 'diterima',
                 ),
                 _buildTimelineStep(
+                  title: 'Menunggu Konfirmasi Admin',
+                  subtitle:
+                      'Bukti penyelesaian sedang diperiksa oleh admin sebelum laporan ditutup',
+                  isDone: report.status == 'selesai',
+                  isCurrent: report.status == 'diproses' &&
+                      report.penugasanStatus == 'menunggu_konfirmasi',
+                ),
+                _buildTimelineStep(
                   title: 'Selesai & Dikonfirmasi',
                   subtitle:
-                      'Tiket ditutup setelah teknisi menyelesaikan penanganan',
+                      'Tiket ditutup setelah admin mengonfirmasi bukti pekerjaan',
                   timestamp: report.completedAt,
                   isDone: report.status == 'selesai',
                   isCurrent: report.status == 'selesai',
@@ -588,7 +598,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    rep.status.toUpperCase(),
+                                    rep.penugasanStatus == 'menunggu_konfirmasi'
+                                        ? 'MENUNGGU ADMIN'
+                                        : rep.status.toUpperCase(),
                                     style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w600,

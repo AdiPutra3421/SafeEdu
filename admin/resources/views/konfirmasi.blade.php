@@ -77,7 +77,7 @@
     })[character]);
   }
 
-  function storageUrl(path) {
+  function proofUrl(path) {
     if (typeof path !== 'string') return null;
     const segments = path.split('/');
     if (segments.length === 0 || segments.some(segment =>
@@ -85,7 +85,7 @@
     )) {
       return null;
     }
-    return `/storage/${segments.map(encodeURIComponent).join('/')}`;
+    return `/api/gambar/${segments.map(encodeURIComponent).join('/')}`;
   }
 
   function showToast(message) {
@@ -131,21 +131,59 @@
   }
 
   async function handleApprove(confId) {
-    // Just mock the approval since we don't have a verified column in DB
-    const idx = confData.findIndex(c => c.id == confId);
-    if (idx > -1) {
-      confData[idx].verified = true;
-      showToast('Laporan teknisi berhasil divalidasi dan tiket ditutup.');
-      renderConfirmations();
+    try {
+      const response = await fetch(`/api/penugasan/${confId}/approve`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+      const result = await response.json();
+      if (!response.ok || result.success !== true) {
+        throw new Error(result.message || 'Gagal menyetujui pekerjaan.');
+      }
+
+      await fetchConfirmations();
+      showToast('Pekerjaan berhasil divalidasi dan tiket ditutup.');
+    } catch (error) {
+      window.alert(error.message || 'Gagal menyetujui pekerjaan.');
+    }
+  }
+
+  async function handleRejectCompletion(confId) {
+    const reason = window.prompt('Jelaskan alasan bukti pekerjaan ditolak:');
+    if (reason === null) return;
+    if (!reason.trim()) {
+      window.alert('Alasan penolakan wajib diisi.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/penugasan/${confId}/reject-completion`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rejection_reason: reason.trim() })
+      });
+      const result = await response.json();
+      if (!response.ok || result.success !== true) {
+        throw new Error(result.message || 'Gagal menolak bukti pekerjaan.');
+      }
+
+      await fetchConfirmations();
+      showToast('Pekerjaan dikembalikan ke teknisi untuk diperbaiki.');
+    } catch (error) {
+      window.alert(error.message || 'Gagal menolak bukti pekerjaan.');
     }
   }
 
   function renderConfirmations() {
     const container = document.getElementById('confirmationList');
 
-    const inProgress = confData.filter(c => !['selesai', 'ditolak'].includes(c.status));
+    const inProgress = confData.filter(c => ['ditugaskan', 'diterima'].includes(c.status));
+    const waitingApproval = confData.filter(c => c.status === 'menunggu_konfirmasi');
     const finished = confData.filter(c => c.status === 'selesai');
-    const pendingCount = inProgress.length;
+    const pendingCount = inProgress.length + waitingApproval.length;
 
     document.getElementById('sidebar-pending-badge').textContent = pendingCount > 0 ? pendingCount : '';
     document.getElementById('count-total-conf').textContent = confData.length;
@@ -154,11 +192,12 @@
 
     const filtered = confData.filter(item => {
       if (currentConfFilter === 'in_progress') {
-        return !['selesai', 'ditolak'].includes(item.status);
+        return ['diterima'].includes(item.status);
       }
       if (currentConfFilter === 'completed') return item.status === 'selesai';
       if (currentConfFilter === 'rejected') return item.status === 'ditolak';
-      if (currentConfFilter === 'unverified') return !item.verified;
+      if (currentConfFilter === 'unverified') return item.status === 'menunggu_konfirmasi';
+      if (currentConfFilter === 'unconfirmed') return item.status === 'ditugaskan';
       return true;
     });
 
@@ -177,6 +216,7 @@
 
     container.innerHTML = filtered.map(item => {
       const isFinished = item.status === 'selesai';
+      const isWaitingApproval = item.status === 'menunggu_konfirmasi';
       const techName = item.teknisi_id == 2 ? 'Bambang Teknisi' : 'Teknisi';
       const initials = techName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
       const taskId = Number(item.id);
@@ -184,6 +224,8 @@
       let statusBadge = '';
       if (isFinished) {
         statusBadge = `<span class="badge badge-resolved"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Selesai</span>`;
+      } else if (isWaitingApproval) {
+        statusBadge = `<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fcd34d;">Menunggu Konfirmasi Admin</span>`;
       } else if (item.status === 'ditolak') {
         statusBadge = `<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;">Ditolak</span>`;
       } else if (item.status === 'ditugaskan') {
@@ -194,15 +236,20 @@
 
       const approvalButton = item.status === 'ditolak'
         ? `<span style="font-size: 0.78rem; color: var(--status-danger-text); font-weight: 600;">Penugasan ditolak</span>`
-        : item.verified
+        : isFinished
           ? `<span style="font-size: 0.78rem; color: var(--status-success-text); font-weight: 600; display: flex; align-items: center; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             Divalidasi Admin
           </span>`
-          : `          <button class="btn btn-primary btn-sm" onclick="handleApprove(${taskId})">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Validasi & Tutup
-          </button>`;
+          : isWaitingApproval
+            ? `<div style="display:flex;gap:6px;">
+                <button class="btn btn-primary btn-sm" onclick="handleApprove(${taskId})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Validasi & Tutup
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="handleRejectCompletion(${taskId})" style="color:#b91c1c;border-color:#fca5a5;">Tolak Bukti</button>
+              </div>`
+            : `<span style="font-size: 0.78rem; color: var(--text-muted);">${item.status === 'ditugaskan' ? 'Menunggu teknisi' : 'Teknisi sedang bekerja'}</span>`;
 
       const logs = item.log_pengerjaans || [];
       const latestLog = logs.length > 0 ? logs[logs.length - 1].catatan_teknisi : (item.catatan_admin || 'Belum ada catatan');
@@ -215,10 +262,21 @@
       };
       const urgencyKey = Object.hasOwn(urgencyLabels, urgency) ? urgency : 'medium';
       const urgencyBadge = `<span style="display:inline-block;padding:3px 8px;border-radius:999px;font-size:.7rem;font-weight:700;${urgencyColors[urgencyKey]}">${urgencyLabels[urgencyKey]}</span>`;
-      const proofPath = logs.length > 0 ? logs[logs.length - 1].photo_proof : null;
-      const proofUrl = storageUrl(proofPath);
-      const proofLink = proofUrl
-        ? `<a href="${escapeHtml(proofUrl)}" target="_blank" rel="noopener">Lihat foto bukti penyelesaian</a>`
+      const latestProofLog = logs
+        .filter(log => typeof log.photo_proof === 'string' && log.photo_proof)
+        .sort((left, right) => {
+          const dateDifference =
+            Date.parse(right.created_at || '') - Date.parse(left.created_at || '');
+          return Number.isNaN(dateDifference) || dateDifference === 0
+            ? Number(right.id || 0) - Number(left.id || 0)
+            : dateDifference;
+        })[0];
+      const latestProofUrl = latestProofLog ? proofUrl(latestProofLog.photo_proof) : null;
+      const proofMarkup = latestProofUrl
+        ? `<div style="margin-top:8px;font-size:.8rem;">
+            <a href="${escapeHtml(latestProofUrl)}" target="_blank" rel="noopener">Lihat foto bukti terbaru</a>
+            <img src="${escapeHtml(latestProofUrl)}" alt="Foto bukti pekerjaan terbaru" style="display:block;max-width:100%;max-height:240px;object-fit:contain;margin-top:6px;border-radius:8px;">
+          </div>`
         : '';
 
       return `
@@ -246,7 +304,7 @@
               <div style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-teal); margin-bottom: 2px;">Catatan Terakhir:</div>
               ${escapeHtml(latestLog)}
             </div>
-            ${proofLink ? `<div style="margin-top:8px;font-size:.8rem;">${proofLink}</div>` : ''}
+            ${proofMarkup || '<div style="margin-top:8px;font-size:.8rem;color:var(--text-muted);">Belum ada foto bukti penyelesaian.</div>'}
 
           </div>
 

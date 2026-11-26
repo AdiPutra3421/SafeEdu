@@ -246,6 +246,28 @@
     })[character]);
   }
 
+  function reportAttachment(value) {
+    if (typeof value !== 'string') return null;
+
+    try {
+      const fileUrl = new URL(value, window.location.origin);
+      if (fileUrl.origin !== window.location.origin || !fileUrl.pathname.startsWith('/storage/bukti/')) {
+        return null;
+      }
+
+      const storedPath = fileUrl.pathname.slice('/storage/'.length);
+      const url = `/api/gambar/${storedPath.split('/').map(encodeURIComponent).join('/')}`;
+      const extension = storedPath.split('.').pop().toLowerCase();
+
+      return {
+        url,
+        isImage: ['jpg', 'jpeg', 'png'].includes(extension),
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async function fetchLaporan() {
     try {
       const response = await fetch('/api/pengaduan');
@@ -430,12 +452,20 @@
       const formattedDate = !isNaN(createdDate.getTime())
         ? `${createdDate.toLocaleDateString('id-ID')} ${createdDate.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`
         : (item.created_at || '-');
+      const attachment = reportAttachment(item.file_bukti_url);
+      const attachmentMarkup = attachment
+        ? attachment.isImage
+          ? `<a href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener" title="Lihat bukti foto">
+              <img src="${escapeHtml(attachment.url)}" alt="Bukti foto ${escapeHtml(judul)}" style="display:block;width:52px;height:52px;object-fit:cover;border-radius:6px;margin-top:6px;">
+            </a>`
+          : '<span style="display:block;margin-top:6px;font-size:.72rem;color:var(--text-muted);">Lampiran tersedia</span>'
+        : '';
 
       return `
         <tr>
           <td><strong>RPT-${escapeHtml(item.id)}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${formattedDate}</span></td>
           <td><span class="badge ${item.kategori?.jenis === 'fasilitas' ? 'badge-facility' : 'badge-ethics'}">${escapeHtml(type)}</span></td>
-          <td style="font-weight:600; color:var(--text-main);">${escapeHtml(judul)}</td>
+          <td style="font-weight:600; color:var(--text-main);">${escapeHtml(judul)}${attachmentMarkup}</td>
           <td style="font-size:0.85rem;">${escapeHtml(item.lokasi_kejadian || '-')}</td>
           <td>${item.is_anonim ? '<i>Anonim</i>' : escapeHtml(item.pelapor?.nama || 'User')}</td>
           <td>${urgencyBadge(item.urgency)}</td>
@@ -501,43 +531,33 @@
 
     // Attachment
     const attachment = document.getElementById('modal-report-attachment');
-    if (item.file_bukti_url) {
-      try {
-        const fileUrl = new URL(item.file_bukti_url, window.location.origin);
-        if (fileUrl.origin === window.location.origin && fileUrl.pathname.startsWith('/storage/bukti/')) {
-          const storedPath = fileUrl.pathname.slice('/storage/'.length);
-          const apiPath = storedPath.split('/').map(encodeURIComponent).join('/');
-          const attachmentUrl = `/api/gambar/${apiPath}`;
-          const link = document.createElement('a');
-          link.href = attachmentUrl;
-          link.target = '_blank';
-          link.rel = 'noopener';
-          link.textContent = '📎 Buka Lampiran / Bukti Foto';
-          link.style.color = 'var(--primary)';
-          link.style.fontWeight = '600';
-          const extension = storedPath.split('.').pop().toLowerCase();
-          if (['jpg', 'jpeg', 'png'].includes(extension)) {
-            const preview = document.createElement('img');
-            preview.src = attachmentUrl;
-            preview.alt = 'Foto lampiran laporan';
-            preview.style.display = 'block';
-            preview.style.maxWidth = '100%';
-            preview.style.maxHeight = '280px';
-            preview.style.objectFit = 'contain';
-            preview.style.marginBottom = '8px';
-            preview.onerror = () => preview.remove();
-            attachment.replaceChildren(preview, link);
-          } else {
-            attachment.replaceChildren(link);
-          }
-        } else {
-          attachment.textContent = 'Lampiran tidak tersedia.';
-        }
-      } catch {
-        attachment.textContent = 'Lampiran tidak tersedia.';
+    const reportFile = reportAttachment(item.file_bukti_url);
+    if (reportFile) {
+      const link = document.createElement('a');
+      link.href = reportFile.url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = '📎 Buka Lampiran / Bukti Foto';
+      link.style.color = 'var(--primary)';
+      link.style.fontWeight = '600';
+      if (reportFile.isImage) {
+        const preview = document.createElement('img');
+        preview.src = reportFile.url;
+        preview.alt = 'Foto lampiran laporan';
+        preview.style.display = 'block';
+        preview.style.maxWidth = '100%';
+        preview.style.maxHeight = '280px';
+        preview.style.objectFit = 'contain';
+        preview.style.marginBottom = '8px';
+        preview.onerror = () => preview.remove();
+        attachment.replaceChildren(preview, link);
+      } else {
+        attachment.replaceChildren(link);
       }
     } else {
-      attachment.textContent = 'Tidak ada lampiran bukti.';
+      attachment.textContent = item.file_bukti_url
+        ? 'Lampiran tidak tersedia.'
+        : 'Tidak ada lampiran bukti.';
     }
 
     // Dropdown penanggung jawab hanya menampilkan teknisi dengan sub-role yang sesuai.

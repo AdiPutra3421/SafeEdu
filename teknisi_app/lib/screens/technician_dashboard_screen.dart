@@ -139,30 +139,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     return 'Permintaan gagal. Silakan coba kembali.';
   }
 
-  Future<bool> _rejectTask(int id, String reason) async {
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/penugasan/$id/reject'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode({'rejection_reason': reason}),
-      );
-      if (response.statusCode == 200) {
-        _lastStatusError = null;
-        await _fetchTasks();
-        return true;
-      }
-      _lastStatusError = _responseMessage(response.body);
-      return false;
-    } catch (error) {
-      debugPrint('Error rejecting task: $error');
-      _lastStatusError = 'Gagal menolak tugas. Periksa koneksi lalu coba lagi.';
-      return false;
-    }
-  }
-
   int get countNew =>
       _tasks.where((t) => t.statusPenugasan == 'ditugaskan').length;
   int get countProcess =>
@@ -175,8 +151,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       final matchesStatus = switch (selectedFilter) {
         'Tugas Baru' => task.statusPenugasan == 'ditugaskan',
         'Dalam Pengerjaan' => task.statusPenugasan == 'diterima',
+        'Menunggu Admin' => task.statusPenugasan == 'menunggu_konfirmasi',
         'Selesai' => task.statusPenugasan == 'selesai',
-        'Ditolak' => task.statusPenugasan == 'ditolak',
         _ => true,
       };
       final matchesUrgency = selectedUrgencyFilter == 'Semua' ||
@@ -407,7 +383,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           try {
                             final photo = await ImagePicker().pickImage(
                               source: ImageSource.gallery,
-                              imageQuality: 85,
+                              imageQuality: 80,
+                              maxWidth: 1600,
+                              maxHeight: 1600,
                             );
                             if (photo != null) {
                               final photoBytes = await photo.readAsBytes();
@@ -534,63 +512,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         );
       },
     ).whenComplete(notesController.dispose);
-  }
-
-  void _showRejectDialog(PenugasanModel task) {
-    final controller = TextEditingController();
-    String? errorText;
-    showDialog<String>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: const Text('Tolak Penugasan'),
-          content: TextField(
-            controller: controller,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Alasan penolakan',
-              errorText: errorText,
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.statusDangerText,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                if (controller.text.trim().isEmpty) {
-                  setDialogState(() => errorText = 'Alasan wajib diisi.');
-                  return;
-                }
-                Navigator.pop(dialogContext, controller.text.trim());
-              },
-              child: const Text('Tolak Tugas'),
-            ),
-          ],
-        ),
-      ),
-    ).then((reason) async {
-      controller.dispose();
-      if (reason == null || !mounted) return;
-      final success = await _rejectTask(task.idPenugasan, reason);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success
-              ? 'Penugasan berhasil ditolak.'
-              : _lastStatusError ?? 'Gagal menolak penugasan.'),
-          backgroundColor: success
-              ? AppColors.statusSuccessText
-              : AppColors.statusDangerText,
-        ),
-      );
-    });
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
@@ -989,9 +910,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                               const SizedBox(width: 8),
                               _buildFilterChip('Dalam Pengerjaan'),
                               const SizedBox(width: 8),
-                              _buildFilterChip('Selesai'),
+                              _buildFilterChip('Menunggu Admin'),
                               const SizedBox(width: 8),
-                              _buildFilterChip('Ditolak'),
+                              _buildFilterChip('Selesai'),
                             ],
                           ),
                         ),
@@ -1286,6 +1207,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Widget _buildTaskCard(PenugasanModel task) {
     final isNew = task.statusPenugasan == 'ditugaskan';
     final isInProgress = task.statusPenugasan == 'diterima';
+    final isWaitingApproval = task.statusPenugasan == 'menunggu_konfirmasi';
     final isDone = task.statusPenugasan == 'selesai';
     final isRejected = task.statusPenugasan == 'ditolak';
 
@@ -1296,6 +1218,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       statusBg = AppColors.statusProcessBg;
       statusText = AppColors.statusProcessText;
       statusIcon = Icons.handyman_outlined;
+    } else if (isWaitingApproval) {
+      statusBg = AppColors.statusPendingBg;
+      statusText = AppColors.statusPendingText;
+      statusIcon = Icons.hourglass_top_rounded;
     } else if (isDone) {
       statusBg = AppColors.statusSuccessBg;
       statusText = AppColors.statusSuccessText;
@@ -1308,6 +1234,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
     String displayStatus = 'Baru';
     if (isInProgress) displayStatus = 'Dikerjakan';
+    if (isWaitingApproval) displayStatus = 'Menunggu Admin';
     if (isDone) displayStatus = 'Selesai';
     if (isRejected) displayStatus = 'Ditolak';
 
@@ -1515,7 +1442,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 task.rejectionReason!.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                'Alasan penolakan: ${task.rejectionReason}',
+                '${isRejected ? 'Alasan penolakan' : 'Catatan admin'}: ${task.rejectionReason}',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.statusDangerText,
@@ -1529,48 +1456,30 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             SizedBox(
               width: double.infinity,
               child: isNew
-                  ? Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.check_circle_outline,
-                                size: 18),
-                            label: const Text('Terima Tugas'),
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary),
-                            onPressed: () async {
-                              final success = await _updateTaskStatus(
-                                task.idPenugasan,
-                                'diterima',
-                                'Teknisi telah menerima dan mengkonfirmasi tugas.',
-                              );
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(success
-                                      ? 'Tugas dikonfirmasi! Status dikirim ke Admin.'
-                                      : _lastStatusError ??
-                                          'Gagal mengirim konfirmasi tugas.'),
-                                  backgroundColor: success
-                                      ? const Color(0xFF10B981)
-                                      : AppColors.statusDangerText,
-                                ),
-                              );
-                            },
+                  ? ElevatedButton.icon(
+                      icon: const Icon(Icons.check_circle_outline, size: 18),
+                      label: const Text('Terima Tugas'),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary),
+                      onPressed: () async {
+                        final success = await _updateTaskStatus(
+                          task.idPenugasan,
+                          'diterima',
+                          'Teknisi telah menerima dan mengkonfirmasi tugas.',
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? 'Tugas dikonfirmasi! Status dikirim ke Admin.'
+                                : _lastStatusError ??
+                                    'Gagal mengirim konfirmasi tugas.'),
+                            backgroundColor: success
+                                ? const Color(0xFF10B981)
+                                : AppColors.statusDangerText,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.close, size: 18),
-                          label: const Text('Tolak'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.statusDangerText,
-                            side: const BorderSide(
-                                color: AppColors.statusDangerText),
-                          ),
-                          onPressed: () => _showRejectDialog(task),
-                        ),
-                      ],
+                        );
+                      },
                     )
                   : isInProgress
                       ? ElevatedButton.icon(
@@ -1580,19 +1489,26 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                               backgroundColor: AppColors.accentTeal),
                           onPressed: () => _showConfirmationSheet(task),
                         )
-                      : OutlinedButton.icon(
-                          icon: Icon(
-                            isRejected ? Icons.block : Icons.task_alt,
-                            size: 18,
-                            color: isRejected
-                                ? AppColors.statusDangerText
-                                : AppColors.statusSuccessText,
-                          ),
-                          label: Text(isRejected
-                              ? 'Penugasan Ditolak'
-                              : 'Laporan Selesai & Terkirim'),
-                          onPressed: null,
-                        ),
+                      : isWaitingApproval
+                          ? OutlinedButton.icon(
+                              icon: const Icon(Icons.hourglass_top_rounded,
+                                  size: 18),
+                              label: const Text('Menunggu Konfirmasi Admin'),
+                              onPressed: null,
+                            )
+                          : OutlinedButton.icon(
+                              icon: Icon(
+                                isRejected ? Icons.block : Icons.task_alt,
+                                size: 18,
+                                color: isRejected
+                                    ? AppColors.statusDangerText
+                                    : AppColors.statusSuccessText,
+                              ),
+                              label: Text(isRejected
+                                  ? 'Penugasan Ditolak'
+                                  : 'Laporan Selesai & Terkirim'),
+                              onPressed: null,
+                            ),
             ),
           ],
         ),

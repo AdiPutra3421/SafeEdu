@@ -12,6 +12,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PenugasanController extends Controller
@@ -240,6 +241,27 @@ class PenugasanController extends Controller
             ], 404);
         }
 
+        if ($penugasan->status === 'menunggu_konfirmasi') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pekerjaan sedang menunggu konfirmasi admin.',
+            ], 409);
+        }
+
+        if (in_array($penugasan->status, ['selesai', 'ditolak'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status penugasan ini tidak dapat diperbarui lagi.',
+            ], 409);
+        }
+
+        if ($request->status === 'selesai' && $penugasan->status !== 'diterima') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tugas harus diterima sebelum dapat diselesaikan.',
+            ], 409);
+        }
+
         $pengaduan = Pengaduan::with('kategori')->find($penugasan->pengaduan_id);
         $teknisi = User::find($penugasan->teknisi_id);
         if (! self::canHandleReport($teknisi, $pengaduan)) {
@@ -260,14 +282,18 @@ class PenugasanController extends Controller
             }
         }
 
-        // Update task status
-        $penugasan->status = $request->status;
+        $penugasan->status = $request->status === 'selesai'
+            ? 'menunggu_konfirmasi'
+            : $request->status;
+        if ($request->status === 'selesai') {
+            $penugasan->rejection_reason = null;
+        }
         $penugasan->save();
 
         // Create log pengerjaan
         $statusLabel = [
             'diterima' => 'Teknisi telah menerima dan mengkonfirmasi tugas.',
-            'selesai' => 'Teknisi menandai pekerjaan selesai.',
+            'selesai' => 'Teknisi mengirim bukti penyelesaian dan menunggu konfirmasi admin.',
         ];
         $defaultNote = $statusLabel[$request->status] ?? 'Status diperbarui.';
         LogPengerjaan::create([
@@ -297,16 +323,15 @@ class PenugasanController extends Controller
                     report($exception);
                 }
             } else if ($request->status === 'selesai') {
-                $pengaduan->status = 'selesai';
-                $pengaduan->completed_at = Carbon::now(); // Masalah #5: Timestamp selesai
+                $pengaduan->status = 'diproses';
+                $pengaduan->completed_at = null;
 
-                // Masalah #6: Notifikasi selesai
                 $notif = Notifikasi::create([
                     'user_id' => $pengaduan->user_id,
                     'pengaduan_id' => $pengaduan->id,
-                    'type' => 'success',
-                    'judul' => 'Laporan Selesai',
-                    'pesan' => "Laporan Anda mengenai '{$pengaduan->judul}' telah diselesaikan. Terima kasih atas partisipasi Anda.",
+                    'type' => 'info',
+                    'judul' => 'Menunggu Konfirmasi Admin',
+                    'pesan' => "Teknisi telah mengirim bukti penyelesaian laporan '{$pengaduan->judul}'. Laporan menunggu konfirmasi admin.",
                 ]);
                 try {
                     broadcast(new NotifikasiDikirim($notif));
@@ -319,12 +344,80 @@ class PenugasanController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Log pengerjaan berhasil ditambahkan dan status diperbarui.',
-            'data' => $penugasan
+            'message' => $request->status === 'selesai'
+                ? 'Bukti pekerjaan berhasil dikirim dan menunggu konfirmasi admin.'
+                : 'Log pengerjaan berhasil ditambahkan dan status diperbarui.',
+            'data' => $penugasan->load('logPengerjaans'),
         ]);
     }
 
-    public function reject(Request $request, $id)
+    public function approveCompletion($id)
+    {
+        $notification = null;
+        $response = DB::transaction(function () use ($id, &$notification) {
+            $penugasan = Penugasan::with('pengaduan')
+                ->lockForUpdate()
+                ->find($id);
+
+            if (! $penugasan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Penugasan tidak ditemukan.',
+                ], 404);
+            }
+
+            if ($penugasan->status !== 'menunggu_konfirmasi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya pekerjaan yang menunggu konfirmasi admin yang dapat disetujui.',
+                ], 409);
+            }
+
+            if (! $penugasan->pengaduan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Laporan untuk penugasan ini tidak ditemukan.',
+                ], 404);
+            }
+
+            $penugasan->status = 'selesai';
+            $penugasan->rejection_reason = null;
+            $penugasan->save();
+
+            $pengaduan = $penugasan->pengaduan;
+            $pengaduan->status = 'selesai';
+            $pengaduan->completed_at = Carbon::now();
+            $pengaduan->save();
+
+            $notification = Notifikasi::create([
+                'user_id' => $pengaduan->user_id,
+                'pengaduan_id' => $pengaduan->id,
+                'type' => 'success',
+                'judul' => 'Laporan Selesai',
+                'pesan' => "Admin telah mengonfirmasi penyelesaian laporan '{$pengaduan->judul}'.",
+            ]);
+
+            $penugasan->setRelation('pengaduan', $pengaduan);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pekerjaan berhasil dikonfirmasi dan laporan ditutup.',
+                'data' => $penugasan->load('logPengerjaans'),
+            ]);
+        });
+
+        if ($notification) {
+            try {
+                broadcast(new NotifikasiDikirim($notification));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        return $response;
+    }
+
+    public function rejectCompletion(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'rejection_reason' => 'required|string|max:2000',
@@ -337,49 +430,74 @@ class PenugasanController extends Controller
             ], 422);
         }
 
-        $penugasan = Penugasan::with('pengaduan.kategori')->find($id);
-        if (! $penugasan) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Penugasan tidak ditemukan.',
-            ], 404);
-        }
-
-        $teknisi = User::find($penugasan->teknisi_id);
-        if (! self::canHandleReport($teknisi, $penugasan->pengaduan)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sub-role teknisi tidak sesuai dengan kategori laporan ini.',
-            ], 422);
-        }
-
-        if ($penugasan->status !== 'ditugaskan') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya penugasan baru yang dapat ditolak.',
-            ], 409);
-        }
-
         $reason = trim($request->input('rejection_reason'));
-        $penugasan->status = 'ditolak';
-        $penugasan->rejection_reason = $reason;
-        $penugasan->save();
+        $notification = null;
+        $response = DB::transaction(function () use ($id, $reason, &$notification) {
+            $penugasan = Penugasan::with('pengaduan')
+                ->lockForUpdate()
+                ->find($id);
 
-        LogPengerjaan::create([
-            'penugasan_id' => $penugasan->id,
-            'catatan_teknisi' => 'Penugasan ditolak: '.$reason,
-        ]);
+            if (! $penugasan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Penugasan tidak ditemukan.',
+                ], 404);
+            }
 
-        if ($penugasan->pengaduan) {
-            $penugasan->pengaduan->status = 'ditolak';
-            $penugasan->pengaduan->save();
+            if ($penugasan->status !== 'menunggu_konfirmasi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya pekerjaan yang menunggu konfirmasi admin yang dapat ditolak.',
+                ], 409);
+            }
+
+            if (! $penugasan->pengaduan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Laporan untuk penugasan ini tidak ditemukan.',
+                ], 404);
+            }
+
+            $penugasan->status = 'diterima';
+            $penugasan->rejection_reason = $reason;
+            $penugasan->save();
+
+            LogPengerjaan::create([
+                'penugasan_id' => $penugasan->id,
+                'catatan_teknisi' => 'Admin meminta perbaikan: '.$reason,
+            ]);
+
+            $pengaduan = $penugasan->pengaduan;
+            $pengaduan->status = 'diproses';
+            $pengaduan->completed_at = null;
+            $pengaduan->save();
+
+            $notification = Notifikasi::create([
+                'user_id' => $pengaduan->user_id,
+                'pengaduan_id' => $pengaduan->id,
+                'type' => 'warning',
+                'judul' => 'Perlu Perbaikan Ulang',
+                'pesan' => "Admin meminta teknisi memperbaiki kembali laporan '{$pengaduan->judul}'.",
+            ]);
+
+            $penugasan->setRelation('pengaduan', $pengaduan);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pekerjaan ditolak dan dikembalikan ke teknisi untuk diperbaiki.',
+                'data' => $penugasan->load('logPengerjaans'),
+            ]);
+        });
+
+        if ($notification) {
+            try {
+                broadcast(new NotifikasiDikirim($notification));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Penugasan berhasil ditolak.',
-            'data' => $penugasan->load('logPengerjaans'),
-        ]);
+        return $response;
     }
 
     private static function technicianSubRole(User $teknisi): ?string

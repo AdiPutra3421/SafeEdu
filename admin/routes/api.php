@@ -46,9 +46,9 @@ Route::prefix('penugasan')->group(function () {
     Route::get('/', [PenugasanController::class, 'index']);
     Route::post('/', [PenugasanController::class, 'store']);
     Route::post('/{id}/status', [PenugasanController::class, 'updateStatus']);
-    Route::post('/{id}/reject', [PenugasanController::class, 'reject']);
+    Route::post('/{id}/approve', [PenugasanController::class, 'approveCompletion']);
+    Route::post('/{id}/reject-completion', [PenugasanController::class, 'rejectCompletion']);
 });
-Route::post('/tasks/{id}/reject', [PenugasanController::class, 'reject']);
 
 // API routes for Web Admin
 Route::apiResource('fasilitas', FasilitasController::class);

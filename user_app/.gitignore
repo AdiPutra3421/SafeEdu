@@ -1,3 +1,16 @@
 # Miscellaneous
 # Widget Preview related
 .widget_preview/
+# Dart generated files
+.dart_tool/
+
+# Flutter generated files
+.packages
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# Temporary files
+*.log

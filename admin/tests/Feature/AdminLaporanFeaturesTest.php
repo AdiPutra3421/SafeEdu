@@ -100,14 +100,22 @@ class AdminLaporanFeaturesTest extends TestCase
 
     public function test_uploaded_report_attachment_can_be_opened_without_a_storage_symlink(): void
     {
-        $path = 'bukti/test-admin-lampiran.png';
-        Storage::disk('public')->put($path, 'test attachment');
+        $paths = [
+            'bukti/test-admin-lampiran.png',
+            'photo_proofs/test-admin-proof.jpg',
+        ];
+        foreach ($paths as $path) {
+            Storage::disk('public')->put($path, 'test attachment');
+        }
 
         try {
-            $this->get('/api/gambar/'.$path)
-                ->assertOk();
+            foreach ($paths as $path) {
+                $this->get('/api/gambar/'.$path)->assertOk();
+            }
         } finally {
-            Storage::disk('public')->delete($path);
+            foreach ($paths as $path) {
+                Storage::disk('public')->delete($path);
+            }
         }
     }
 
