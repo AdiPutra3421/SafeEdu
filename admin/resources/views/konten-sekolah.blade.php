@@ -19,7 +19,7 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width:70px;">Gambar</th>
+            <th>Gambar</th>
             <th>Jenis</th>
             <th>Judul</th>
             <th>Isi Konten</th>

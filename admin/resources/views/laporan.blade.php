@@ -8,12 +8,6 @@
     <h2>Daftar Laporan User</h2>
     <p>Filter antara laporan fasilitas dan pelanggaran kode etik, lalu verifikasi, teruskan ke penanggung jawab, atau tolak laporan.</p>
   </div>
-  <div class="topbar-actions">
-    <div class="system-status-indicator">
-      <span class="status-dot-pulse"></span>
-      Real-time Sync
-    </div>
-  </div>
 </header>
 
 <main class="content-body">
