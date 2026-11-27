@@ -251,13 +251,17 @@
 
     try {
       const fileUrl = new URL(value, window.location.origin);
-      if (fileUrl.origin !== window.location.origin || !fileUrl.pathname.startsWith('/storage/bukti/')) {
+      if (!fileUrl.pathname.startsWith('/storage/bukti/')) return null;
+
+      const pathSegments = fileUrl.pathname.slice('/storage/'.length).split('/').map(decodeURIComponent);
+      if (pathSegments.length < 2 || pathSegments.some(segment =>
+        !segment || segment === '.' || segment === '..' || /[\/\\]/.test(segment)
+      )) {
         return null;
       }
 
-      const storedPath = fileUrl.pathname.slice('/storage/'.length);
-      const url = `/api/gambar/${storedPath.split('/').map(encodeURIComponent).join('/')}`;
-      const extension = storedPath.split('.').pop().toLowerCase();
+      const url = `/api/gambar/${pathSegments.map(encodeURIComponent).join('/')}`;
+      const extension = pathSegments[pathSegments.length - 1].split('.').pop().toLowerCase();
 
       return {
         url,

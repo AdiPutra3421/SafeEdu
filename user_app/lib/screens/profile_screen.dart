@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/report_model.dart';
+import '../services/api_config.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
@@ -205,6 +206,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       },
+    );
+  }
+
+  String? _reportImageUrl(String? fileUrl) {
+    if (fileUrl == null || fileUrl.isEmpty) return null;
+
+    final baseUri = Uri.parse(ApiConfig.baseUrl);
+    final attachmentUri = Uri.tryParse(fileUrl);
+    if (attachmentUri == null) return null;
+
+    final segments = List<String>.from(attachmentUri.pathSegments);
+    if (segments.isNotEmpty && segments.first == 'storage') {
+      segments.removeAt(0);
+    }
+    if (segments.length < 2 ||
+        segments.first != 'bukti' ||
+        segments.any((segment) =>
+            segment.isEmpty ||
+            segment == '.' ||
+            segment == '..' ||
+            segment.contains('/') ||
+            segment.contains(r'\'))) {
+      return null;
+    }
+
+    final extension = segments.last.split('.').last.toLowerCase();
+    if (!const {'jpg', 'jpeg', 'png'}.contains(extension)) return null;
+
+    final encodedPath = segments.map(Uri.encodeComponent).join('/');
+    return baseUri.resolve('/api/gambar/$encodedPath').toString();
+  }
+
+  void _showReportImage(String imageUrl) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        child: SizedBox(
+          width: MediaQuery.of(dialogContext).size.width * 0.9,
+          height: MediaQuery.of(dialogContext).size.height * 0.75,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: InteractiveViewer(
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('Error loading report image: $error');
+                      return const Center(
+                        child: Text('Foto bukti tidak dapat dimuat.'),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: IconButton(
+                  tooltip: 'Tutup foto',
+                  onPressed: () => Navigator.pop(dialogContext),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -521,6 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   itemCount: widget.userReports.length,
                   itemBuilder: (context, index) {
                     final rep = widget.userReports[index];
+                    final reportImageUrl = _reportImageUrl(rep.fileBuktiUrl);
 
                     Color statusBg = AppColors.statusPendingBg;
                     Color statusText = AppColors.statusPendingText;
@@ -537,6 +607,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     return Card(
                       child: ListTile(
+                        leading: reportImageUrl == null
+                            ? null
+                            : Tooltip(
+                                message: 'Lihat foto bukti',
+                                child: InkWell(
+                                  onTap: () => _showReportImage(reportImageUrl),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      reportImageUrl,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        debugPrint(
+                                            'Error loading report thumbnail: $error');
+                                        return Container(
+                                          width: 56,
+                                          height: 56,
+                                          color: AppColors.subtle,
+                                          alignment: Alignment.center,
+                                          child: const Icon(
+                                            Icons.broken_image_outlined,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         title: Row(

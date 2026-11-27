@@ -410,6 +410,7 @@ class _ReportScreenState extends State<ReportScreen> {
               data['is_anonim'] == '1' ||
               data['is_anonim'] == true,
           createdAt: data['created_at'],
+          fileBuktiUrl: data['file_bukti_url']?.toString(),
           namaKategori: (data['kategori'] as Map?)?['nama']?.toString() ??
               _selectedKategoriName,
           kategoriJenis: _reportType == 'fasilitas' ? 'fasilitas' : 'etik',
