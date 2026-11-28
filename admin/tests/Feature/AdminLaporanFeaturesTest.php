@@ -290,11 +290,35 @@ class AdminLaporanFeaturesTest extends TestCase
             ->assertJsonPath('data.kategori.jenis', 'etik');
     }
 
-    public function test_report_with_duplicate_title_and_description_is_rejected_across_users_and_statuses(): void
+    public function test_user_cannot_create_duplicate_report_while_previous_report_is_active(): void
     {
-        $otherReporter = User::factory()->create(['role' => 'siswa']);
         Pengaduan::create([
-            'user_id' => $otherReporter->id,
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Kerusakan jendela kelas',
+            'deskripsi' => 'Pintu kelas mengalami kerusakan yang perlu diperbaiki segera.',
+            'lokasi_kejadian' => 'Gedung A',
+            'status' => 'menunggu',
+        ]);
+
+        $response = $this->post('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => '  KERUSAKAN   JENDELA KELAS ',
+            'deskripsi' => "PINTU KELAS mengalami\nkerusakan yang perlu diperbaiki segera.",
+            'lokasi_kejadian' => 'Gedung B',
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(429)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Laporan dengan judul dan deskripsi yang sama sedang diproses atau belum selesai.');
+    }
+
+    public function test_user_can_create_report_with_same_title_and_description_when_previous_report_is_completed(): void
+    {
+        Pengaduan::create([
+            'user_id' => $this->reporter->id,
             'kategori_id' => $this->kategoriFasilitas->id,
             'judul' => 'Kerusakan jendela kelas',
             'deskripsi' => 'Pintu kelas mengalami kerusakan yang perlu diperbaiki segera.',
@@ -311,9 +335,83 @@ class AdminLaporanFeaturesTest extends TestCase
             'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
         ], ['Accept' => 'application/json']);
 
-        $response->assertStatus(429)
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
+    }
+
+    public function test_user_cannot_create_more_than_five_active_reports(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Pengaduan::create([
+                'user_id' => $this->reporter->id,
+                'kategori_id' => $this->kategoriFasilitas->id,
+                'judul' => "Kerusakan fasilitas nomor $i",
+                'deskripsi' => "Deskripsi detail untuk laporan fasilitas aktif ke-$i di sekolah.",
+                'lokasi_kejadian' => "Ruang $i",
+                'status' => 'menunggu',
+            ]);
+        }
+
+        for ($i = 4; $i <= 5; $i++) {
+            Pengaduan::create([
+                'user_id' => $this->reporter->id,
+                'kategori_id' => $this->kategoriEtik->id,
+                'judul' => "Pelanggaran kode etik nomor $i",
+                'deskripsi' => "Deskripsi detail untuk laporan etika aktif ke-$i yang perlu ditangani.",
+                'lokasi_kejadian' => "Halaman $i",
+                'status' => 'diproses',
+            ]);
+        }
+
+        $response = $this->post('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Laporan fasilitas baru yang keenam',
+            'deskripsi' => 'Mencoba membuat laporan keenam saat masih ada lima laporan yang aktif.',
+            'lokasi_kejadian' => 'Laboratorium Kimia',
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Laporan dengan judul dan deskripsi yang sama sudah pernah dibuat.');
+            ->assertJsonPath('message', 'Anda sudah memiliki 5 laporan aktif. Tunggu hingga laporan sebelumnya selesai sebelum membuat laporan baru.');
+    }
+
+    public function test_user_can_create_report_when_previous_reports_are_completed(): void
+    {
+        for ($i = 1; $i <= 4; $i++) {
+            Pengaduan::create([
+                'user_id' => $this->reporter->id,
+                'kategori_id' => $this->kategoriFasilitas->id,
+                'judul' => "Kerusakan fasilitas nomor $i",
+                'deskripsi' => "Deskripsi detail untuk laporan fasilitas aktif ke-$i di sekolah.",
+                'lokasi_kejadian' => "Ruang $i",
+                'status' => 'menunggu',
+            ]);
+        }
+
+        for ($i = 5; $i <= 6; $i++) {
+            Pengaduan::create([
+                'user_id' => $this->reporter->id,
+                'kategori_id' => $this->kategoriEtik->id,
+                'judul' => "Pelanggaran kode etik selesai $i",
+                'deskripsi' => "Deskripsi detail untuk laporan etika yang sudah selesai dikerjakan.",
+                'lokasi_kejadian' => "Halaman $i",
+                'status' => 'selesai',
+            ]);
+        }
+
+        $response = $this->post('/api/pengaduan', [
+            'user_id' => $this->reporter->id,
+            'kategori_id' => $this->kategoriFasilitas->id,
+            'judul' => 'Laporan fasilitas aktif yang kelima',
+            'deskripsi' => 'Mencoba membuat laporan kelima yang masih diperbolehkan oleh sistem.',
+            'lokasi_kejadian' => 'Laboratorium Fisika',
+            'file_bukti' => UploadedFile::fake()->create('fasilitas.jpg', 10, 'image/jpeg'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
     }
 
     public function test_report_with_different_title_and_description_is_not_rejected_as_duplicate(): void

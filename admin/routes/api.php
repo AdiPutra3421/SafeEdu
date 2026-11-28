@@ -80,7 +80,10 @@ Route::get('/gambar/{path}', function ($path) {
         abort(404);
     }
 
-    $response = response()->file($file);
+    $mime = mime_content_type($file) ?: 'application/octet-stream';
+    $response = response(file_get_contents($file), 200, [
+        'Content-Type' => $mime,
+    ]);
     $response->headers->set('Access-Control-Allow-Origin', '*');
     $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     $response->headers->set('Access-Control-Allow-Private-Network', 'true');

@@ -98,9 +98,21 @@ class PengaduanController extends Controller
             ], 422);
         }
 
+        // Batasan Maksimal 5 Laporan Aktif per User (Semua Kategori: Fasilitas & Kode Etik)
+        $activeReportsCount = Pengaduan::where('user_id', $request->user_id)
+            ->whereIn('status', ['menunggu', 'diproses'])
+            ->count();
+
+        if ($activeReportsCount >= 5) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah memiliki 5 laporan aktif. Tunggu hingga laporan sebelumnya selesai sebelum membuat laporan baru.',
+            ], 422);
+        }
+
         $isFacilityReport = $kategori?->jenis === 'fasilitas';
 
-        // Anti-Spam (Masalah #1)
+        // Anti-Spam: Cek duplikasi judul & deskripsi pada laporan yang belum selesai
         $judul = trim($request->judul);
         $lokasi = trim($request->lokasi_kejadian);
         $deskripsi = trim($request->deskripsi);
@@ -109,6 +121,8 @@ class PengaduanController extends Controller
         $normalizedDescription = self::normalizeDuplicateText($deskripsi);
         $compactTitle = self::compactDuplicateText($judul);
         $possibleDuplicates = Pengaduan::query()
+            ->where('user_id', $request->user_id)
+            ->whereIn('status', ['menunggu', 'diproses'])
             ->whereRaw(
                 "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(judul), ' ', ''), CHAR(9), ''), CHAR(10), ''), CHAR(13), '')) = ?",
                 [$compactTitle]
@@ -123,7 +137,7 @@ class PengaduanController extends Controller
         if ($duplicateExists) {
             return response()->json([
                 'success' => false,
-                'message' => 'Laporan dengan judul dan deskripsi yang sama sudah pernah dibuat.',
+                'message' => 'Laporan dengan judul dan deskripsi yang sama sedang diproses atau belum selesai.',
             ], 429);
         }
 

@@ -71,6 +71,7 @@ class AuthApiController extends Controller
                 'nama' => $user->nama,
                 'email' => $user->display_email,
                 'role' => $user->role,
+                'bidang' => $user->bidang,
             ],
         ]);
     }
@@ -117,6 +118,7 @@ class AuthApiController extends Controller
                 'nama' => $user->nama,
                 'email' => $user->display_email,
                 'role' => $user->role,
+                'bidang' => $user->bidang,
             ],
         ], 201);
     }
@@ -127,7 +129,7 @@ class AuthApiController extends Controller
     public function me(Request $request)
     {
         $userId = $request->query('user_id');
-        $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user'])->first();
+        $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user', 'teknisi', 'guru_bk'])->first();
 
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'Data user tidak ditemukan.'], 404);
@@ -140,6 +142,7 @@ class AuthApiController extends Controller
                 'nama' => $user->nama,
                 'email' => $user->display_email,
                 'role' => $user->role,
+                'bidang' => $user->bidang,
             ],
         ]);
     }
@@ -150,7 +153,7 @@ class AuthApiController extends Controller
     public function updateProfile(Request $request)
     {
         $userId = $request->input('user_id', $request->query('user_id'));
-        $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user'])->first();
+        $user = User::where('id', $userId)->whereIn('role', ['siswa', 'user', 'teknisi', 'guru_bk'])->first();
 
         if (! $user) {
             return response()->json([
@@ -199,6 +202,7 @@ class AuthApiController extends Controller
                 'nama' => $user->nama,
                 'email' => $user->display_email,
                 'role' => $user->role,
+                'bidang' => $user->bidang,
             ],
         ]);
     }

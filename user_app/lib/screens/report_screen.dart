@@ -235,17 +235,39 @@ class _ReportScreenState extends State<ReportScreen> {
     return null;
   }
 
+  String _normalizeDuplicateText(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
   Future<void> _handleSubmit() async {
     if (_isSubmitting) return;
 
-    // Cegah pelaporan berulang (cek ke riwayat yang sudah dimuat)
-    final judul = _titleController.text.trim();
-    final lokasi = _locationController.text.trim();
-    final duplicate = widget.existingReports
-        .any((r) => r.judul == judul && (r.lokasiKejadian ?? '') == lokasi);
-    if (duplicate) {
+    // 1. Batasan Maksimal 5 Laporan Aktif (Semua Kategori)
+    final activeReportsCount = widget.existingReports
+        .where((r) => r.status == 'menunggu' || r.status == 'diproses')
+        .length;
+    if (activeReportsCount >= 5) {
       _showError(
-          'Anda sudah melaporkan insiden ini sebelumnya. Laporan tidak dapat dikirim berulang kali.');
+          'Anda sudah memiliki 5 laporan aktif. Tunggu hingga laporan sebelumnya selesai sebelum membuat laporan baru.');
+      return;
+    }
+
+    // 2. Batasan judul dan deskripsi yang sama jika belum selesai
+    final judul = _titleController.text.trim();
+    final deskripsi = _descController.text.trim();
+    final normalizedTitle = _normalizeDuplicateText(judul);
+    final normalizedDesc = _normalizeDuplicateText(deskripsi);
+
+    final duplicateActive = widget.existingReports.any((r) {
+      final isActive = r.status == 'menunggu' || r.status == 'diproses';
+      if (!isActive) return false;
+      return _normalizeDuplicateText(r.judul) == normalizedTitle &&
+          _normalizeDuplicateText(r.deskripsi) == normalizedDesc;
+    });
+
+    if (duplicateActive) {
+      _showError(
+          'Laporan dengan judul dan deskripsi yang sama sedang diproses atau belum selesai.');
       return;
     }
 

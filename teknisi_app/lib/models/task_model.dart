@@ -19,6 +19,9 @@ class PenugasanModel {
   String tanggalPenugasan;
   String? photoProof;
 
+  String get status => statusPenugasan;
+  set status(String val) => statusPenugasan = val;
+
   PenugasanModel({
     required this.idPenugasan,
     required this.idPengaduan,

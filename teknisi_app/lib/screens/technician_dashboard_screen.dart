@@ -10,7 +10,9 @@ import '../theme/app_theme.dart';
 import 'auth/login_screen.dart';
 
 class TechnicianDashboardScreen extends StatefulWidget {
-  const TechnicianDashboardScreen({super.key});
+  final VoidCallback? onOpenProfile;
+
+  const TechnicianDashboardScreen({super.key, this.onOpenProfile});
 
   @override
   State<TechnicianDashboardScreen> createState() =>
@@ -18,7 +20,7 @@ class TechnicianDashboardScreen extends StatefulWidget {
 }
 
 class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
-  bool isOnDuty = true;
+  bool get isOnDuty => AuthService.instance.isOnDuty;
   String selectedFilter = 'Semua';
   String selectedUrgencyFilter = 'Semua';
   String? _lastStatusError;
@@ -714,7 +716,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       appBar: AppBar(
         title: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () => _showProfileSheet(context),
+          onTap: () {
+            if (widget.onOpenProfile != null) {
+              widget.onOpenProfile!();
+            } else {
+              _showProfileSheet(context);
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             child: Row(
@@ -741,21 +749,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           ),
         ),
         actions: [
-          Tooltip(
-            message: isOnDuty
-                ? 'Nonaktifkan status bertugas'
-                : 'Aktifkan status bertugas',
-            child: Switch(
-              value: isOnDuty,
-              activeThumbColor: AppColors.accentTeal,
-              onChanged: (v) => setState(() => isOnDuty = v),
-            ),
-          ),
           IconButton(
-            icon: const Icon(Icons.logout_rounded,
-                color: AppColors.statusDangerText),
-            tooltip: 'Keluar dari Akun Teknisi',
-            onPressed: () => _confirmLogout(context),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Segarkan data',
+            onPressed: _fetchTasks,
           ),
         ],
       ),

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Kategori;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class KategoriTest extends TestCase
@@ -51,6 +52,7 @@ class KategoriTest extends TestCase
             'lokasi_kejadian' => 'Gedung A, lantai 2.',
             'urgency' => 'medium',
             'is_anonim' => false,
+            'file_bukti' => UploadedFile::fake()->create('foto.jpg', 10, 'image/jpeg'),
         ])->assertCreated()
             ->assertJsonPath('data.judul', 'AC Lab 2 rusak!')
             ->assertJsonPath('data.lokasi_kejadian', 'Gedung A, lantai 2.');
